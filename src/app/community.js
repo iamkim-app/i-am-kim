@@ -404,10 +404,10 @@ function closeModal() {
 async function uploadOneImage(file, userId) {
   // returns { publicUrl, path }
   const bucket = "community";
-  const maxBytes = 3 * 1024 * 1024;
+  const maxBytes = 2 * 1024 * 1024;
 
   if (!file) return { publicUrl: "", path: "" };
-  if (file.size > maxBytes) throw new Error("Image too large (max 3MB).");
+  if (file.size > maxBytes) throw new Error("Image too large (max 2MB).");
   const allowed = ["image/jpeg", "image/png", "image/webp"];
   if (!allowed.includes(file.type)) throw new Error("Unsupported image type.");
 
@@ -423,6 +423,84 @@ async function uploadOneImage(file, userId) {
 
   const { data } = supabase.storage.from(bucket).getPublicUrl(path);
   return { publicUrl: data?.publicUrl || "", path };
+}
+
+async function compressImage(file) {
+  const allowed = ["image/jpeg", "image/png", "image/webp"];
+  if (!file || !allowed.includes(file.type)) throw new Error("Unsupported image type.");
+
+  const maxDim = 1600;
+  let width = 0;
+  let height = 0;
+  let bitmap = null;
+  let img = null;
+  let objectUrl = "";
+
+  try {
+    if ("createImageBitmap" in window) {
+      bitmap = await createImageBitmap(file);
+      width = bitmap.width;
+      height = bitmap.height;
+    } else {
+      objectUrl = URL.createObjectURL(file);
+      img = await new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+        image.src = objectUrl;
+      });
+      width = img.naturalWidth || img.width;
+      height = img.naturalHeight || img.height;
+    }
+
+    if (!width || !height) throw new Error("Invalid image.");
+
+    const scale = Math.min(1, maxDim / Math.max(width, height));
+    const targetW = Math.max(1, Math.round(width * scale));
+    const targetH = Math.max(1, Math.round(height * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = targetW;
+    canvas.height = targetH;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas unavailable.");
+
+    if (bitmap) {
+      ctx.drawImage(bitmap, 0, 0, targetW, targetH);
+      bitmap.close?.();
+    } else if (img) {
+      ctx.drawImage(img, 0, 0, targetW, targetH);
+    }
+
+    const qualities = [0.8, 0.7, 0.6, 0.5];
+    const maxBytes = 2 * 1024 * 1024;
+
+    const toBlob = (q) =>
+      new Promise((resolve, reject) => {
+        canvas.toBlob(
+          (blob) => (blob ? resolve(blob) : reject(new Error("Compression failed."))),
+          "image/jpeg",
+          q
+        );
+      });
+
+    let lastBlob = null;
+    for (const q of qualities) {
+      const blob = await toBlob(q);
+      lastBlob = blob;
+      if (blob.size <= maxBytes) {
+        const base = (file.name || "photo").replace(/\.[^/.]+$/, "");
+        return { blob, fileName: `${base || "photo"}.jpg` };
+      }
+    }
+
+    if (lastBlob) {
+      throw new Error("Compressed image still too large.");
+    }
+    throw new Error("Compression failed.");
+  } finally {
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+  }
 }
 
 async function createPost({ category, body, imageUrl, imagePath }) {
@@ -864,8 +942,24 @@ function setupCommunity() {
       let imagePath = "";
 
       if (file) {
+        status.textContent = "Compressing photo...";
+        let uploadFile = file;
+        try {
+          const compressed = await compressImage(file);
+          uploadFile = new File([compressed.blob], compressed.fileName, {
+            type: "image/jpeg",
+          });
+        } catch (err) {
+          const maxBytes = 2 * 1024 * 1024;
+          if (file.size <= maxBytes) {
+            uploadFile = file;
+          } else {
+            throw new Error("Photo too large. Please choose a smaller image.");
+          }
+        }
+
         status.textContent = "Uploading image...";
-        const uploaded = await uploadOneImage(file, session.user.id);
+        const uploaded = await uploadOneImage(uploadFile, session.user.id);
         imageUrl = uploaded.publicUrl;
         imagePath = uploaded.path;
       }
