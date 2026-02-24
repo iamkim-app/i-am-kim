@@ -2329,6 +2329,9 @@ body.is-native-shell .main{
   position: fixed;
   inset: 0;
   z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 12px;
 }
 .travelBigModal[hidden]{
   display: none;
@@ -2341,23 +2344,55 @@ body.is-native-shell .main{
 .travelBigModal__card{
   position: relative;
   width: min(900px, 92vw);
-  margin: 8vh auto 0;
-  background: #fff;
-  border-radius: 18px;
-  border: 1px solid var(--border2);
-  box-shadow: 0 30px 80px rgba(2,6,23,0.3);
-  padding: 18px 18px 26px;
+  margin: 0;
+  background: rgba(255,255,255,0.92);
+  border-radius: 20px;
+  border: 1px solid rgba(11,18,32,0.10);
+  box-shadow: 0 30px 80px rgba(2,6,23,0.22);
+  padding: calc(24px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: travelBigIn 200ms ease;
 }
 .travelBigModal__actions{
   display: flex;
   justify-content: flex-end;
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top));
+  right: 12px;
+  z-index: 2;
+}
+.travelBigModal__actions .btn{
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(11,18,32,0.12);
+  background: rgba(255,255,255,0.85);
+  font-weight: 800;
+  opacity: 0.9;
+}
+.travelBigModal__actions .btn:hover{
+  opacity: 1;
+}
+.travelBigModal__actions .btn:active{
+  opacity: 0.75;
 }
 .travelBigModal__text{
-  margin-top: 8px;
+  margin: 0 auto;
+  max-width: 520px;
   text-align: center;
-  font-size: clamp(32px, 8vw, 92px);
+  font-size: clamp(28px, 7vw, 56px);
   font-weight: 900;
-  line-height: 1.1;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  line-break: strict;
+}
+@keyframes travelBigIn{
+  from{ opacity: 0; transform: scale(0.98); }
+  to{ opacity: 1; transform: scale(1); }
 }
 @media (max-width: 640px){
   .travelPhraseBtn{
@@ -2592,6 +2627,46 @@ body.is-native-shell .main{
   background: rgba(255,255,255,0.92);
   border: 1px solid rgba(255,255,255,0.65);
   box-shadow: 0 24px 90px rgba(2,6,23,0.25);
+}
+/* Post modal: keep header/footer visible, scroll body on mobile */
+#postModal .modal__card{
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 28px);
+  max-height: calc(100dvh - 28px);
+  overflow: hidden;
+}
+#postModal .form{
+  margin-top: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 4px;
+}
+#postModal .photoPreview{
+  max-height: 40vh;
+}
+#postModal .photoPreview img{
+  max-height: 40vh;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+@media (max-width: 820px){
+  #postModal .modal__card{
+    width: min(560px, calc(100% - 20px));
+  }
+  #postModal .row{
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    align-self: stretch;
+    background: rgba(255,255,255,0.96);
+    padding: 10px 0 calc(12px + env(safe-area-inset-bottom));
+    box-shadow: 0 -8px 20px rgba(2,6,23,0.08);
+  }
 }
 .authSheet[hidden]{ display: none; }
 .authSheet{
