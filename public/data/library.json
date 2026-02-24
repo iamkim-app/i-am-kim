@@ -1,0 +1,159 @@
+﻿{
+  "_how_to_edit": "Edit only collections[].items. Each item is one video object: { title, url, channel, why }. Keep long-form guides when possible. Avoid duplicates by URL.",
+  "_note": "This JSON has 6 collection objects. Each collection has an items[] array of video objects.",
+  "collections": [
+    {
+      "_note": "Collection object #1 (Transit)",
+      "key": "transit",
+      "title": "Transit",
+      "desc": "Subway, bus, rail, and card basics for moving around.",
+      "items": [
+        {
+          "_note": "Video object",
+          "title": "How to Use Subway & Bus in Seoul | T-Money & Naver Map Tips",
+          "url": "https://www.youtube.com/watch?v=J9DPw6yw_7o",
+          "channel": "Janine in South Korea",
+          "why": "Clear demos for tapping in/out + Naver Map tips."
+        },
+        {
+          "_note": "Video object",
+          "title": "Master the SUBWAY! How to ride the subway in Seoul | Help Traveling in South Korea",
+          "url": "https://www.youtube.com/watch?v=fxujBWcyVwE",
+          "channel": "Megan Osten",
+          "why": "Shows how to read subway lines, transfer, and pass gates with clear visuals."
+        }
+      ]
+    },
+    {
+      "_note": "Collection object #2 (Arrival & SIM)",
+      "key": "arrival_sim",
+      "title": "Arrival & SIM",
+      "desc": "Airport arrival flow, data setup, and first-hour essentials.",
+      "items": [
+        {
+          "_note": "Video object",
+          "title": "The Ultimate Korea SIM Card Guide: Why You NEED a Phone Number",
+          "url": "https://www.youtube.com/watch?v=v0ANKQ_gYeU",
+          "channel": "Creatrip",
+          "why": "Explains why tourists need a SIM with a Korean phone number for queue systems (CatchTable/Tabling)."
+        }
+      ]
+    },
+    {
+      "_note": "Collection object #3 (Where to stay)",
+      "key": "stay",
+      "title": "Where to stay",
+      "desc": "Neighborhood choices by budget, access, and travel style.",
+      "items": [
+        {
+          "_note": "Video object",
+          "title": "Where To Stay In Seoul? District Guide for Tourists",
+          "url": "https://www.youtube.com/watch?v=6aa2Ftr7Cyc",
+          "channel": "In My Korea",
+          "why": "Breaks down major neighborhoods by vibe, budget, and proximity to sights."
+        },
+        {
+          "_note": "Video object",
+          "title": "Where to Stay in Seoul: In-Depth Virtual Tour of 9 Areas",
+          "url": "https://www.youtube.com/watch?v=sgKqSPyga8g",
+          "channel": "Lost Then Found",
+          "why": "Map-first approach showing distance and access to main transport hubs."
+        },
+        {
+          "_note": "Video object (channel name can be refined later if needed)",
+          "title": "Best Seoul Hotels 2026 (Best Choices and Best Values)",
+          "url": "https://www.youtube.com/watch?v=qRk-hZuEwr4",
+          "channel": "Local Guide",
+          "why": "Curated hotel picks (value to premium) with a 2026-focused roundup."
+        }
+      ]
+    },
+    {
+      "_note": "Collection object #4 (Food)",
+      "key": "food",
+      "title": "Food",
+      "desc": "Street food, markets, and practical ordering tips.",
+      "items": [
+        {
+          "_note": "Video object",
+          "title": "Must Try Before You Die!! Seoul Street Food Marathon",
+          "url": "https://www.youtube.com/watch?v=-RqaB36PZJ0",
+          "channel": "Best Ever Food Review Show",
+          "why": "Names and explains common Korean snacks so you know what to order."
+        },
+        {
+          "_note": "Video object",
+          "title": "2026 Korea Food Guide: 50 Budget Eats (w/ Prices) • Best Restaurants & Street Food Trip • Seoul Vlog",
+          "url": "https://www.youtube.com/watch?v=ZyLri4IGfhI",
+          "channel": "Angelica & Aileen Wanders",
+          "why": "Budget-friendly food guide with prices—useful for planning your daily spend."
+        }
+      ]
+    },
+    {
+      "_note": "Collection object #5 (Concert & Fan Guide) - BTS content is included here, not separate.",
+      "key": "concert_fan",
+      "title": "Concert & Fan Guide",
+      "desc": "K-pop fan routes, merch planning, and event prep.",
+      "items": [
+        {
+          "_note": "Video object",
+          "title": "The Ultimate K-POP Concert Guide: Everything You NEED to Know",
+          "url": "https://youtu.be/vjEESG01wl0",
+          "channel": "Beyadori",
+          "why": "Covers lightstick batteries, standing pit survival, and what to pack."
+        },
+        {
+          "_note": "Video object",
+          "title": "Everything to Know About K-Pop Concerts: Merch, VIP, & Etiquette",
+          "url": "https://youtu.be/nlnXSpXkOaY",
+          "channel": "BEYADORI",
+          "why": "Explains VIP check-in, merch flow, and fan etiquette in Korea."
+        },
+        {
+          "_note": "Video object (BTS travel is grouped here instead of a separate BTS category)",
+          "title": "15+ BTS PLACES IN SEOUL - THE ULTIMATE GUIDE",
+          "url": "https://youtu.be/jjkbqSFeLVw",
+          "channel": "GZBichina",
+          "why": "Detailed locations and how-to-go instructions for BTS-related spots in Seoul."
+        }
+      ]
+    },
+    {
+      "_note": "Collection object #6 (Living in Korea / Real Local Survival Guide)",
+      "key": "living",
+      "title": "Living in Korea",
+      "desc": "Tips for foreigners living in Korea day to day.",
+      "items": [
+        {
+          "_note": "Video object",
+          "title": "How to RECYCLE in Korea: The Guide to Taking Out the Trash",
+          "url": "https://www.youtube.com/watch?v=y7Pq7QXJRVk",
+          "channel": "The Auzi Traveller",
+          "why": "Korea’s recycling rules are strict—great for Airbnb stays (food waste, schedules, tags)."
+        },
+        {
+          "_note": "Video object",
+          "title": "Real Korean Conversation: How to Buy Medicine at a Korean Pharmacy",
+          "url": "https://www.youtube.com/watch?v=rsLLoTxhjD8",
+          "channel": "Real Korean with Morning",
+          "why": "Practical pharmacy phrases + how Korean pharmacies work when you’re sick."
+        },
+        {
+          "_note": "Video object",
+          "title": "4 Korean delivery apps for foreigners (Baedal Minjok, Yogiyo, Coupang Eats...)",
+          "url": "https://www.youtube.com/watch?v=8dmpoHXhVlo",
+          "channel": "Note Seoul",
+          "why": "Shows how foreigners can use Korean delivery apps and overcome sign-up/payment barriers."
+        },
+        {
+          "_note": "Video object (channel name can be refined later if needed)",
+          "title": "10 Things I Wish I Knew Before Moving to Korea",
+          "url": "https://www.youtube.com/watch?v=HuF5tuBXTmQ",
+          "channel": "Independent Creator",
+          "why": "Realistic cultural/life tips (pace, expectations, friction points) that guides often miss."
+        }
+      ]
+    }
+  ]
+}

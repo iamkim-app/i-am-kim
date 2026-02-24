@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>I AM KIM</title>
+
+    <meta
+      name="description"
+      content="I AM KIM ??an installable travel tool for Korea. Paste a YouTube link -> watch it -> extract only the travel-useful parts (prices, routes, timing, what to skip) with timestamps."
+    />
+    <meta name="color-scheme" content="light" />
+
+    <!-- PWA -->
+    <meta name="theme-color" content="#0A84FF" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  </head>
+
+  <body>
+    <div id="loadingOverlay" class="loadingOverlay" hidden>
+      <div class="loadingOverlay__card" role="status" aria-live="polite" aria-label="Analyzing video">
+        <div class="loadingOverlay__spinner"></div>
+        <div class="loadingOverlay__title">Analyzing video...</div>
+        <div class="loadingOverlay__desc">Extracting travel tips and timestamps.</div>
+      </div>
+    </div>
+    <div class="app">
+      <header class="topbar">
+        <div class="topbar__inner">
+          <div class="brand" role="banner">
+            <span class="brand__mark" aria-hidden="true">K</span>
+            <div class="brand__text">
+              <div class="brand__name">I AM KIM</div>
+              <div class="brand__tagline">Korea travel, simplified.</div>
+            </div>
+          </div>
+
+          <nav class="nav" aria-label="Primary">
+            <a class="nav__link" href="#home" data-route="home">Home</a>
+            <a class="nav__link" href="#korea-now" data-route="korea-now">Korea Now</a>
+            <a class="nav__link" href="#phrases" data-route="phrases">Phrases</a>
+            <a class="nav__link" href="#community" data-route="community">Community</a>
+            <a class="nav__link" href="#about" data-route="about">About</a>
+          </nav>
+
+          <div class="topbar__actions">
+            <button class="btn btn--ghost btn--small" id="btnLoginGoogle" type="button">Google</button>
+            <button class="btn btn--ghost btn--small" id="btnLoginApple" type="button">Apple</button>
+            <button class="btn btn--ghost btn--small" id="btnLogout" type="button" style="display:none">Logout</button>
+            <button class="btn btn--install devOnly" id="btnInstall" type="button" aria-label="Install">Install</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Mobile tab bar (app-like) -->
+      <nav class="tabbar" aria-label="Primary mobile">
+        <a class="tabbar__link" href="#home" data-route="home">
+          <span class="tabbar__icon">
+            <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 10.5l9-7 9 7"></path>
+              <path d="M5 9.5V20h14V9.5"></path>
+            </svg>
+          </span>
+          <span class="tabbar__label">Home</span>
+        </a>
+        <a class="tabbar__link" href="#korea-now" data-route="korea-now">
+          <span class="tabbar__icon">
+            <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="8"></circle>
+              <path d="M12 6v6l4 2"></path>
+            </svg>
+          </span>
+          <span class="tabbar__label">Now</span>
+        </a>
+        <a class="tabbar__link" href="#phrases" data-route="phrases">
+          <span class="tabbar__icon">
+            <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M6 4h9a4 4 0 0 1 0 8H6z"></path>
+              <path d="M6 12v8"></path>
+            </svg>
+          </span>
+          <span class="tabbar__label">Phrases</span>
+        </a>
+        <a class="tabbar__link" href="#community" data-route="community">
+          <span class="tabbar__icon">
+            <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 6h14v9H8l-3 3z"></path>
+            </svg>
+          </span>
+          <span class="tabbar__label">Board</span>
+        </a>
+        <a class="tabbar__link" href="#about" data-route="about">
+          <span class="tabbar__icon">
+            <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M12 10v6"></path>
+              <path d="M12 7h.01"></path>
+            </svg>
+          </span>
+          <span class="tabbar__label">About</span>
+        </a>
+      </nav>
+
+      <main class="main" role="main">
+        <!-- HOME -->
+        <section class="page" id="page-home" data-page="home">
+          <div class="hero hero--v3">
+            <div class="hero__left">
+              <div class="hero__pill">Built for travelers in Korea</div>
+              <h1 class="hero__title">Travel Korea. Instantly.</h1>
+              <p class="hero__subtitle">
+                Paste a YouTube link -> watch it -> extract only the travel-useful parts (prices, routes, timing, what to skip) with timestamps.
+              </p>
+
+              <div class="hero__chips" aria-label="Highlights">
+                <span class="chip">Timestamps</span>
+                <span class="chip">Travel-only skim</span>
+                <span class="chip">Google/Apple login</span>
+                <span class="chip chip--rgb devOnly">Installable</span>
+              </div>
+            </div>
+
+            <div class="hero__right">
+              <div class="heroCard">
+                <div class="heroCard__title">How it works</div>
+                <ol class="heroCard__steps">
+                  <li>Tap a featured video (or paste your link)</li>
+                  <li>Press <strong>Play &amp; Extract</strong></li>
+                  <li>Jump to key moments while you travel</li>
+                </ol>
+                <div class="heroCard__note">
+                  Tip: install as an app for faster access while on the street.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card card--player card--full">
+            <div class="card__head">
+              <h2 class="card__title">Watch &amp; Extract</h2>
+              <span class="badge badge--soft" id="watchQuotaPill" style="display:none"></span>
+            </div>
+
+            <div class="watchbar watchbar--hero">
+              <div class="watchbar__top">
+                <div>
+                  <div class="watchbar__kicker">Paste a YouTube link</div>
+                  <div class="muted small">
+                    We extract travel-only info for foreigners visiting Korea (routes, pricing, timing, traps, etiquette) + timestamps you can tap.
+                  </div>
+                </div>
+                <span class="badge badge--soft">3 free / account</span>
+              </div>
+
+              <div class="watchbar__row">
+                <input id="homeYoutubeUrl" class="input input--xl" placeholder="Paste a YouTube link (https://youtu.be/...)" autocomplete="off" />
+                <button class="btn btn--primary" id="btnHomeAnalyze" type="button">Play &amp; Extract</button>
+                <button class="btn btn--ghost" id="btnHomeClear" type="button">Clear</button>
+              </div>
+
+              <div class="watchbar__hint muted small">
+                Or tap a thumbnail below to load instantly.
+              </div>
+            </div>
+
+            <div class="playerSplit playerSplit--vB">
+              <div class="playerCol">
+                <div id="videoPlayer" class="player"></div>
+
+                <div class="videoGalleryHead">
+                  <div>
+                    <div class="videoGalleryTitle">Featured travel videos</div>
+                    <div class="muted small">Tap a thumbnail to load it. Paste your own link anytime.</div>
+                  </div>
+                </div>
+                <div id="featuredVideos" class="thumbStrip"></div>
+                <div class="muted small" style="margin-top:10px;">
+                  Tip: if a video can?�t be embedded, tap ??to open it in YouTube.
+                </div>
+              </div>
+
+              <div id="watchInsights" class="insights">
+                <div class="insights__head">
+                  <div class="insights__title">Travel skim</div>
+                </div>
+
+                <div class="muted small" id="watchSkimStatus">Paste a link above to start.</div>
+
+                <div class="insights__section">
+                  <div class="insights__label">Quick skim</div>
+                  <div class="insights__text" id="watchTldr">??/div>
+                </div>
+
+                <div class="insights__section">
+                  <div class="insights__label">Traveler must-knows</div>
+                  <ul class="bullets bullets--tight" id="watchMustKnows"></ul>
+                </div>
+
+                <div class="insights__section">
+                  <div class="insights__label">Key moments (tap to jump)</div>
+                  <div class="moments" id="watchMoments"></div>
+                </div>
+
+                <div class="insights__section">
+                  <div class="insights__label">Places &amp; foods mentioned</div>
+                  <ul class="bullets bullets--tight" id="watchPlacesFoods"></ul>
+                </div>
+
+                <details class="details" id="watchMore" style="display:none">
+                  <summary>Full notes</summary>
+                  <div class="output" id="watchFull"></div>
+                </details>
+
+                <div class="callout" id="watchAuthHint" style="display:none">
+                  Sign in (Google/Apple) to use your free 3-video analyses.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- KOREA NOW -->
+        <section class="page" id="page-korea-now" data-page="korea-now" hidden>
+          <div class="pageHeader">
+            <h2 class="pageHeader__title">Korea Now</h2>
+            <p class="pageHeader__desc">Quick, visual, English-only. Split by category for travelers.</p>
+          </div>
+
+          <div class="row row--space" style="margin-bottom: 10px;">
+            <div class="status" id="nowStatus" aria-live="polite"></div>
+            <button class="btn btn--ghost" id="btnReloadNow" type="button">Reload</button>
+          </div>
+
+          <div class="nowGrid">
+            <section class="nowCard nowCard--blue">
+              <div class="nowCard__head">
+                <h3 class="nowCard__title">Travel essentials</h3>
+                <span class="badge badge--soft">Info</span>
+              </div>
+              <div class="nowList" id="nowEssentials"></div>
+            </section>
+
+            <section class="nowCard nowCard--purple">
+              <div class="nowCard__head">
+                <h3 class="nowCard__title">Trending in Korea</h3>
+                <span class="badge badge--soft">Trend</span>
+              </div>
+              <div class="nowList" id="nowTrending"></div>
+            </section>
+
+            <section class="nowCard nowCard--red">
+              <div class="nowCard__head">
+                <h3 class="nowCard__title">Major issues &amp; alerts</h3>
+                <span class="badge badge--soft">Alert</span>
+              </div>
+              <div class="nowList" id="nowIssues"></div>
+            </section>
+          </div>
+
+          <section class="nowCard nowCard--dark" id="nowKpop" style="margin-top: 18px;">
+            <div class="nowCard__head">
+              <h3 class="nowCard__title">K-POP now</h3>
+              <span class="badge badge--soft">Guide</span>
+            </div>
+            <div class="nowList">
+              <div class="nowItem">
+                <div class="nowItem__title">Concert day checklist</div>
+                <div class="nowItem__desc">Arrive early, check bag policy, and confirm entry gates.</div>
+              </div>
+              <div class="nowItem">
+                <div class="nowItem__title">Merch + VIP flow</div>
+                <div class="nowItem__desc">Queue rules, pickup windows, and respectful fan etiquette.</div>
+              </div>
+              <div class="nowItem">
+                <div class="nowItem__title">Fan spot map tips</div>
+                <div class="nowItem__desc">Studios, cafe zones, and photo-friendly areas near venues.</div>
+              </div>
+            </div>
+          </section>
+
+          <div class="muted small" style="margin-top: 10px;">
+            Edit <code>public/data/korea_now.json</code> to update these sections.
+          </div>
+        </section>
+
+        <!-- PHRASES -->
+        <section class="page" id="page-phrases" data-page="phrases" hidden>
+          <div class="pageHeader">
+            <h2 class="pageHeader__title">?�주?�는 문장 Ranking</h2>
+            <p class="pageHeader__desc">?�어 문장????���??�국??발음�??�터�??�성 ?�생???�인?????�어??</p>
+          </div>
+
+          <div class="phraseSearch">
+            <input id="phraseSearch" class="input input--xl" placeholder="Search (?�어/?�국??발음)" autocomplete="off" />
+          </div>
+
+          <div class="filters" id="phraseFilters" aria-label="Phrase categories">
+            <button class="chip chip--filter is-active" data-filter="?�체" type="button">?�체</button>
+            <button class="chip chip--filter" data-filter="공항" type="button">공항</button>
+            <button class="chip chip--filter" data-filter="교통" type="button">교통</button>
+            <button class="chip chip--filter" data-filter="?�당" type="button">?�당</button>
+            <button class="chip chip--filter" data-filter="?�핑" type="button">?�핑</button>
+            <button class="chip chip--filter" data-filter="?�급" type="button">?�급</button>
+            <button class="chip chip--filter" data-filter="기�?" type="button">기�?</button>
+          </div>
+
+          <div class="phraseList" id="phraseList"></div>
+
+          <div class="status" id="phraseEmpty" aria-live="polite" style="display:none">No phrases found.</div>
+
+          <!-- Phrase detail sheet -->
+          <div class="sheet" id="phraseModal" hidden>
+            <div class="sheet__backdrop" data-close="1"></div>
+            <div class="sheet__card" role="dialog" aria-modal="true" aria-label="Phrase detail">
+              <div class="sheet__head">
+                <div class="sheet__title" id="phraseDetailEn">Phrase</div>
+                <button class="iconBtn" data-close="1" type="button" aria-label="Close">×</button>
+              </div>
+              <div class="sheet__body">
+                <div class="sheet__label">?�국??/div>
+                <div class="sheet__text" id="phraseDetailKo"></div>
+                <div class="sheet__label">발음 (로마??</div>
+                <div class="sheet__text" id="phraseDetailRoman"></div>
+                <div class="row">
+                  <button class="btn btn--primary" id="phrasePlay" type="button">Play</button>
+                  <button class="btn btn--ghost" id="phraseToggleFav" type="button">즐겨찾기</button>
+                </div>
+                <div class="status" id="phraseSpeechStatus" aria-live="polite"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- COMMUNITY -->
+        <section class="page" id="page-community" data-page="community" hidden>
+          <div class="pageHeader pageHeader--row">
+            <div>
+              <h2 class="pageHeader__title">Community</h2>
+              <p class="pageHeader__desc">Ask questions, share routes & tips. 1 photo per post.</p>
+            </div>
+
+            <button class="btn btn--primary" id="btnNewPost" type="button">New post</button>
+          </div>
+
+          <div class="filters" id="communityFilters" aria-label="Community categories">
+            <button class="chip chip--filter is-active" data-filter="all" type="button">All</button>
+            <button class="chip chip--filter" data-filter="Tips" type="button">Tips</button>
+            <button class="chip chip--filter" data-filter="Food" type="button">Food</button>
+            <button class="chip chip--filter" data-filter="Transport" type="button">Transport</button>
+            <button class="chip chip--filter" data-filter="Safety" type="button">Safety</button>
+          </div>
+
+          <div class="callout" id="communityAuthHint" style="display:none">
+            Sign in (Google/Apple) to post and upload photos.
+          </div>
+
+          <div class="status" id="communityStatus" aria-live="polite"></div>
+
+          <div class="feed" id="communityFeed"></div>
+
+          <button class="fab" id="fabNewPost" type="button" aria-label="New post">+</button>
+
+          <!-- Post modal -->
+          <div class="modal" id="postModal" hidden>
+            <div class="modal__backdrop" data-close="1"></div>
+            <div class="modal__card" role="dialog" aria-modal="true" aria-label="New post">
+              <div class="modal__head">
+                <div class="modal__title">New post</div>
+                <button class="iconBtn" data-close="1" type="button" aria-label="Close"></button>
+              </div>
+
+              <form id="postForm" class="form">
+                <label class="label" for="postCategory">Category</label>
+                <select id="postCategory" class="select">
+                  <option value="Tips">Tips</option>
+                  <option value="Food">Food</option>
+                  <option value="Transport">Transport</option>
+                  <option value="Safety">Safety</option>
+                </select>
+
+                <label class="label" for="postBody">Message</label>
+                <textarea id="postBody" class="textarea" rows="6" placeholder="Share details: price, timing, route, what to avoid..."></textarea>
+
+                <label class="label" for="postPhoto">Photo (optional, 1)</label>
+                <input id="postPhoto" class="file" type="file" accept="image/*" />
+
+                <div class="photoPreview" id="postPhotoPreview" hidden></div>
+
+                <div class="row">
+                  <button class="btn btn--primary" id="btnSubmitPost" type="submit">Post</button>
+                  <button class="btn btn--ghost" type="button" data-close="1">Cancel</button>
+                </div>
+
+                <div class="status" id="postModalStatus" aria-live="polite"></div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- ABOUT -->
+        <section class="page" id="page-about" data-page="about" hidden>
+          <div class="pageHeader">
+            <h2 class="pageHeader__title">About</h2>
+            <p class="pageHeader__desc">PWA now. Wrap to iOS/Android later (Capacitor).</p>
+          </div>
+
+          <div class="grid grid--2">
+            <div class="card">
+              <h3 class="card__title card__title--small">Install as an app (PWA)</h3>
+              <ul class="bullets">
+                <li><strong>Android (Chrome)</strong>: menu -> Install app / Add to Home screen.</li>
+                <li><strong>iPhone (Safari)</strong>: Share -> Add to Home Screen.</li>
+              </ul>
+
+            </div>
+          </div>
+        </section>
+
+        <footer class="footer">
+          <div>© <span id="year"></span> I AM KIM</div>
+          <div class="footer__right"></div>
+        </footer>
+      </main>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

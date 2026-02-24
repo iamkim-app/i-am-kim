@@ -1,0 +1,31 @@
+{
+  "events": [
+    {
+      "title": "Add real events here",
+      "location": "Seoul / Busan / Jeju (edit this)",
+      "date": "Update weekly",
+      "description": "Open public/data/events.json and replace these demo items with real events (festivals, pop-ups, exhibitions) travelers can join.",
+      "link": "",
+      "sourceLabel": "",
+      "lastVerified": "\u2014"
+    },
+    {
+      "title": "Example: Night market / food festival",
+      "location": "Seoul",
+      "date": "YYYY-MM-DD",
+      "description": "Write 1\u20132 lines: what it is, who it\u2019s for, and why a traveler should care.",
+      "link": "",
+      "sourceLabel": "",
+      "lastVerified": "\u2014"
+    },
+    {
+      "title": "Example: Cultural performance / seasonal festival",
+      "location": "Busan",
+      "date": "YYYY-MM-DD",
+      "description": "Keep it short, clear, and practical. Add an official link when possible.",
+      "link": "",
+      "sourceLabel": "Official link",
+      "lastVerified": "\u2014"
+    }
+  ]
+}

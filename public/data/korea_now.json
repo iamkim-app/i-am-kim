@@ -1,0 +1,69 @@
+{
+  "lastVerified": "Sample — edit public/data/korea_now.json",
+  "travel_essentials": [
+    {
+      "title": "Transit card: T-money / WOWPASS",
+      "desc": "Subway + bus are easiest with a transit card. You can recharge at convenience stores and stations.",
+      "tag": "Transport"
+    },
+    {
+      "title": "Maps: KakaoMap / Naver Map",
+      "desc": "Google Maps can be limited for walking routes. Install KakaoMap or Naver Map for better directions.",
+      "tag": "Navigation"
+    },
+    {
+      "title": "SIM / eSIM",
+      "desc": "For stable data, buy a SIM/eSIM at the airport or online. Keep your passport handy.",
+      "tag": "Connectivity"
+    },
+    {
+      "title": "Cash vs card",
+      "desc": "Most places accept cards, but markets and small stalls may prefer cash. Carry a small amount of KRW.",
+      "tag": "Money"
+    },
+    {
+      "title": "Trash & recycling",
+      "desc": "Public trash bins are rare. Carry a small bag and sort waste when possible.",
+      "tag": "Etiquette"
+    },
+    {
+      "title": "Emergency numbers",
+      "desc": "Police 112, Fire/Ambulance 119. For tourist help: 1330 (Korea Travel Hotline).",
+      "tag": "Safety"
+    }
+  ],
+  "trending": [
+    {
+      "title": "Pop-up stores & concept spaces",
+      "desc": "Pop-ups rotate fast (often weekly). Seongsu and Hongdae are common areas—check Instagram posts before going.",
+      "tag": "Trend"
+    },
+    {
+      "title": "Café hopping",
+      "desc": "Many cafés are built for photos + desserts. Go off-peak to avoid long lines.",
+      "tag": "Food"
+    },
+    {
+      "title": "Photo booths",
+      "desc": "Self-photo studios and booths are everywhere. Bring a friend or use the remote option.",
+      "tag": "Culture"
+    }
+  ],
+  "major_issues": [
+    {
+      "title": "Peak crowd times",
+      "desc": "Weekends + evenings can be packed in popular districts. If you hate crowds, go weekday mornings.",
+      "tag": "Alert"
+    },
+    {
+      "title": "Seasonal weather swings",
+      "desc": "Korea can change fast by season. Check weather + air quality before a day trip.",
+      "tag": "Weather"
+    },
+    {
+      "title": "Reservation-only spots",
+      "desc": "Some restaurants and experiences require booking. If a place is viral, assume you need a reservation.",
+      "tag": "Planning"
+    }
+  ]
+}
