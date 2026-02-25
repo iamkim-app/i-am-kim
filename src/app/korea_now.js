@@ -519,6 +519,9 @@ export async function initKoreaNow(options = {}) {
   if (mode === "kpop") {
     ensureKpopUI(page);
   } else {
+    page.querySelector(".nowGrid")?.remove();
+    page.querySelector("#nowStatus")?.remove();
+    page.querySelector("#btnReloadNow")?.remove();
     ensureMyKoreaUI(page);
   }
 
