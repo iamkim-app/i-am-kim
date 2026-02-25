@@ -99,10 +99,21 @@ body{
 .nickBanner{
   position: sticky;
   top: 0;
-  z-index: 30;
-  background: rgba(255,255,255,0.95);
-  border-bottom: 1px solid var(--border2);
-  backdrop-filter: blur(10px);
+  z-index: 20;
+
+  /* ?ÑÏ†Ñ ??Î∞∞Í≤Ω ?úÍ±∞ ???§Îçî?Ä ?êÏó∞?§ÎüΩÍ≤??∞Í≤∞ */
+  background: linear-gradient(
+    to bottom,
+    rgba(255,255,255,0.92),
+    rgba(255,255,255,0.85)
+  );
+
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+
+  /* Í≥ºÌïú Î∏îÎü¨ ?úÍ±∞ ??Î°úÍ≥† ?úÍ≥° Î∞©Ï? */
+  backdrop-filter: saturate(120%) blur(6px);
+
+  transition: background 0.2s ease;
 }
 .nickBanner__inner{
   max-width: var(--max);
@@ -517,14 +528,6 @@ code{
   position: relative;
   isolation: isolate;
 }
-.brand__mark::before{
-  content:"";
-  position: absolute;
-  inset: 3px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.92);
-  box-shadow: inset 0 0 0 1px rgba(11,18,32,0.06);
-}
 .brand__mark{
   color: rgba(11,18,32,0.88);
 }
@@ -658,7 +661,7 @@ code{
   overflow-x: auto;
   overflow-y: hidden;
 
-  scroll-snap-type: x proximity;   /* üî• mandatory ‚Üí proximity */
+  scroll-snap-type: x proximity;   /* ?î• mandatory ??proximity */
   -webkit-overflow-scrolling: touch;
 
   padding: 4px 16px 16px;
@@ -669,11 +672,11 @@ code{
 }
 
 .heroCard {
-  flex: 0 0 75vw;            /* üî• 78 ‚Üí 75 */
+  flex: 0 0 75vw;            /* ?î• 78 ??75 */
   width: 75vw;
   max-width: 420px;
 
-  scroll-snap-align: center; /* üî• start ‚Üí center */
+  scroll-snap-align: center; /* ?î• start ??center */
   transition: transform .35s ease;
 }
 
@@ -3591,29 +3594,27 @@ input[type="file"]:disabled{
     cursor: pointer;
     min-width: 0;
   }
-  .mobileTopbar__mark{
-    width: 34px;
-    height: 34px;
-    border-radius: 999px;
-    box-shadow: var(--shadow-xs);
-    border: 1px solid rgba(11,18,32,0.08);
-    background: #fff;
-    display: grid;
-    place-items: center;
-  }
-  .mobileTopbar__mark.brand__mark{
-    background: conic-gradient(from 180deg, var(--red), var(--cyan), var(--blue), var(--purple), var(--red));
-    position: relative;
-    isolation: isolate;
-  }
-  .mobileTopbar__mark.brand__mark::before{
-    content:"";
-    position: absolute;
-    inset: 3px;
-    border-radius: 999px;
-    background: rgba(255,255,255,0.92);
-    box-shadow: inset 0 0 0 1px rgba(11,18,32,0.06);
-  }
+ .mobileTopbar__mark{
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  box-shadow: none;              /* Í∑∏Î¶º???úÍ±∞ */
+  border: none;                  /* ?åÎëêÎ¶??úÍ±∞ */
+  background: transparent;       /* ????Î∞∞Í≤Ω ?úÍ±∞ */
+  display: grid;
+  place-items: center;
+}
+
+.brand__mark{
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: url("/icons/icon-192.png") center/contain no-repeat;
+}
+
+.mobileTopbar__mark.brand__mark{
+  background: url("/icons/icon-192.png") center/contain no-repeat;
+}
   .mobileTopbar__avatar{
     width: 32px;
     height: 32px;
@@ -3869,3 +3870,102 @@ input[type="file"]:disabled{
 
 
 .heroStrip__track::-webkit-scrollbar { width: 0; height: 0; }
+
+.mobileTopbar__mark.brand__mark::before,
+.mobileTopbar__mark.brand__mark::after,
+.brand__mark::before,
+.brand__mark::after{
+  content:none !important;
+  display:none !important;
+}
+
+
+\.mobileTopbar__wordmark {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+\.mobileTopbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+}
+
+\.mobileTopbar {
+  min-height: 64px;
+}
+
+\.mobileTopbar__mark\.brand__mark {
+  width: 56px;
+  height: 56px;
+  background-size: contain;
+}
+
+
+
+.brandLogo{
+  width: 64px;
+  height: auto;
+  display: block;
+}
+
+.mobileTopbar{
+  min-height: 84px;
+  padding: 10px 16px;
+}
+
+.mobileTopbar__brand{
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.mobileTopbar__wordmark{
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+
+\.brandLogo {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  display: block;
+}
+
+
+
+.mobileTopbar__brand{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 auto;width:fit-content;}
+.brandLogo{width:34px;height:34px;display:block;}
+.brandWord{font-size:18px;font-weight:900;letter-spacing:0.08em;white-space:nowrap;}
+.mobileTopbar__brand .mobileTopbar__mark{display:none!important;}
+
+
+\.brandWord {
+  font-size: 18px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+
+
+\.mobileTopbar__brand \.mobileTopbar__mark {
+  width: 52px !important;
+  height: 52px !important;
+}
+
+\.mobileTopbar__brand \.brand__mark {
+  width: 52px !important;
+  height: 52px !important;
+}
+
+
+\.mobileTopbar__brand img {
+  width: 52px !important;
+  height: 52px !important;
+}
+

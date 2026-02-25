@@ -408,8 +408,8 @@ function ensureMobileTopbar() {
     bar.innerHTML = `
     <button class="mobileTopbar__btn mobileTopbar__iconBtn" id="btnMobileMenu" type="button" aria-label="Menu">${mobileIconSvg("menu")}</button>
     <button class="mobileTopbar__brand" id="mobileLogo" type="button" aria-label="I AM KIM">
-      <span class="mobileTopbar__mark brand__mark" aria-hidden="true"></span>
-      <span class="mobileTopbar__wordmark">I AM KIM</span>
+      <img class="brandLogo" src="/logo.png" alt="" />
+      <span class="brandWord">I AM KIM</span>
     </button>
     <div class="mobileTopbar__actions">
       <button class="mobileTopbar__btn mobileTopbar__iconBtn mobileTopbar__auth" id="btnMobileAuth" type="button" aria-label="Login">${mobileIconSvg("user")}</button>
@@ -2653,6 +2653,16 @@ function ensureAppContext() {
   return window.App;
 }
 
+function replaceBrandMarkWithLogo() {
+  const mark = document.querySelector(".brand__mark");
+  if (!mark || mark.tagName === "IMG") return;
+  const img = document.createElement("img");
+  img.src = "/icons/icon-192.png";
+  img.alt = "I AM KIM";
+  img.className = "brandLogo";
+  mark.replaceWith(img);
+}
+
 function buildAppContext() {
   const app = ensureAppContext();
   Object.assign(app, {
@@ -2828,6 +2838,7 @@ async function init() {
       location.hash = "#home";
     });
   }
+  replaceBrandMarkWithLogo();
 
   // home
   if (typeof setupHome === "function") {
@@ -2888,6 +2899,7 @@ async function init() {
 }
 
 boot().catch((err) => console.warn("[init] Failed.", err));
+
 
 
 

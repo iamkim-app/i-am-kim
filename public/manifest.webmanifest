@@ -1,7 +1,7 @@
 {
   "name": "I AM KIM",
   "short_name": "IAMKIM",
-  "description": "I AM KIM \u2014 a fast, installable Korea travel tool. Get transcript-first skims from travel videos, check Korea Now, and share tips.",
+  "description": "I AM KIM — a fast, installable Korea travel tool.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -16,6 +16,12 @@
     {
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
     }
