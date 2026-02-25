@@ -591,28 +591,6 @@ function renderHomeLayout() {
         </button>
       </div>
     </section>
-
-    <section class="homeSection">
-      <div class="sectionHead">
-      <div class="sectionTitle">Concert &amp; fan</div>
-      <div class="sectionDesc">K-POP essentials for live shows and fan spots.</div>
-      </div>
-      <div class="spotlightGrid">
-        <button class="spotlightCard" type="button" data-action="kpop-now">
-          <div class="spotlightTitle">K-POP Concerts &amp; Fan Spots</div>
-          <div class="spotlightDesc">Entry rules, bag policy, arrival timing.</div>
-        </button>
-        <button class="spotlightCard" type="button" data-action="kpop-now">
-          <div class="spotlightTitle">Merch &amp; VIP etiquette</div>
-          <div class="spotlightDesc">Queueing, photos, respectful behavior.</div>
-        </button>
-        <button class="spotlightCard" type="button" data-action="kpop-now">
-          <div class="spotlightTitle">K-POP Stars</div>
-          <div class="spotlightDesc">Studios, cafés, iconic photo spots.</div>
-        </button>
-      </div>
-    </section>
-
     <section class="homeSection">
       <div class="sectionHead">
         <div class="sectionTitle">Korea Now</div>
@@ -792,7 +770,7 @@ function setupHome() {
     const card = e.target?.closest?.(".spotlightCard");
     if (!card) return;
     if (card.dataset.action === "kpop-now") {
-      location.hash = "#now";
+      location.hash = "#kpop";
       setTimeout(() => {
         document
           .getElementById("nowKpop")
@@ -825,4 +803,5 @@ function setupHome() {
 
 // Expose entrypoint for main.js
 export { setupHome, analyzeHomeUrl };
+
 

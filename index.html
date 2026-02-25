@@ -39,10 +39,10 @@
 
           <nav class="nav" aria-label="Primary">
             <a class="nav__link" href="#home" data-route="home">Home</a>
-            <a class="nav__link" href="#korea-now" data-route="korea-now">Korea Now</a>
-            <a class="nav__link" href="#phrases" data-route="phrases">Phrases</a>
+            <a class="nav__link" href="#kpop" data-route="kpop">Kpop</a>
+            <a class="nav__link" href="#mykorea" data-route="mykorea">MyKorea</a>
             <a class="nav__link" href="#community" data-route="community">Community</a>
-            <a class="nav__link" href="#about" data-route="about">About</a>
+            <a class="nav__link" href="#about" data-route="about">Information</a>
           </nav>
 
           <div class="topbar__actions">
@@ -65,23 +65,23 @@
           </span>
           <span class="tabbar__label">Home</span>
         </a>
-        <a class="tabbar__link" href="#korea-now" data-route="korea-now">
+        <a class="tabbar__link" href="#kpop" data-route="kpop">
           <span class="tabbar__icon">
             <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <circle cx="12" cy="12" r="8"></circle>
               <path d="M12 6v6l4 2"></path>
             </svg>
           </span>
-          <span class="tabbar__label">Now</span>
+          <span class="tabbar__label">Kpop</span>
         </a>
-        <a class="tabbar__link" href="#phrases" data-route="phrases">
+        <a class="tabbar__link" href="#mykorea" data-route="mykorea">
           <span class="tabbar__icon">
             <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M6 4h9a4 4 0 0 1 0 8H6z"></path>
               <path d="M6 12v8"></path>
             </svg>
           </span>
-          <span class="tabbar__label">Phrases</span>
+          <span class="tabbar__label">MyKorea</span>
         </a>
         <a class="tabbar__link" href="#community" data-route="community">
           <span class="tabbar__icon">
@@ -99,7 +99,7 @@
               <path d="M12 7h.01"></path>
             </svg>
           </span>
-          <span class="tabbar__label">About</span>
+          <span class="tabbar__label">Information</span>
         </a>
       </nav>
 
@@ -221,11 +221,11 @@
           </div>
         </section>
 
-        <!-- KOREA NOW -->
+        <!-- MYKOREA -->
         <section class="page" id="page-korea-now" data-page="korea-now" hidden>
           <div class="pageHeader">
-            <h2 class="pageHeader__title">Korea Now</h2>
-            <p class="pageHeader__desc">Quick, visual, English-only. Split by category for travelers.</p>
+            <h2 class="pageHeader__title">MyKorea</h2>
+            <p class="pageHeader__desc">Personal travel posts and quick updates for your trip.</p>
           </div>
 
           <div class="row row--space" style="margin-bottom: 10px;">
@@ -259,6 +259,39 @@
             </section>
           </div>
 
+          <div class="muted small" style="margin-top: 10px;">
+            Edit <code>public/data/korea_now.json</code> to update these sections.
+          </div>
+        </section>
+
+        <!-- KPOP -->
+        <section class="page" id="page-kpop" data-page="kpop" hidden>
+          <div class="pageHeader">
+            <h2 class="pageHeader__title">K-POP</h2>
+            <p class="pageHeader__desc">Concert prep, fan etiquette, and on-the-ground tips.</p>
+          </div>
+
+          <section class="homeSection">
+            <div class="sectionHead">
+              <div class="sectionTitle">Concert &amp; fan</div>
+              <div class="sectionDesc">K-POP essentials for live shows and fan spots.</div>
+            </div>
+            <div class="spotlightGrid">
+              <button class="spotlightCard" type="button" data-action="kpop-now">
+                <div class="spotlightTitle">K-POP Concerts &amp; Fan Spots</div>
+                <div class="spotlightDesc">Entry rules, bag policy, arrival timing.</div>
+              </button>
+              <button class="spotlightCard" type="button" data-action="kpop-now">
+                <div class="spotlightTitle">Merch &amp; VIP etiquette</div>
+                <div class="spotlightDesc">Queueing, photos, respectful behavior.</div>
+              </button>
+              <button class="spotlightCard" type="button" data-action="kpop-now">
+                <div class="spotlightTitle">K-POP Stars</div>
+                <div class="spotlightDesc">Studios, caf&#233;s, iconic photo spots.</div>
+              </button>
+            </div>
+          </section>
+
           <section class="nowCard nowCard--dark" id="nowKpop" style="margin-top: 18px;">
             <div class="nowCard__head">
               <h3 class="nowCard__title">K-POP now</h3>
@@ -279,10 +312,6 @@
               </div>
             </div>
           </section>
-
-          <div class="muted small" style="margin-top: 10px;">
-            Edit <code>public/data/korea_now.json</code> to update these sections.
-          </div>
         </section>
 
         <!-- PHRASES -->

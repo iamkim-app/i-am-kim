@@ -249,14 +249,14 @@ function ensureProfileUI() {
   });
   $("#avatarSave")?.addEventListener("click", () => saveAvatar());
   $("#profileManagePacks")?.addEventListener("click", () => {
-    location.hash = "#mykorea";
+    location.hash = "#phrases";
     const el = $("#packsArea");
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   });
   $("#profileViewFavorites")?.addEventListener("click", () => {
     PHRASE_STATE.favoritesOnly = true;
     saveFavoritesOnly();
-    location.hash = "#mykorea";
+    location.hash = "#phrases";
     const favToggle = $("#phraseFavToggle");
     if (favToggle) {
       favToggle.setAttribute("aria-pressed", "true");
@@ -265,7 +265,7 @@ function ensureProfileUI() {
     renderPhraseList();
   });
   $("#profileManageCustom")?.addEventListener("click", () => {
-    location.hash = "#mykorea";
+    location.hash = "#phrases";
     if (!PACK_STATE.selectedPackId && PACK_STATE.packs.length) {
       PACK_STATE.selectedPackId = PACK_STATE.packs[0].id;
     }
@@ -847,13 +847,11 @@ function closeContactModal() {
 
 const ROUTE_ALIASES = {
   now: "mykorea",
-  "korea-now": "kpop",
-  phrases: "mykorea",
+  "korea-now": "mykorea",
 };
 
 const ROUTE_PAGE_MAP = {
-  kpop: "korea-now",
-  mykorea: "phrases",
+  mykorea: "korea-now",
 };
 
 function normalizeRoute(route) {
@@ -864,8 +862,8 @@ function normalizeRoute(route) {
 function updateBottomTabbarRoutes() {
   const mappings = [
     { from: "home", to: { route: "home", href: "#home", label: "Home" } },
-    { from: "korea-now", to: { route: "kpop", href: "#kpop", label: "Kpop" } },
-    { from: "phrases", to: { route: "mykorea", href: "#mykorea", label: "MyKorea" } },
+    { from: "kpop", to: { route: "kpop", href: "#kpop", label: "Kpop" } },
+    { from: "mykorea", to: { route: "mykorea", href: "#mykorea", label: "MyKorea" } },
     { from: "community", to: { route: "community", href: "#community", label: "Community" } },
     { from: "about", to: { route: "about", href: "#about", label: "Information" } },
   ];
