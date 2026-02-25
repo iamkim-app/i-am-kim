@@ -1,3 +1,4 @@
+html,body { overflow-x: hidden; }
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap");
 
 @font-face {
@@ -732,13 +733,15 @@ code{
     var(--rgb) border-box;
 }
 
-.heroCard{
-  border-radius: var(--radius);
-  border: 1px solid transparent;
-  background:
-    linear-gradient(rgba(255,255,255,0.90), rgba(255,255,255,0.90)) padding-box,
-    linear-gradient(135deg, rgba(11,18,32,0.10), rgba(11,18,32,0.08)) border-box;
-  padding: 16px;
+.heroCard {
+  position: relative;
+  flex: 0 0 78vw;
+  max-width: 420px;
+  height: 190px;
+  border-radius: 20px;
+  background: var(--bg) center/cover no-repeat;
+  overflow: hidden;
+  scroll-snap-align: start;
 }
 .heroCard__title{
   font-weight: 950;
@@ -3767,16 +3770,24 @@ input[type="file"]:disabled{
 .heroStrip { margin: 24px 0; }
 .heroStrip__track {
   display: flex;
-  gap: 16px;
+  flex-wrap: nowrap;
+  gap: 12px;
   overflow-x: auto;
+  padding: 0 16px 8px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scroll-padding-left: 16px;
+  scrollbar-width: none;
 }
 .heroCard {
   position: relative;
-  flex: 0 0 75vw;
-  height: 180px;
-  border-radius: 18px;
+  flex: 0 0 78vw;
+  max-width: 420px;
+  height: 190px;
+  border-radius: 20px;
   background: var(--bg) center/cover no-repeat;
   overflow: hidden;
+  scroll-snap-align: start;
 }
 
 .heroCard::before {
@@ -3812,4 +3823,8 @@ input[type="file"]:disabled{
   max-width: calc(100% - 24px);
 }
 
+
+
+
+.heroStrip__track::-webkit-scrollbar { width: 0; height: 0; }
 

@@ -476,10 +476,28 @@ function renderHomeLayout() {
         <section class="heroStrip">
           <div class="heroStrip__track">
             <button class="heroCard" type="button" style="--bg:url('/hero/hero_kpop_concert.webp')" onclick="location.hash='#kpop'">
-              <span>K-POP</span>
+              <span class="heroCard__badge">K-POP</span>
+              <span class="heroCard__title">Concert day essentials</span>
+            </button>
+            <button class="heroCard" type="button" style="--bg:url('/hero/hero_fandom_line.webp')" onclick="location.hash='#kpop'">
+              <span class="heroCard__badge">K-POP</span>
+              <span class="heroCard__title">Fandom line etiquette</span>
+            </button>
+            <button class="heroCard" type="button" style="--bg:url('/hero/hero_album_display.webp')" onclick="location.hash='#kpop'">
+              <span class="heroCard__badge">K-POP</span>
+              <span class="heroCard__title">Album shops & exclusives</span>
             </button>
             <button class="heroCard" type="button" style="--bg:url('/hero/hero_seoul_night.webp')" onclick="location.hash='#mykorea'">
-              <span>SEOUL</span>
+              <span class="heroCard__badge">SEOUL</span>
+              <span class="heroCard__title">Night views & spots</span>
+            </button>
+            <button class="heroCard" type="button" style="--bg:url('/hero/hero_kbeauty_shop.webp')" onclick="location.hash='#mykorea'">
+              <span class="heroCard__badge">BEAUTY</span>
+              <span class="heroCard__title">K-beauty stores to try</span>
+            </button>
+            <button class="heroCard" type="button" style="--bg:url('/hero/hero_kfood_street.webp')" onclick="location.hash='#mykorea'">
+              <span class="heroCard__badge">FOOD</span>
+              <span class="heroCard__title">Street food favorites</span>
             </button>
           </div>
         </section>
