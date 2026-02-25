@@ -553,6 +553,15 @@ function renderHomeLayout() {
           </span>
           <span class="quickAction__label">Exchange</span>
         </button>
+        <button class="quickAction" type="button" data-action="phrases">
+          <span class="quickAction__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M6 4h9a4 4 0 0 1 0 8H6z" stroke="currentColor" stroke-width="1.82" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M6 12v8" stroke="currentColor" stroke-width="1.82" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="quickAction__label">Phrases</span>
+        </button>
       </div>
     </section>
 
@@ -781,6 +790,10 @@ function setupHome() {
     if (action === "exchange") {
       window.location.href =
         "https://www.xe.com/currencyconverter/convert/?Amount=1&From=USD&To=KRW";
+      return;
+    }
+    if (action === "phrases") {
+      location.hash = "#phrases";
       return;
     }
     if (action === "safety") {
