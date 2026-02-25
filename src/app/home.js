@@ -473,6 +473,16 @@ function renderHomeLayout() {
       <div class="homeHero">
         <div class="homeHero__title">Travel Korea. Instantly.</div>
         <div class="homeHero__subtitle">Plan, learn, and move faster with MyKorea and K-POP tips.</div>
+        <section class="heroStrip">
+          <div class="heroStrip__track">
+            <button class="heroCard" type="button" style="--bg:url('/hero/hero_kpop_concert.webp')" onclick="location.hash='#kpop'">
+              <span>K-POP</span>
+            </button>
+            <button class="heroCard" type="button" style="--bg:url('/hero/hero_seoul_night.webp')" onclick="location.hash='#mykorea'">
+              <span>SEOUL</span>
+            </button>
+          </div>
+        </section>
         <div class="homeHero__cta">
           <a class="btn btn--primary btn--small" href="#info">Open YouTube Summarizer</a>
         </div>
