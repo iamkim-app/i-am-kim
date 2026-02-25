@@ -865,7 +865,7 @@ function updateBottomTabbarRoutes() {
     { from: "kpop", to: { route: "kpop", href: "#kpop", label: "Kpop" } },
     { from: "mykorea", to: { route: "mykorea", href: "#mykorea", label: "MyKorea" } },
     { from: "community", to: { route: "community", href: "#community", label: "Community" } },
-    { from: "about", to: { route: "about", href: "#about", label: "Information" } },
+    { from: "info", to: { route: "info", href: "#info", label: "Information" } },
   ];
 
   mappings.forEach(({ from, to }) => {

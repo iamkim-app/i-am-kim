@@ -469,48 +469,9 @@ function renderHomeLayout() {
     <section class="homeSection homeSection--hero">
       <div class="homeHero">
         <div class="homeHero__title">Travel Korea. Instantly.</div>
-        <div class="homeHero__subtitle">Paste a YouTube link and get travel-only tips with tappable timestamps.</div>
-        <div class="homeHero__cta">Start with a link or explore quick actions below.</div>
-      </div>
-
-      <div class="analyzeBox" id="analyzeBox">
-        <div class="analyzeBox__head">
-          <div class="analyzeBox__title">Play and Extract</div>
-          <div class="analyzeBox__desc">Travel-only tips. No fluff.</div>
-        </div>
-        <div class="analyzeRow">
-          <input id="homeYoutubeUrl" class="input input--xl" placeholder="Paste a YouTube link (https://youtu.be/...)" autocomplete="off" />
-          <button class="btn btn--primary btn--xl" id="btnHomeAnalyze" type="button">Play & Extract</button>
-          <button class="btn btn--ghost btn--xl" id="btnHomeClear" type="button">Clear</button>
-        </div>
-        <div class="analyzeMeta analyzeMeta--link">
-          <button class="btn btn--ghost btn--small chipLink" type="button" id="btnGoLibrary">Browse Category Library</button>
-        </div>
-        <div class="analyzeMeta">
-          <span class="badge badge--soft" id="watchQuotaPill" style="display:none"></span>
-        </div>
-      </div>
-
-      <div id="videoPlayer" class="player"></div>
-
-      <div class="resultsGrid">
-        <div class="resultsCard">
-          <div class="resultsTitle">Quick skim</div>
-          <div class="resultsBody" id="watchTldr"></div>
-          <div class="muted small" id="watchSkimStatus">Paste a link to generate insights.</div>
-          <div class="callout" id="watchAuthHint" style="display:none">Sign in to unlock the free analysis.</div>
-          <details class="details" id="watchMore" style="display:none">
-            <summary>See full summary</summary>
-            <div class="output" id="watchFull"></div>
-          </details>
-        </div>
-        <div class="resultsCard">
-          <div class="resultsTitle">Traveler must-knows</div>
-          <ul class="bullets bullets--tight" id="watchMustKnows"></ul>
-          <div class="resultsTitle">Key moments (tap to jump)</div>
-          <div class="moments" id="watchMoments"></div>
-          <div class="resultsTitle">Places and foods</div>
-          <ul class="bullets bullets--tight" id="watchPlacesFoods"></ul>
+        <div class="homeHero__subtitle">Plan, learn, and move faster with MyKorea and K-POP tips.</div>
+        <div class="homeHero__cta">
+          <a class="btn btn--primary btn--small" href="#info">Open YouTube Summarizer</a>
         </div>
       </div>
     </section>
@@ -591,6 +552,7 @@ function renderHomeLayout() {
         </button>
       </div>
     </section>
+
     <section class="homeSection">
       <div class="sectionHead">
         <div class="sectionTitle">Korea Now</div>
@@ -613,14 +575,69 @@ function renderHomeLayout() {
           <div class="previewDesc">Temporary line closures and bus reroutes.</div>
         </div>
       </div>
-    </section>\n<section class="homeSection" id="home-library">
+    </section>
+  `;
+}
+
+function renderInfoLayout() {
+  const page = $("#page-info");
+  if (!page) return;
+  page.innerHTML = `
+    <section class="homeSection homeSection--hero">
+      <div class="homeHero">
+        <div class="homeHero__title">YouTube Summarize</div>
+        <div class="homeHero__subtitle">Paste a link and get travel-only tips with tappable timestamps.</div>
+      </div>
+
+      <div class="analyzeBox" id="analyzeBox">
+        <div class="analyzeBox__head">
+          <div class="analyzeBox__title">Play and Extract</div>
+          <div class="analyzeBox__desc">Travel-only tips. No fluff.</div>
+        </div>
+        <div class="analyzeRow">
+          <input id="homeYoutubeUrl" class="input input--xl" placeholder="Paste a YouTube link (https://youtu.be/...)" autocomplete="off" />
+          <button class="btn btn--primary btn--xl" id="btnHomeAnalyze" type="button">Play & Extract</button>
+          <button class="btn btn--ghost btn--xl" id="btnHomeClear" type="button">Clear</button>
+        </div>
+        <div class="analyzeMeta analyzeMeta--link">
+          <button class="btn btn--ghost btn--small chipLink" type="button" id="btnGoLibrary">Browse Category Library</button>
+        </div>
+        <div class="analyzeMeta">
+          <span class="badge badge--soft" id="watchQuotaPill" style="display:none"></span>
+        </div>
+      </div>
+
+      <div id="videoPlayer" class="player"></div>
+
+      <div class="resultsGrid">
+        <div class="resultsCard">
+          <div class="resultsTitle">Quick skim</div>
+          <div class="resultsBody" id="watchTldr"></div>
+          <div class="muted small" id="watchSkimStatus">Paste a link to generate insights.</div>
+          <div class="callout" id="watchAuthHint" style="display:none">Sign in to unlock the free analysis.</div>
+          <details class="details" id="watchMore" style="display:none">
+            <summary>See full summary</summary>
+            <div class="output" id="watchFull"></div>
+          </details>
+        </div>
+        <div class="resultsCard">
+          <div class="resultsTitle">Traveler must-knows</div>
+          <ul class="bullets bullets--tight" id="watchMustKnows"></ul>
+          <div class="resultsTitle">Key moments (tap to jump)</div>
+          <div class="moments" id="watchMoments"></div>
+          <div class="resultsTitle">Places and foods</div>
+          <ul class="bullets bullets--tight" id="watchPlacesFoods"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="homeSection" id="home-library">
       <div class="sectionHead">
         <div class="sectionTitle">Curated library</div>
         <div class="sectionDesc">Explore videos by theme.</div>
       </div>
       <div id="homeCollections" class="collectionsWrap"></div>
     </section>
-
   `;
 }
 
@@ -712,12 +729,13 @@ async function loadNowPreview() {
 
 function setupHome() {
   renderHomeLayout();
+  renderInfoLayout();
   clearHome();
 
   $("#btnHomeAnalyze")?.addEventListener("click", analyzeHomeUrl);
   $("#btnHomeClear")?.addEventListener("click", clearHome);
   $("#btnGoLibrary")?.addEventListener("click", async () => {
-    if (location.hash !== "#home") location.hash = "#home";
+    if (location.hash !== "#info") location.hash = "#info";
     if (!HOME_LIBRARY_COLLECTIONS.length) {
       await loadHomeLibrary();
       renderCollectionsSection();
@@ -803,5 +821,6 @@ function setupHome() {
 
 // Expose entrypoint for main.js
 export { setupHome, analyzeHomeUrl };
+
 
 
