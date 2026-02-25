@@ -442,9 +442,12 @@ function renderCollectionDetail() {
     item.addEventListener("click", () => {
       const url = item.getAttribute("data-url") || "";
       if (!url) return;
-      location.hash = "#home";
+      location.hash = "#info";
       setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        document.getElementById("videoPlayer")?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
       }, 50);
       const input = document.getElementById("homeYoutubeUrl");
       if (input) input.value = url;

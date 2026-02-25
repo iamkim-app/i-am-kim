@@ -75,6 +75,8 @@ function escapeHtml(s) {
 const NOW_STATE = {
   items: [],
   isAdmin: false,
+  mode: "mykorea",
+  refresh: null,
 };
 
 function getApp() {
@@ -185,7 +187,7 @@ function bindChips(active, items) {
   });
 }
 
-async function loadFallbackItems() {
+async function loadFallbackItems(mode) {
   const items = [];
   try {
     const res = await fetch("/data/korea_now.json", { cache: "no-store" });
@@ -233,10 +235,17 @@ async function loadFallbackItems() {
     });
   });
 
-  return items;
+  return filterItemsByMode(items, mode);
 }
 
-async function loadSupabaseItems() {
+function filterItemsByMode(items, mode) {
+  if (mode === "kpop") {
+    return items.filter((it) => it.section === "K-POP Now");
+  }
+  return items.filter((it) => it.section !== "K-POP Now");
+}
+
+async function loadSupabaseItems(mode) {
   const supabase = getSupabase();
   if (!supabase) return { ok: false, items: [] };
   try {
@@ -263,7 +272,7 @@ async function loadSupabaseItems() {
       })
       .filter(Boolean);
 
-    return { ok: true, items };
+    return { ok: true, items: filterItemsByMode(items, mode) };
   } catch (err) {
     console.warn("[korea-now] Supabase load failed.", err);
     return { ok: false, items: [] };
@@ -326,7 +335,7 @@ function ensureAdminModal() {
         </label>
         <label class="field">
           <div class="field__label">Link (optional)</div>
-          <input id="nowFormLink" class="input" placeholder="#korea-now or https://" />
+          <input id="nowFormLink" class="input" placeholder="#mykorea, #kpop, or https://" />
         </label>
         <div class="field__status" id="nowFormStatus"></div>
       </div>
@@ -345,7 +354,7 @@ function ensureAdminModal() {
   });
 }
 
-async function handleCreatePost(refresh) {
+async function handleCreatePost(refresh, mode) {
   const supabase = getSupabase();
   const status = $("#nowFormStatus");
   if (!supabase) {
@@ -359,7 +368,7 @@ async function handleCreatePost(refresh) {
   const summaryEl = $("#nowFormSummary");
   const linkEl = $("#nowFormLink");
 
-  const section = sectionEl ? sectionEl.value : "";
+  let section = sectionEl ? sectionEl.value : "";
   const tag = tagEl ? tagEl.value : "";
   const title = titleEl ? titleEl.value : "";
   const summary = summaryEl ? summaryEl.value : "";
@@ -373,6 +382,9 @@ async function handleCreatePost(refresh) {
   if (status) status.textContent = "Saving...";
 
   try {
+    if (mode === "kpop") {
+      section = "K-POP Now";
+    }
     const payload = {
       section,
       tag,
@@ -438,75 +450,138 @@ function bindCardActions(refresh) {
   bindHost("#nowCardsKpop");
 }
 
-export async function initKoreaNow() {
-  const page = $("#page-korea-now");
+function ensureMyKoreaUI(page) {
   if (!page || $("#nowChips")) return;
-  page.innerHTML = `
-    <div class="pageHeader">
-      <h2 class="pageHeader__title">Korea Now</h2>
-      <p class="pageHeader__desc">Quick, visual, English-only. Split by category for travelers.</p>
+  const section = document.createElement("section");
+  section.className = "nowSection";
+  section.id = "nowMyKoreaPosts";
+  section.innerHTML = `
+    <div class="sectionHead">
+      <div>
+        <div class="sectionTitle">MyKorea Updates</div>
+        <div class="sectionDesc">Major issues, travel tips, trends, and deals.</div>
+      </div>
+      <div class="nowAdminBar" data-admin-bar="1" style="display:none">
+        <button class="btn btn--primary btn--small nowAdminAddBtn" data-mode="mykorea" type="button">+ Add</button>
+      </div>
     </div>
-    <section class="nowSection" id="nowKorea">
-      <div class="sectionHead">
-        <div>
-          <div class="sectionTitle">Korea Now</div>
-          <div class="sectionDesc">Major issues, travel tips, trends, and deals.</div>
-        </div>
-        <div class="nowAdminBar" id="nowAdminBar" style="display:none">
-          <button class="btn btn--primary btn--small" id="nowAdminAdd" type="button">+ Add</button>
-        </div>
-      </div>
-      <div class="nowFilters" id="nowChips"></div>
-      <div class="nowCards" id="nowCards"></div>
-    </section>
-    <section class="nowSection" id="nowKpop">
-      <div class="sectionHead">
-        <div class="sectionTitle">K-POP Now</div>
-        <div class="sectionDesc">Concert &amp; fan content.</div>
-      </div>
-      <div class="nowCards" id="nowCardsKpop"></div>
-    </section>
+    <div class="nowFilters" id="nowChips"></div>
+    <div class="nowCards" id="nowCards"></div>
   `;
+  page.appendChild(section);
+}
+
+function ensureKpopUI(page) {
+  if (!page) return;
+  const kpopSection = page.querySelector("#nowKpop") || page;
+  if (!kpopSection) return;
+  const head = kpopSection.querySelector(".nowCard__head") || kpopSection.querySelector(".sectionHead");
+  if (head && !head.querySelector("[data-admin-bar='1']")) {
+    const bar = document.createElement("div");
+    bar.className = "nowAdminBar";
+    bar.dataset.adminBar = "1";
+    bar.style.display = "none";
+    bar.innerHTML = `<button class="btn btn--primary btn--small nowAdminAddBtn" data-mode="kpop" type="button">+ Add</button>`;
+    head.appendChild(bar);
+  }
+
+  let list = kpopSection.querySelector(".nowList");
+  if (!list) {
+    list = document.createElement("div");
+    list.className = "nowList";
+    kpopSection.appendChild(list);
+  }
+  list.id = "nowCardsKpop";
+  list.classList.add("nowCards");
+}
+
+function setAdminSectionDefaults(mode) {
+  const sectionEl = $("#nowFormSection");
+  if (!sectionEl) return;
+  if (mode === "kpop") {
+    sectionEl.value = "K-POP Now";
+    sectionEl.disabled = true;
+  } else {
+    sectionEl.disabled = false;
+    if (sectionEl.value === "K-POP Now") {
+      sectionEl.value = FILTERS[0];
+    }
+  }
+}
+
+export async function initKoreaNow(options = {}) {
+  const mode = options?.mode === "kpop" ? "kpop" : "mykorea";
+  NOW_STATE.mode = mode;
+
+  const page = mode === "kpop" ? $("#page-kpop") : $("#page-korea-now");
+  if (!page) return;
+
+  if (mode === "kpop") {
+    ensureKpopUI(page);
+  } else {
+    ensureMyKoreaUI(page);
+  }
 
   const refresh = async () => {
     let items = [];
-    const supa = await loadSupabaseItems();
+    const supa = await loadSupabaseItems(mode);
     if (supa.ok && supa.items.length) {
       items = supa.items;
     } else {
-      items = await loadFallbackItems();
+      items = await loadFallbackItems(mode);
     }
 
     NOW_STATE.items = items;
+    if (mode === "kpop") {
+      renderKpop(items);
+      return;
+    }
     const initial = FILTERS[0];
     const active = $("#nowChips .is-active")?.dataset?.filter || initial;
     renderChips(active);
     renderCards(active, items);
     bindChips(active, items);
-    renderKpop(items);
   };
+
+  NOW_STATE.refresh = refresh;
 
   await refresh();
 
   NOW_STATE.isAdmin = await isAdmin();
   if (NOW_STATE.isAdmin) {
-    const bar = $("#nowAdminBar");
-    if (bar) bar.style.display = "flex";
+    document.querySelectorAll("[data-admin-bar='1']").forEach((bar) => {
+      bar.style.display = "flex";
+    });
     ensureAdminModal();
 
-    $("#nowAdminAdd")?.addEventListener("click", () => {
-      const modal = $("#nowAdminModal");
-      if (modal) modal.hidden = false;
-      const status = $("#nowFormStatus");
-      if (status) status.textContent = "";
+    document.querySelectorAll(".nowAdminAddBtn").forEach((btn) => {
+      if (btn.dataset.bound === "1") return;
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", () => {
+        const modeForBtn = btn.dataset.mode === "kpop" ? "kpop" : "mykorea";
+        const modal = $("#nowAdminModal");
+        if (modal) modal.hidden = false;
+        const status = $("#nowFormStatus");
+        if (status) status.textContent = "";
+        setAdminSectionDefaults(modeForBtn);
+      });
     });
 
-    $("#nowFormSave")?.addEventListener("click", () => handleCreatePost(refresh));
+    const saveBtn = $("#nowFormSave");
+    if (saveBtn && saveBtn.dataset.bound !== "1") {
+      saveBtn.dataset.bound = "1";
+      saveBtn.addEventListener("click", () =>
+        handleCreatePost(NOW_STATE.refresh || refresh, NOW_STATE.mode)
+      );
+    }
   }
 
-  const active = $("#nowChips .is-active")?.dataset?.filter || FILTERS[0];
-  renderCards(active, NOW_STATE.items);
-  renderKpop(NOW_STATE.items);
+  if (mode === "kpop") {
+    renderKpop(NOW_STATE.items);
+  } else {
+    const active = $("#nowChips .is-active")?.dataset?.filter || FILTERS[0];
+    renderCards(active, NOW_STATE.items);
+  }
 
   bindCardActions(refresh);
 }

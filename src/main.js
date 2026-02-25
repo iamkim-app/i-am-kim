@@ -918,7 +918,8 @@ function setActiveRoute(route) {
   });
 
   // route hooks
-  if (pageRoute === "korea-now") initKoreaNow?.();
+  if (route === "mykorea") initKoreaNow?.({ mode: "mykorea" });
+  if (route === "kpop") initKoreaNow?.({ mode: "kpop" });
   if (pageRoute === "community") loadCommunityPosts?.(false);
   if (pageRoute === "admin") loadAdminPanel?.();
   if (pageRoute !== "admin") clearAdminRefreshTimer?.();
@@ -2834,8 +2835,8 @@ async function init() {
   ensureCommentReportModal();
 
   // korea now
-  $("#btnReloadNow")?.addEventListener("click", () => initKoreaNow?.());
-  initKoreaNow?.();
+  $("#btnReloadNow")?.addEventListener("click", () => initKoreaNow?.({ mode: "mykorea" }));
+  initKoreaNow?.({ mode: "mykorea" });
 
   // community
   setupCommunity();
