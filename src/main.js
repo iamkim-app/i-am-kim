@@ -876,6 +876,14 @@ function updateBottomTabbarRoutes() {
     const label = link.querySelector(".tabbar__label");
     if (label) label.textContent = to.label;
   });
+
+  const myKoreaIcon = document.querySelector(
+    '.tabbar__link[data-route="mykorea"] .tabbar__icon'
+  );
+  if (myKoreaIcon) {
+    myKoreaIcon.innerHTML =
+      '<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12v16l-6-4-6 4z"/></svg>';
+  }
 }
 
 function currentRoute() {
