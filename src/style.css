@@ -3370,7 +3370,7 @@ input[type="file"]:disabled{
   -webkit-box-orient: vertical;
 
   overflow: hidden;
-  /* optional modern fallback (지원 브라우저에 따라) */
+  /* optional modern fallback (지??브라?��????�라) */
   line-clamp: 2;
 }
 .curatedCard__channel{
@@ -3763,3 +3763,53 @@ input[type="file"]:disabled{
 .is-dev .devOnly {
   display: block !important;
 }
+
+.heroStrip { margin: 24px 0; }
+.heroStrip__track {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+}
+.heroCard {
+  position: relative;
+  flex: 0 0 75vw;
+  height: 180px;
+  border-radius: 18px;
+  background: var(--bg) center/cover no-repeat;
+  overflow: hidden;
+}
+
+.heroCard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 35%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+.heroCard__badge,
+.heroCard__title {
+  position: absolute;
+  left: 12px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(6px);
+  border: 0;
+  box-shadow: none;
+}
+
+.heroCard__badge {
+  bottom: 48px;
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 999px;
+}
+
+.heroCard__title {
+  bottom: 14px;
+  padding: 6px 12px;
+  font-size: 14px;
+  border-radius: 12px;
+  max-width: calc(100% - 24px);
+}
+
+
