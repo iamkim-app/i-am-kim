@@ -644,7 +644,44 @@ code{
 }
 
 /* -------------------------------- HERO --------------------------------- */
+/* Hero strip must be scrollable on mobile */
+.heroStrip {
+  width: 100%;
+  overflow: hidden;
+}
 
+.heroStrip__track {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 16px;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  scroll-snap-type: x proximity;   /* 🔥 mandatory → proximity */
+  -webkit-overflow-scrolling: touch;
+
+  padding: 4px 16px 16px;
+}
+
+.heroStrip__track::-webkit-scrollbar {
+  display: none;
+}
+
+.heroCard {
+  flex: 0 0 75vw;            /* 🔥 78 → 75 */
+  width: 75vw;
+  max-width: 420px;
+
+  scroll-snap-align: center; /* 🔥 start → center */
+  transition: transform .35s ease;
+}
+
+.heroCard {
+  flex: 0 0 78vw;
+  max-width: 420px;
+  scroll-snap-align: start;
+}
 .hero{
   border: 1px solid transparent;
   background:
@@ -3373,7 +3410,7 @@ input[type="file"]:disabled{
   -webkit-box-orient: vertical;
 
   overflow: hidden;
-  /* optional modern fallback (지??브라?��????�라) */
+  /* optional modern fallback (지??브라?��????�라) */
   line-clamp: 2;
 }
 .curatedCard__channel{
