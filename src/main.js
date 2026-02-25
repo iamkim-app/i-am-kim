@@ -249,14 +249,14 @@ function ensureProfileUI() {
   });
   $("#avatarSave")?.addEventListener("click", () => saveAvatar());
   $("#profileManagePacks")?.addEventListener("click", () => {
-    location.hash = "#phrases";
+    location.hash = "#mykorea";
     const el = $("#packsArea");
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   });
   $("#profileViewFavorites")?.addEventListener("click", () => {
     PHRASE_STATE.favoritesOnly = true;
     saveFavoritesOnly();
-    location.hash = "#phrases";
+    location.hash = "#mykorea";
     const favToggle = $("#phraseFavToggle");
     if (favToggle) {
       favToggle.setAttribute("aria-pressed", "true");
@@ -265,7 +265,7 @@ function ensureProfileUI() {
     renderPhraseList();
   });
   $("#profileManageCustom")?.addEventListener("click", () => {
-    location.hash = "#phrases";
+    location.hash = "#mykorea";
     if (!PACK_STATE.selectedPackId && PACK_STATE.packs.length) {
       PACK_STATE.selectedPackId = PACK_STATE.packs[0].id;
     }
@@ -845,12 +845,46 @@ function closeContactModal() {
 
 /* ----------------------------- ROUTING --------------------------------- */
 
+const ROUTE_ALIASES = {
+  now: "mykorea",
+  "korea-now": "kpop",
+  phrases: "mykorea",
+};
+
+const ROUTE_PAGE_MAP = {
+  kpop: "korea-now",
+  mykorea: "phrases",
+};
+
+function normalizeRoute(route) {
+  const key = (route || "").toLowerCase();
+  return ROUTE_ALIASES[key] || key || "home";
+}
+
+function updateBottomTabbarRoutes() {
+  const mappings = [
+    { from: "home", to: { route: "home", href: "#home", label: "Home" } },
+    { from: "korea-now", to: { route: "kpop", href: "#kpop", label: "Kpop" } },
+    { from: "phrases", to: { route: "mykorea", href: "#mykorea", label: "MyKorea" } },
+    { from: "community", to: { route: "community", href: "#community", label: "Community" } },
+    { from: "about", to: { route: "about", href: "#about", label: "Information" } },
+  ];
+
+  mappings.forEach(({ from, to }) => {
+    const link = document.querySelector(`.tabbar__link[data-route="${from}"]`);
+    if (!link) return;
+    link.dataset.route = to.route;
+    link.setAttribute("href", to.href);
+    const label = link.querySelector(".tabbar__label");
+    if (label) label.textContent = to.label;
+  });
+}
+
 function currentRoute() {
   const path = (location.pathname || "").toLowerCase();
   if (path.endsWith("/admin")) return "admin";
   const raw = (location.hash || "#home").replace("#", "").trim();
-  if (raw === "now") return "korea-now";
-  return raw || "home";
+  return normalizeRoute(raw);
 }
 
 function navigateToHome() {
@@ -863,27 +897,34 @@ function navigateToHome() {
 }
 
 function setActiveRoute(route) {
+  const pageRoute = ROUTE_PAGE_MAP[route] || route;
   // pages
   $$(".page").forEach((p) => {
-    p.hidden = p.dataset.page !== route;
+    p.hidden = p.dataset.page !== pageRoute;
   });
 
   // desktop nav
   $$(".nav__link").forEach((a) => {
-    a.classList.toggle("is-active", a.dataset.route === route);
+    a.classList.toggle(
+      "is-active",
+      a.dataset.route === route || a.dataset.route === pageRoute
+    );
   });
 
   // mobile tab bar
   $$(".tabbar__link").forEach((a) => {
-    a.classList.toggle("is-active", a.dataset.route === route);
+    a.classList.toggle(
+      "is-active",
+      a.dataset.route === route || a.dataset.route === pageRoute
+    );
   });
 
   // route hooks
-  if (route === "korea-now") initKoreaNow?.();
-  if (route === "community") loadCommunityPosts?.(false);
-  if (route === "admin") loadAdminPanel?.();
-  if (route !== "admin") clearAdminRefreshTimer?.();
-  if (route === "profile") refreshProfileStateFromStorage();
+  if (pageRoute === "korea-now") initKoreaNow?.();
+  if (pageRoute === "community") loadCommunityPosts?.(false);
+  if (pageRoute === "admin") loadAdminPanel?.();
+  if (pageRoute !== "admin") clearAdminRefreshTimer?.();
+  if (pageRoute === "profile") refreshProfileStateFromStorage();
 }
 
 /* ----------------------------- ENV / BACKEND --------------------------- */
@@ -2810,6 +2851,7 @@ async function init() {
   loadBackendSettingsUI();
 
   // routing
+  updateBottomTabbarRoutes();
   setActiveRoute(currentRoute());
   window.addEventListener("hashchange", () => setActiveRoute(currentRoute()));
 
