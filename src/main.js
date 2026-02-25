@@ -1555,6 +1555,7 @@ function setupPhrases() {
           <div class="packsCreate">
             <input id="packNameInput" class="input" placeholder="Pack name" autocomplete="off" />
             <button class="btn btn--primary" id="btnCreatePack" type="button">Create Pack</button>
+            <button class="btn btn--ghost btn--small" id="btnPacksTravelMode" type="button">Travel Mode</button>
           </div>
         </div>
         <div class="packsBody">
@@ -1565,6 +1566,10 @@ function setupPhrases() {
     `;
     phrasesPage.appendChild(packsArea);
   }
+
+  $("#btnPacksTravelMode")?.addEventListener("click", () => {
+    location.hash = "#travel";
+  });
 
   ensureCustomPhraseModal();
 
