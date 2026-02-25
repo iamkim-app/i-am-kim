@@ -3969,3 +3969,12 @@ input[type="file"]:disabled{
   height: 52px !important;
 }
 
+
+.mobileTopbar__brand,
+.mobileTopbar__brand *,
+.mobileTopbar__wordmark,
+.brandWord {
+  color:#1A1A1A !important;
+  -webkit-text-fill-color:#1A1A1A !important;
+  text-decoration:none !important;
+}
