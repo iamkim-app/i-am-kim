@@ -471,8 +471,8 @@ function renderHomeLayout() {
   page.innerHTML = `
     <section class="homeSection homeSection--hero">
       <div class="homeHero">
-        <div class="homeHero__title">Travel Korea. Instantly.</div>
-        <div class="homeHero__subtitle">Plan, learn, and move faster with MyKorea and K-POP tips.</div>
+        <div class="homeHero__title">Your Guide to Korea, Inspired by K‑POP.</div>
+        <div class="homeHero__subtitle">Real places. Real moments. Built for international fans.</div>
         <section class="heroStrip">
           <div class="heroStrip__track">
             <button class="heroCard" type="button" style="--bg:url('/hero/hero_kpop_concert.webp')" onclick="location.hash='#kpop'">
@@ -861,6 +861,55 @@ function setupHome() {
   loadHomeLibrary().then(() => {
     renderCollectionsSection();
   });
+  initHeroAutoplay();
+}
+
+function initHeroAutoplay() {
+  const track = document.querySelector(".heroStrip__track");
+  if (!track || track.dataset.autoplay === "1") return;
+  track.dataset.autoplay = "1";
+
+  const cards = [...track.querySelectorAll(".heroCard")];
+  if (!cards.length) return;
+
+  let i = 0;
+  let intervalId = null;
+  let resumeTimer = null;
+
+  const tick = () => {
+    const card = cards[i];
+    if (!card) return;
+    track.scrollTo({ left: card.offsetLeft, behavior: "smooth" });
+    i = (i + 1) % cards.length;
+  };
+
+  const startInterval = () => {
+    clearInterval(intervalId);
+    intervalId = setInterval(tick, 4000);
+  };
+
+  const pause = () => {
+    clearInterval(intervalId);
+  };
+
+  const resume = () => {
+    clearTimeout(resumeTimer);
+    resumeTimer = setTimeout(() => {
+      startInterval();
+    }, 6000);
+  };
+
+  startInterval();
+
+  const handleInteract = () => {
+    pause();
+    resume();
+  };
+
+  track.addEventListener("pointerdown", handleInteract, { passive: true });
+  track.addEventListener("touchstart", handleInteract, { passive: true });
+  track.addEventListener("wheel", handleInteract, { passive: true });
+  track.addEventListener("scroll", handleInteract, { passive: true });
 }
 
 // Expose entrypoint for main.js
