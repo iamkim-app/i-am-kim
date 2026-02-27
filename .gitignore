@@ -1,5 +1,19 @@
-node_modules
+# env
 .env
 .env.local
-dist
+
+# Apple Sign In private key
+*.p8
+AuthKey_*.p8
+
+# Apple JWT test script (if local only)
+apple_jwt.js
+
+# Node
+node_modules/
+
+# macOS
 .DS_Store
+
+# build
+dist/
