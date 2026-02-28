@@ -1012,6 +1012,7 @@ async function loadNowPreview(routeToken) {
         }
 
         if (slot.source === "k") {
+          if (!slot.source_id || !String(slot.source_id).trim()) return { placeholder: true };
           const { data: row } = await supabase
             .from("k_posts")
             .select("id,title,subtitle,content,link_hash")
@@ -1028,6 +1029,7 @@ async function loadNowPreview(routeToken) {
           };
         }
 
+        if (!slot.source_id || !String(slot.source_id).trim()) return { placeholder: true };
         const { data: row } = await supabase
           .from("korea_now_posts")
           .select("id,section,tag,title,summary,link")
