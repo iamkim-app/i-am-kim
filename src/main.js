@@ -85,6 +85,9 @@ let analyzeHomeUrl;
 let clearHome;
 let renderFeaturedVideos;
 let initKoreaNow;
+let initKPage;
+let startHomeCarousel;
+let stopHomeCarousel;
 
 /* ----------------------------- PROFILE / NICKNAME ---------------------- */
 
@@ -846,12 +849,15 @@ function closeContactModal() {
 /* ----------------------------- ROUTING --------------------------------- */
 
 const ROUTE_ALIASES = {
-  now: "mykorea",
-  "korea-now": "mykorea",
+  now: "news",
+  "korea-now": "news",
+  kpop: "k",
+  mykorea: "news",
 };
 
 const ROUTE_PAGE_MAP = {
-  mykorea: "korea-now",
+  k: "kpop",
+  news: "korea-now",
 };
 
 function normalizeRoute(route) {
@@ -859,11 +865,29 @@ function normalizeRoute(route) {
   return ROUTE_ALIASES[key] || key || "home";
 }
 
+function getHashParts() {
+  const raw = (location.hash || "#home").replace("#", "").trim();
+  const [routePart, queryPart] = raw.split("?");
+  return {
+    route: (routePart || "home").trim(),
+    query: (queryPart || "").trim(),
+  };
+}
+
+function getKTabFromHash() {
+  const { route, query } = getHashParts();
+  if (normalizeRoute(route) !== "k") return "";
+  const params = new URLSearchParams(query || "");
+  const raw = String(params.get("tab") || "kpop").toLowerCase();
+  const allowed = new Set(["kpop", "food", "beauty", "deals", "shopping"]);
+  return allowed.has(raw) ? raw : "kpop";
+}
+
 function updateBottomTabbarRoutes() {
   const mappings = [
     { from: "home", to: { route: "home", href: "#home", label: "Home" } },
-    { from: "kpop", to: { route: "kpop", href: "#kpop", label: "Kpop" } },
-    { from: "mykorea", to: { route: "mykorea", href: "#mykorea", label: "MyKorea" } },
+    { from: "kpop", to: { route: "k", href: "#k", label: "K" } },
+    { from: "mykorea", to: { route: "news", href: "#news", label: "News" } },
     { from: "community", to: { route: "community", href: "#community", label: "Community" } },
     { from: "info", to: { route: "info", href: "#info", label: "Information" } },
   ];
@@ -878,7 +902,7 @@ function updateBottomTabbarRoutes() {
   });
 
   const myKoreaIcon = document.querySelector(
-    '.tabbar__link[data-route="mykorea"] .tabbar__icon'
+    '.tabbar__link[data-route="news"] .tabbar__icon'
   );
   if (myKoreaIcon) {
     myKoreaIcon.innerHTML =
@@ -886,11 +910,13 @@ function updateBottomTabbarRoutes() {
   }
 }
 
+let ROUTE_TOKEN = 0;
+
 function currentRoute() {
   const path = (location.pathname || "").toLowerCase();
   if (path.endsWith("/admin")) return "admin";
-  const raw = (location.hash || "#home").replace("#", "").trim();
-  return normalizeRoute(raw);
+  const { route } = getHashParts();
+  return normalizeRoute(route);
 }
 
 function navigateToHome() {
@@ -903,6 +929,20 @@ function navigateToHome() {
 }
 
 function setActiveRoute(route) {
+  ROUTE_TOKEN += 1;
+  const token = ROUTE_TOKEN;
+  if (window.App) window.App.routeToken = token;
+  const wasHome = document.querySelector("#page-home")?.hidden === false;
+  if (wasHome && route !== "home") {
+    clearHome?.();
+  }
+  if (route === "home") {
+    setupHome?.(token);
+  }
+  if (route === "k" && !String(location.hash || "").includes("tab=")) {
+    location.hash = "#k?tab=kpop";
+    route = "k";
+  }
   const pageRoute = ROUTE_PAGE_MAP[route] || route;
   // pages
   $$(".page").forEach((p) => {
@@ -926,10 +966,19 @@ function setActiveRoute(route) {
   });
 
   // route hooks
-  if (route === "mykorea") initKoreaNow?.({ mode: "mykorea" });
-  if (route === "kpop") initKoreaNow?.({ mode: "kpop" });
+  if (route === "news") initKoreaNow?.({ mode: "mykorea" });
+  if (route === "k") {
+    const tab = getKTabFromHash();
+    initKPage?.({ tab });
+    if (tab === "kpop") initKoreaNow?.({ mode: "kpop" });
+  }
+  if (route === "home") {
+    startHomeCarousel?.();
+  } else {
+    stopHomeCarousel?.();
+  }
   if (pageRoute === "community") loadCommunityPosts?.(false);
-  if (pageRoute === "admin") loadAdminPanel?.();
+  if (pageRoute === "admin") loadAdminPanel?.(token);
   if (pageRoute !== "admin") clearAdminRefreshTimer?.();
   if (pageRoute === "profile") refreshProfileStateFromStorage();
 }
@@ -2693,6 +2742,7 @@ function buildAppContext() {
     ensureEmergencySheet,
     openEmergencySheet,
     closeEmergencySheet,
+    routeToken: ROUTE_TOKEN,
   });
 }
 
@@ -2743,6 +2793,8 @@ async function loadAppModules() {
     clearHome,
     renderFeaturedVideos,
     setupHome,
+    startHomeCarousel,
+    stopHomeCarousel,
   } = home);
 
   Object.assign(app, {
@@ -2759,6 +2811,8 @@ async function loadAppModules() {
     clearHome,
     renderFeaturedVideos,
     setupHome,
+    startHomeCarousel,
+    stopHomeCarousel,
   });
 
   // 3) COMMUNITY
@@ -2774,6 +2828,11 @@ async function loadAppModules() {
   const now = await import("./app/korea_now.js");
   ({ initKoreaNow } = now);
   Object.assign(app, { initKoreaNow });
+
+  // 3.6) K PAGE (sub-tabs)
+  const kpage = await import("./app/k.js");
+  ({ initKPage } = kpage);
+  Object.assign(app, { initKPage });
 
   // 4) ADMIN
   const admin = await import("./app/admin.js");
@@ -2841,11 +2900,7 @@ async function init() {
   replaceBrandMarkWithLogo();
 
   // home
-  if (typeof setupHome === "function") {
-    setupHome();
-  } else {
-    console.warn("[home] setupHome missing");
-  }
+  // home setup deferred to route guard
 
   // phrases
   setupPhrases();

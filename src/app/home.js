@@ -299,10 +299,12 @@ async function analyzeHomeUrl() {
 }
 
 function clearHome() {
-  const input = $("#homeYoutubeUrl");
+  const root = document.querySelector("#page-home");
+  if (!root) return;
+  const input = root.querySelector("#homeYoutubeUrl");
   if (input) input.value = "";
 
-  const player = $("#videoPlayer");
+  const player = root.querySelector("#videoPlayer");
   if (player) {
     player.innerHTML = `<div class="player__empty">
       <div class="player__emptyTitle">Paste a link</div>
@@ -311,12 +313,18 @@ function clearHome() {
   }
 
   setWatchStatus("Paste a link to generate insights.");
-  setText("#watchTldr", "No summary yet. Extract a video to get a quick skim.");
-  $("#watchMustKnows") && ($("#watchMustKnows").innerHTML = "");
-  $("#watchPlacesFoods") && ($("#watchPlacesFoods").innerHTML = "");
-  $("#watchMoments") && ($("#watchMoments").innerHTML = "");
-  $("#watchMore") && ($("#watchMore").style.display = "none");
-  $("#watchFull") && ($("#watchFull").textContent = "");
+  const watchTldr = root.querySelector("#watchTldr");
+  if (watchTldr) watchTldr.textContent = "No summary yet. Extract a video to get a quick skim.";
+  const mustKnows = root.querySelector("#watchMustKnows");
+  if (mustKnows) mustKnows.innerHTML = "";
+  const placesFoods = root.querySelector("#watchPlacesFoods");
+  if (placesFoods) placesFoods.innerHTML = "";
+  const moments = root.querySelector("#watchMoments");
+  if (moments) moments.innerHTML = "";
+  const watchMore = root.querySelector("#watchMore");
+  if (watchMore) watchMore.style.display = "none";
+  const watchFull = root.querySelector("#watchFull");
+  if (watchFull) watchFull.textContent = "";
 }
 
 function getCollections() {
@@ -491,11 +499,11 @@ function renderHomeLayout() {
               <span class="heroCard__badge">SEOUL</span>
               <span class="heroCard__title">Night views & spots</span>
             </button>
-            <button class="heroCard" type="button" style="--bg:url('/hero/hero_kbeauty_shop.webp')" onclick="location.hash='#mykorea'">
+            <button class="heroCard" type="button" style="--bg:url('/hero/hero_kbeauty_shop.webp')" onclick="location.hash='#k?tab=beauty'">
               <span class="heroCard__badge">BEAUTY</span>
               <span class="heroCard__title">K-beauty stores to try</span>
             </button>
-            <button class="heroCard" type="button" style="--bg:url('/hero/hero_kfood_street.webp')" onclick="location.hash='#mykorea'">
+            <button class="heroCard" type="button" style="--bg:url('/hero/hero_kfood_street.webp')" onclick="location.hash='#k?tab=food'">
               <span class="heroCard__badge">FOOD</span>
               <span class="heroCard__title">Street food favorites</span>
             </button>
@@ -595,24 +603,18 @@ function renderHomeLayout() {
 
     <section class="homeSection">
       <div class="sectionHead">
-        <div class="sectionTitle">Korea Now</div>
-        <div class="sectionDesc">Latest travel notes and quick alerts.</div>
+        <div>
+          <div class="sectionTitle">Korea Now</div>
+          <div class="sectionDesc">Latest travel notes and quick alerts.</div>
+        </div>
+        <button class="btn btn--ghost btn--small" id="btnEditHomePicks" type="button" style="display:none">Edit</button>
       </div>
-      <div class="previewGrid" id="homeNowPreview">
-        <div class="previewCard">
-          <div class="previewTag">Essentials</div>
-          <div class="previewTitle">Arrival checklist</div>
-          <div class="previewDesc">SIM, T-money, and airport transit tips.</div>
-        </div>
-        <div class="previewCard">
-          <div class="previewTag">Trending</div>
-          <div class="previewTitle">Seasonal hotspots</div>
-          <div class="previewDesc">Popular areas and crowd windows this week.</div>
-        </div>
-        <div class="previewCard">
-          <div class="previewTag">Advisory</div>
-          <div class="previewTitle">Transit changes</div>
-          <div class="previewDesc">Temporary line closures and bus reroutes.</div>
+      <div class="previewCarousel" id="homeNowPreview">
+        <div class="previewTrack" id="homeNowTrack"></div>
+        <div class="previewDots" id="homeNowDots" aria-hidden="true">
+          <button class="dot is-active" type="button" data-idx="0"></button>
+          <button class="dot" type="button" data-idx="1"></button>
+          <button class="dot" type="button" data-idx="2"></button>
         </div>
       </div>
     </section>
@@ -706,35 +708,353 @@ function openUrl(url) {
   window.open(target, "_blank", "noopener");
 }
 
-async function loadNowPreview() {
+async function isAdminUser() {
+  const supabase = getApp().supabase;
+  if (!supabase) return false;
+  try {
+    const userResp = await supabase.auth.getUser();
+    const uid = userResp?.data?.user?.id || null;
+    if (!uid) return false;
+    const { data: roleRow, error } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", uid)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (error) throw error;
+    return roleRow?.role === "admin";
+  } catch {
+    return false;
+  }
+}
+
+function ensureHomePicksModal() {
+  if (document.querySelector("#homePicksModal")) return;
+  const modal = document.createElement("div");
+  modal.className = "modal";
+  modal.id = "homePicksModal";
+  modal.hidden = true;
+  modal.innerHTML = `
+    <div class="modal__backdrop" data-close="1"></div>
+    <div class="modal__card" role="dialog" aria-modal="true" aria-label="Edit Home Picks">
+      <div class="modal__head">
+        <div class="modal__title">Edit Home Picks</div>
+        <button class="iconBtn" data-close="1" type="button" aria-label="Close"></button>
+      </div>
+      <div class="modal__body" id="homePicksBody"></div>
+      <div class="modal__actions">
+        <button class="btn btn--ghost" data-close="1" type="button">Cancel</button>
+        <button class="btn btn--primary" id="btnSaveHomePicks" type="button">Save</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  modal.addEventListener("click", (e) => {
+    if (e.target?.closest?.("[data-close='1']")) modal.hidden = true;
+  });
+}
+
+function renderHomePicksForm(rows) {
+  const body = document.getElementById("homePicksBody");
+  if (!body) return;
+  const map = new Map((rows || []).map((r) => [Number(r.slot), r]));
+  body.innerHTML = [1, 2, 3]
+    .map((slot) => {
+      const row = map.get(slot) || {};
+      return `
+        <div class="card" style="margin-bottom:10px;">
+          <div class="muted small" style="margin-bottom:6px;">Slot ${slot}</div>
+          <div class="grid">
+            <label class="field">
+              <div class="field__label">Source</div>
+              <select class="input" data-slot="${slot}" data-field="source">
+                <option value="k_posts" ${row.source === "k_posts" ? "selected" : ""}>k_posts</option>
+                <option value="korea_now_posts" ${row.source === "korea_now_posts" ? "selected" : ""}>korea_now_posts</option>
+              </select>
+            </label>
+            <label class="field">
+              <div class="field__label">Source ID</div>
+              <input class="input" data-slot="${slot}" data-field="source_id" value="${escapeHtml(
+                row.source_id || ""
+              )}" />
+            </label>
+            <label class="field">
+              <div class="field__label">Title override</div>
+              <input class="input" data-slot="${slot}" data-field="title_override" value="${escapeHtml(
+                row.title_override || ""
+              )}" />
+            </label>
+            <label class="field">
+              <div class="field__label">Subtitle override</div>
+              <input class="input" data-slot="${slot}" data-field="subtitle_override" value="${escapeHtml(
+                row.subtitle_override || ""
+              )}" />
+            </label>
+            <label class="field">
+              <div class="field__label">Link hash</div>
+              <input class="input" data-slot="${slot}" data-field="link_hash" value="${escapeHtml(
+                row.link_hash || ""
+              )}" />
+            </label>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+async function openHomePicksModal() {
+  const supabase = getApp().supabase;
+  if (!supabase) return;
+  ensureHomePicksModal();
+  const modal = document.getElementById("homePicksModal");
+  if (!modal) return;
+  const { data } = await supabase.from("home_featured").select("*").order("slot");
+  renderHomePicksForm(data || []);
+  modal.hidden = false;
+}
+
+async function saveHomePicks() {
+  const supabase = getApp().supabase;
+  if (!supabase) return;
+  const inputs = Array.from(document.querySelectorAll("#homePicksBody [data-slot][data-field]"));
+  const bySlot = new Map();
+  inputs.forEach((el) => {
+    const slot = Number(el.dataset.slot);
+    const field = el.dataset.field;
+    if (!bySlot.has(slot)) bySlot.set(slot, {});
+    bySlot.get(slot)[field] = String(el.value || "").trim();
+  });
+  const rows = Array.from(bySlot.entries()).map(([slot, row]) => ({
+    slot,
+    source: row.source || "",
+    source_id: row.source_id || "",
+    title_override: row.title_override || null,
+    subtitle_override: row.subtitle_override || null,
+    link_hash: row.link_hash || null,
+  }));
+  await supabase.from("home_featured").upsert(rows, { onConflict: "slot" });
+  const modal = document.getElementById("homePicksModal");
+  if (modal) modal.hidden = true;
+  await loadNowPreview();
+}
+
+let HOME_CAROUSEL_TIMER = null;
+let HOME_CAROUSEL_INDEX = 0;
+
+function isHomeActive() {
+  const page = document.getElementById("page-home");
+  return page && !page.hidden;
+}
+
+function startHomeCarousel() {
+  if (HOME_CAROUSEL_TIMER) return;
+  const root = document.querySelector("#page-home");
+  if (!root) return;
+  const host = root.querySelector("#homeNowPreview");
+  const track = root.querySelector("#homeNowTrack");
+  const dots = root.querySelector("#homeNowDots");
+  if (!host || !track || !dots) return;
+
+  const total = () => track.querySelectorAll(".previewCard").length;
+  const applyIndex = () => {
+    if (!isHomeActive()) return;
+    const max = Math.max(0, total() - 1);
+    HOME_CAROUSEL_INDEX = Math.min(Math.max(HOME_CAROUSEL_INDEX, 0), max);
+    track.style.transform = `translateX(${-HOME_CAROUSEL_INDEX * 100}%)`;
+    dots.querySelectorAll(".dot").forEach((d, i) => {
+      d.classList.toggle("is-active", i === HOME_CAROUSEL_INDEX);
+    });
+  };
+
+  applyIndex();
+  HOME_CAROUSEL_TIMER = setInterval(() => {
+    if (!isHomeActive()) return;
+    const max = total();
+    if (max <= 1) return;
+    HOME_CAROUSEL_INDEX = (HOME_CAROUSEL_INDEX + 1) % max;
+    applyIndex();
+  }, 4000);
+}
+
+function stopHomeCarousel() {
+  if (HOME_CAROUSEL_TIMER) {
+    clearInterval(HOME_CAROUSEL_TIMER);
+    HOME_CAROUSEL_TIMER = null;
+  }
+}
+
+function setupHomePreviewCarousel() {
   const host = document.getElementById("homeNowPreview");
-  if (!host) return;
+  const track = document.getElementById("homeNowTrack");
+  const dots = document.getElementById("homeNowDots");
+  if (!host || !track || !dots || host.dataset.bound === "1") return;
+  host.dataset.bound = "1";
+
+  let index = 0;
+  let timer = null;
+  let paused = false;
+  let startX = 0;
+  let startY = 0;
+  let deltaX = 0;
+  let deltaY = 0;
+  let didSwipe = false;
+
+  const cards = () => Array.from(track.querySelectorAll(".previewCard"));
+  const total = () => cards().length;
+
+  const setIndex = (next) => {
+    if (!isHomeActive()) return;
+    const max = Math.max(0, total() - 1);
+    index = Math.min(Math.max(next, 0), max);
+    track.style.transform = `translateX(${-index * 100}%)`;
+    dots.querySelectorAll(".dot").forEach((d, i) => {
+      d.classList.toggle("is-active", i === index);
+    });
+  };
+
+  const tick = () => {
+    if (paused) return;
+    const max = total();
+    if (max <= 1) return;
+    setIndex((index + 1) % max);
+  };
+
+  const start = () => {
+    if (HOME_CAROUSEL_TIMER) clearInterval(HOME_CAROUSEL_TIMER);
+    HOME_CAROUSEL_TIMER = setInterval(tick, 4000);
+  };
+
+  const pause = () => {
+    paused = true;
+    if (HOME_CAROUSEL_TIMER) clearInterval(HOME_CAROUSEL_TIMER);
+  };
+
+  const resume = () => {
+    paused = false;
+    start();
+  };
+
+  track.addEventListener("touchstart", (e) => {
+    pause();
+    const t = e.touches?.[0];
+    if (!t) return;
+    startX = t.clientX;
+    startY = t.clientY;
+    deltaX = 0;
+    deltaY = 0;
+    didSwipe = false;
+    host.dataset.swiping = "0";
+  });
+  track.addEventListener("touchmove", (e) => {
+    const t = e.touches?.[0];
+    if (!t) return;
+    deltaX = t.clientX - startX;
+    deltaY = t.clientY - startY;
+    if (Math.abs(deltaX) > 12 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      didSwipe = true;
+      host.dataset.swiping = "1";
+    }
+  });
+  track.addEventListener("touchend", () => {
+    if (didSwipe && Math.abs(deltaX) > 12) {
+      setIndex(deltaX < 0 ? index + 1 : index - 1);
+    }
+    startX = 0;
+    startY = 0;
+    deltaX = 0;
+    deltaY = 0;
+    didSwipe = false;
+    host.dataset.swiping = "0";
+    resume();
+  });
+
+  host.addEventListener("mouseenter", pause);
+  host.addEventListener("mouseleave", resume);
+
+  start();
+  setIndex(0);
+}
+
+async function loadNowPreview(routeToken) {
+  if (routeToken && routeToken !== window.App?.routeToken) return;
+  const host = document.getElementById("homeNowPreview");
+  const track = document.getElementById("homeNowTrack");
+  if (!host || !track) return;
 
   const supabase = getApp().supabase;
   let items = [];
 
   if (supabase) {
     try {
-      const { data, error } = await supabase
-        .from("korea_now_posts")
-        .select("section,tag,title,summary,link,created_at,status")
-        .eq("status", "active")
-        .order("created_at", { ascending: false })
-        .limit(3);
+      const { data: slots, error } = await supabase
+        .from("home_featured")
+        .select(
+          "slot,source,source_id,title_override,subtitle_override,image_url_override,link_hash"
+        )
+        .order("slot", { ascending: true });
       if (error) throw error;
-      items = (data || []).map((row) => ({
-        tag: row.tag || row.section || "Update",
-        title: row.title || "Untitled",
-        summary: row.summary || "",
-        link: row.link || "",
-      }));
+
+      const slotMap = new Map((slots || []).map((s) => [Number(s.slot), s]));
+      const slotsNormalized = [1, 2, 3].map((n) => slotMap.get(n) || null);
+
+      const resolveSlot = async (slot) => {
+        if (!slot) return { placeholder: true };
+        if (slot.title_override) {
+          return {
+            tag: slot.source === "k" ? "K" : "News",
+            title: slot.title_override,
+            summary: slot.subtitle_override || "",
+            link: "",
+            linkHash: slot.link_hash || "",
+            source: slot.source || "",
+          };
+        }
+
+        if (slot.source === "k") {
+          const { data: row } = await supabase
+            .from("k_posts")
+            .select("id,title,subtitle,content,link_hash")
+            .eq("id", slot.source_id)
+            .maybeSingle();
+          if (!row) return { placeholder: true };
+          return {
+            tag: "K",
+            title: row.title || "Untitled",
+            summary: row.subtitle || row.content || "",
+            link: "",
+            linkHash: row.link_hash || slot.link_hash || "",
+            source: "k_posts",
+          };
+        }
+
+        const { data: row } = await supabase
+          .from("korea_now_posts")
+          .select("id,section,tag,title,summary,link")
+          .eq("id", slot.source_id)
+          .maybeSingle();
+        if (!row) return { placeholder: true };
+        return {
+          tag: row.tag || row.section || "Update",
+          title: row.title || "Untitled",
+          summary: row.summary || "",
+          link: row.link || "",
+          linkHash: slot.link_hash || "",
+          source: "korea_now_posts",
+        };
+      };
+
+      items = await Promise.all(slotsNormalized.map((slot) => resolveSlot(slot)));
     } catch (err) {
       console.warn("[home] Korea Now preview failed.", err);
     }
   }
 
+  if (routeToken && routeToken !== window.App?.routeToken) return;
+  if (!isHomeActive()) return;
+
   if (!items.length) {
-    host.innerHTML = `
+    track.innerHTML = `
       <div class="previewCard">
         <div class="previewTag">Essentials</div>
         <div class="previewTitle">Arrival checklist</div>
@@ -751,39 +1071,56 @@ async function loadNowPreview() {
         <div class="previewDesc">Temporary line closures and bus reroutes.</div>
       </div>
     `;
+    setupHomePreviewCarousel();
     return;
   }
 
-  host.innerHTML = items
+  track.innerHTML = items
     .map(
       (it) => `
-      <button class="previewCard" type="button" data-link="${escapeHtml(it.link)}">
-        <div class="previewTag">${escapeHtml(it.tag)}</div>
-        <div class="previewTitle">${escapeHtml(it.title)}</div>
-        <div class="previewDesc">${escapeHtml(it.summary)}</div>
-      </button>
+      ${
+        it.placeholder
+          ? `<div class="previewCard" data-placeholder="1">
+              <div class="previewTag">Admin</div>
+              <div class="previewTitle">Pick an item (admin)</div>
+              <div class="previewDesc">Assign a slot in home_featured.</div>
+            </div>`
+          : `<button class="previewCard" type="button" data-link="${escapeHtml(
+              it.link || ""
+            )}" data-link-hash="${escapeHtml(it.linkHash || "")}" data-source="${escapeHtml(
+              it.source || ""
+            )}">
+              <div class="previewTag">${escapeHtml(it.tag || "Update")}</div>
+              <div class="previewTitle">${escapeHtml(it.title || "Untitled")}</div>
+              <div class="previewDesc">${escapeHtml(it.summary || "")}</div>
+            </button>`
+      }
     `
     )
     .join("");
+  setupHomePreviewCarousel();
 }
 
-function setupHome() {
+function setupHome(routeToken) {
+  if (!isHomeActive()) return;
+  const root = document.querySelector("#page-home");
+  if (!root) return;
   renderHomeLayout();
   renderInfoLayout();
   clearHome();
 
-  $("#btnHomeAnalyze")?.addEventListener("click", analyzeHomeUrl);
-  $("#btnHomeClear")?.addEventListener("click", clearHome);
-  $("#btnGoLibrary")?.addEventListener("click", async () => {
+  root.querySelector("#btnHomeAnalyze")?.addEventListener("click", analyzeHomeUrl);
+  root.querySelector("#btnHomeClear")?.addEventListener("click", clearHome);
+  root.querySelector("#btnGoLibrary")?.addEventListener("click", async () => {
     if (location.hash !== "#info") location.hash = "#info";
     if (!HOME_LIBRARY_COLLECTIONS.length) {
       await loadHomeLibrary();
       renderCollectionsSection();
     }
-    const target = document.getElementById("homeCollections");
+    const target = root.querySelector("#homeCollections");
     if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
   });
-  $(".quickActions")?.addEventListener("click", (e) => {
+  root.querySelector(".quickActions")?.addEventListener("click", (e) => {
     const btn = e.target?.closest?.(".quickAction");
     if (!btn) return;
     const action = btn.dataset.action || "";
@@ -828,40 +1165,69 @@ function setupHome() {
       window.App?.openEmergencySheet?.();
     }
   });
-  $(".spotlightGrid")?.addEventListener("click", (e) => {
+  root.querySelector(".spotlightGrid")?.addEventListener("click", (e) => {
     const card = e.target?.closest?.(".spotlightCard");
     if (!card) return;
     if (card.dataset.action === "kpop-now") {
       location.hash = "#kpop";
       setTimeout(() => {
-        document
-          .getElementById("nowKpop")
+        root
+          .querySelector("#nowKpop")
           ?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
     }
   });
 
-  loadNowPreview();
+  const localToken = routeToken;
+  loadNowPreview(localToken);
   if (!setupHome.nowPreviewBound) {
     setupHome.nowPreviewBound = true;
-    window.addEventListener("koreaNow:updated", () => loadNowPreview());
-    document.getElementById("homeNowPreview")?.addEventListener("click", (e) => {
+    window.addEventListener("koreaNow:updated", () => loadNowPreview(localToken));
+    root.querySelector("#homeNowPreview")?.addEventListener("click", (e) => {
+      const host = root.querySelector("#homeNowPreview");
+      if (host?.dataset?.swiping === "1") return;
       const card = e.target?.closest?.(".previewCard");
-      if (!card) return;
+      if (!card || card.dataset.placeholder === "1") return;
+      const linkHash = card.dataset.linkHash || "";
+      const source = card.dataset.source || "";
       const link = card.dataset.link || "";
-      if (link) openUrl(link);
+      if (linkHash) {
+        location.hash = linkHash;
+        return;
+      }
+      if (source === "korea_now_posts" && link) {
+        openUrl(link);
+      }
+    });
+  }
+
+  if (!setupHome.homePicksBound) {
+    setupHome.homePicksBound = true;
+    isAdminUser().then((ok) => {
+      const btn = document.getElementById("btnEditHomePicks");
+      if (btn) btn.style.display = ok ? "inline-flex" : "none";
+    });
+    root.querySelector("#btnEditHomePicks")?.addEventListener("click", () => {
+      location.hash = "#admin";
+      setTimeout(() => {
+        const scope = root.parentElement || root;
+        const btn = scope.querySelector("#adminTabs button[data-tab='home']");
+        if (btn) btn.click();
+      }, 100);
     });
   }
 
   // Enter key in input triggers analyze
-  $("#homeYoutubeUrl")?.addEventListener("keydown", (e) => {
+  root.querySelector("#homeYoutubeUrl")?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") analyzeHomeUrl();
   });
 
   loadHomeLibrary().then(() => {
+    if (localToken !== window.App?.routeToken || !isHomeActive()) return;
     renderCollectionsSection();
   });
   initHeroAutoplay();
+  startHomeCarousel();
 }
 
 function initHeroAutoplay() {
@@ -913,7 +1279,7 @@ function initHeroAutoplay() {
 }
 
 // Expose entrypoint for main.js
-export { setupHome, analyzeHomeUrl };
+export { setupHome, analyzeHomeUrl, startHomeCarousel, stopHomeCarousel };
 
 
 

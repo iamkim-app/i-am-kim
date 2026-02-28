@@ -1,6 +1,10 @@
 ﻿import dotenv from "dotenv";
 import http from "http";
 import summarizeHandler from "./summarize.js";
+import placesNearbyHandler from "./places-nearby.js";
+import placesPhotoHandler from "./places-photo.js";
+import idolSpotsSyncPhotosHandler from "./idol-spots-sync-photos.js";
+import placesTextSearchHandler from "./places-textsearch.js";
 dotenv.config({ path: ".env.local" });
 
 
@@ -70,6 +74,69 @@ const server = http.createServer(async (req, res) => {
     } catch (e) {
       return send(res, 500, {
         error: "Summarization failed.",
+        details: String(e?.message || e),
+      });
+    }
+  }
+
+  if (req.url === "/api/idol-spots-sync-photos" && req.method === "POST") {
+    try {
+      req.body = await readJson(req).catch(() => ({}));
+
+      if (!res.status) {
+        res.status = (code) => {
+          res.statusCode = code;
+          return res;
+        };
+      }
+
+      if (!res.json) {
+        res.json = (obj) => {
+          if (!res.getHeader("Content-Type")) {
+            res.setHeader("Content-Type", "application/json; charset=utf-8");
+          }
+          res.end(JSON.stringify(obj));
+          return res;
+        };
+      }
+
+      return await idolSpotsSyncPhotosHandler(req, res);
+    } catch (e) {
+      return send(res, 500, {
+        error: "Idol spots sync failed.",
+        details: String(e?.message || e),
+      });
+    }
+  }
+
+  if (req.url?.startsWith("/api/places-textsearch") && req.method === "GET") {
+    try {
+      return await placesTextSearchHandler(req, res);
+    } catch (e) {
+      return send(res, 500, {
+        error: "Places textsearch failed.",
+        details: String(e?.message || e),
+      });
+    }
+  }
+
+  if (req.url?.startsWith("/api/places-nearby") && req.method === "GET") {
+    try {
+      return await placesNearbyHandler(req, res);
+    } catch (e) {
+      return send(res, 500, {
+        error: "Places nearby failed.",
+        details: String(e?.message || e),
+      });
+    }
+  }
+
+  if (req.url?.startsWith("/api/places-photo") && req.method === "GET") {
+    try {
+      return await placesPhotoHandler(req, res);
+    } catch (e) {
+      return send(res, 500, {
+        error: "Places photo failed.",
         details: String(e?.message || e),
       });
     }

@@ -98,6 +98,14 @@ function normalizeSection(raw) {
   return "";
 }
 
+const K_CATEGORY_SECTION_MAP = {
+  kpop: "K-POP Now",
+  food: "K-FOOD",
+  beauty: "K-BEAUTY",
+  deals: "Deals",
+  shopping: "Shopping",
+};
+
 function isStandaloneMode() {
   try {
     if (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) {
@@ -279,7 +287,61 @@ async function loadSupabaseItems(mode) {
   }
 }
 
-async function isAdmin() {
+export async function fetchKPosts(category) {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  // TODO (migration plan):
+  // 1) Create `k_posts` table with columns: id, category, title, summary, link, status, created_at.
+  // 2) Backfill from `korea_now_posts` where section = 'K-POP Now' -> category 'kpop'.
+  // 3) Update fetchKPosts to query `k_posts` by category.
+
+  const section = K_CATEGORY_SECTION_MAP[String(category || "").toLowerCase()] || "K-POP Now";
+
+  try {
+    const { data, error } = await supabase
+      .from("korea_now_posts")
+      .select("id,section,tag,title,summary,link,created_at,status")
+      .eq("status", "active")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+
+    return (data || [])
+      .map((row) => {
+        const normalized = normalizeSection(row.section) || row.section;
+        return {
+          id: row.id,
+          section: normalized,
+          tag: row.tag || normalized,
+          title: row.title || "Untitled",
+          summary: row.summary || "",
+          link: row.link || "",
+        };
+      })
+      .filter((row) => row.section === section);
+  } catch (err) {
+    console.warn("[korea-now] fetchKPosts failed.", err);
+    return [];
+  }
+}
+
+export async function fetchIdolSpots() {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase
+      .from("idol_spots")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return data || [];
+  } catch (err) {
+    console.warn("[korea-now] fetchIdolSpots failed.", err);
+    return [];
+  }
+}
+
+export async function isAdmin() {
   const supabase = getSupabase();
   if (!supabase) return false;
   try {
@@ -300,6 +362,8 @@ async function isAdmin() {
   }
 }
 
+let K_ADMIN_REFRESH = null;
+
 function ensureAdminModal() {
   if ($("#nowAdminModal")) return;
   const modal = document.createElement("div");
@@ -319,6 +383,9 @@ function ensureAdminModal() {
           <select id="nowFormSection" class="input">
             ${FILTERS.map((s) => `<option value="${s}">${s}</option>`).join("")}
             <option value="K-POP Now">K-POP Now</option>
+            <option value="K-FOOD">K-FOOD</option>
+            <option value="K-BEAUTY">K-BEAUTY</option>
+            <option value="Shopping">Shopping</option>
           </select>
         </label>
         <label class="field">
@@ -354,7 +421,18 @@ function ensureAdminModal() {
   });
 }
 
-async function handleCreatePost(refresh, mode) {
+async function handleAdminSaveClick() {
+  const modal = $("#nowAdminModal");
+  const mode = modal?.dataset?.mode || NOW_STATE.mode;
+  const category = modal?.dataset?.category || "";
+  if (mode === "k") {
+    await handleCreatePost(K_ADMIN_REFRESH || (() => {}), "k", category);
+    return;
+  }
+  await handleCreatePost(NOW_STATE.refresh || (() => {}), NOW_STATE.mode);
+}
+
+async function handleCreatePost(refresh, mode, category) {
   const supabase = getSupabase();
   const status = $("#nowFormStatus");
   if (!supabase) {
@@ -384,6 +462,10 @@ async function handleCreatePost(refresh, mode) {
   try {
     if (mode === "kpop") {
       section = "K-POP Now";
+    }
+    if (mode === "k") {
+      const mapped = K_CATEGORY_SECTION_MAP[String(category || "").toLowerCase()];
+      if (mapped) section = mapped;
     }
     const payload = {
       section,
@@ -450,6 +532,19 @@ function bindCardActions(refresh) {
   bindHost("#nowCardsKpop");
 }
 
+export async function deleteKPost(id) {
+  const supabase = getSupabase();
+  if (!supabase || !id) return false;
+  try {
+    const { error } = await supabase.from("korea_now_posts").delete().eq("id", id);
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.warn("[korea-now] Delete failed.", err);
+    return false;
+  }
+}
+
 function ensureMyKoreaUI(page) {
   if (!page || $("#nowChips")) return;
   const section = document.createElement("section");
@@ -509,6 +604,35 @@ function setAdminSectionDefaults(mode) {
   }
 }
 
+function setAdminSectionDefaultsForCategory(category) {
+  const sectionEl = $("#nowFormSection");
+  if (!sectionEl) return;
+  const mapped = K_CATEGORY_SECTION_MAP[String(category || "").toLowerCase()];
+  if (mapped) {
+    sectionEl.value = mapped;
+    sectionEl.disabled = true;
+  } else {
+    sectionEl.disabled = false;
+  }
+}
+
+export function openKAdminModal(category) {
+  ensureAdminModal();
+  const modal = $("#nowAdminModal");
+  if (!modal) return;
+  modal.dataset.mode = "k";
+  modal.dataset.category = String(category || "kpop").toLowerCase();
+  modal.hidden = false;
+  const status = $("#nowFormStatus");
+  if (status) status.textContent = "";
+  setAdminSectionDefaultsForCategory(category);
+}
+
+export function bindKAdminHandlers(refresh) {
+  K_ADMIN_REFRESH = refresh;
+  ensureAdminModal();
+}
+
 export async function initKoreaNow(options = {}) {
   const mode = options?.mode === "kpop" ? "kpop" : "mykorea";
   NOW_STATE.mode = mode;
@@ -563,7 +687,11 @@ export async function initKoreaNow(options = {}) {
       btn.addEventListener("click", () => {
         const modeForBtn = btn.dataset.mode === "kpop" ? "kpop" : "mykorea";
         const modal = $("#nowAdminModal");
-        if (modal) modal.hidden = false;
+        if (modal) {
+          modal.hidden = false;
+          modal.dataset.mode = modeForBtn;
+          modal.dataset.category = "";
+        }
         const status = $("#nowFormStatus");
         if (status) status.textContent = "";
         setAdminSectionDefaults(modeForBtn);
@@ -573,9 +701,7 @@ export async function initKoreaNow(options = {}) {
     const saveBtn = $("#nowFormSave");
     if (saveBtn && saveBtn.dataset.bound !== "1") {
       saveBtn.dataset.bound = "1";
-      saveBtn.addEventListener("click", () =>
-        handleCreatePost(NOW_STATE.refresh || refresh, NOW_STATE.mode)
-      );
+      saveBtn.addEventListener("click", handleAdminSaveClick);
     }
   }
 

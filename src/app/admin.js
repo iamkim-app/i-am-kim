@@ -26,6 +26,7 @@ function ensureAdminUI() {
         <button class="btn btn--ghost btn--small is-active" data-tab="post">Post Reports</button>
         <button class="btn btn--ghost btn--small" data-tab="comment">Comment Reports</button>
         <button class="btn btn--ghost btn--small" data-tab="users">User Management</button>
+        <button class="btn btn--ghost btn--small" data-tab="home">Home Picks</button>
         </div>
         <button class="btn btn--ghost btn--small" id="adminRefresh" type="button">Refresh</button>
       </div>
@@ -41,6 +42,10 @@ function ensureAdminUI() {
 
 let ADMIN_REFRESH_TIMER = null;
 let ADMIN_REDIRECT_TIMER = null;
+let postReportsLoading = false;
+let commentReportsLoading = false;
+let userManagementLoading = false;
+let homePicksLoading = false;
 
 function clearAdminRefreshTimer() {
   if (ADMIN_REFRESH_TIMER) {
@@ -69,12 +74,12 @@ function showNotAuthorizedAndRedirect() {
   }, 1000);
 }
 
-async function loadAdminPanel() {
+async function loadAdminPanel(routeToken) {
   const panel = $("#adminPanel");
   const status = $("#adminStatus");
   if (!panel || !status) return;
+  if (routeToken && routeToken !== window.App?.routeToken) return;
   status.textContent = "loading";
-  panel.innerHTML = "";
 
   if (!supabase) {
     status.textContent = "not authorized";
@@ -103,21 +108,125 @@ async function loadAdminPanel() {
       return;
     }
 
+    if (routeToken && routeToken !== window.App?.routeToken) return;
     status.textContent = "authorized";
-    renderAdminTab("post");
+    const active = $("#adminTabs .is-active")?.dataset?.tab || "post";
+    renderAdminTab(active);
 
-    $("#adminTabs")?.addEventListener("click", (e) => {
-      const btn = e.target?.closest?.("button[data-tab]");
-      if (!btn) return;
-      $$("#adminTabs button").forEach((b) => b.classList.toggle("is-active", b === btn));
-      renderAdminTab(btn.dataset.tab || "post");
-    });
+    if (!panel.dataset.bound) {
+      panel.dataset.bound = "1";
+      panel.addEventListener("click", async (e) => {
+        const tabBtn = e.target?.closest?.("button[data-tab]");
+        if (tabBtn) {
+          $$("#adminTabs button").forEach((b) => b.classList.toggle("is-active", b === tabBtn));
+          renderAdminTab(tabBtn.dataset.tab || "post");
+          return;
+        }
 
-    $("#adminRefresh")?.addEventListener("click", () => {
-      const active = $("#adminTabs .is-active")?.dataset?.tab || "post";
-      renderAdminTab(active);
-      loadBanStatus();
-    });
+        const refreshBtn = e.target?.closest?.("#adminRefresh");
+        if (refreshBtn) {
+          const active = $("#adminTabs .is-active")?.dataset?.tab || "post";
+          renderAdminTab(active);
+          loadBanStatus();
+          return;
+        }
+
+        const saveBtn = e.target?.closest?.("#adminSaveHomePicks");
+        if (saveBtn) {
+          await saveHomePicksAdmin();
+          return;
+        }
+
+        const actionBtn = e.target?.closest?.("[data-action]");
+        if (!actionBtn) return;
+        if (actionBtn.dataset.disabled === "1") return;
+
+        const action = actionBtn.dataset.action;
+        if (action === "ban-24h" || action === "ban-7d" || action === "ban-perm" || action === "unban") {
+          const userId = $("#banUserId")?.value?.trim();
+          if (!userId) return;
+          if (action === "unban") {
+            await unbanUser(userId);
+          } else {
+            await banUser(userId, action);
+          }
+          return;
+        }
+
+        const row = actionBtn.closest(".adminTable__row");
+        if (!row) return;
+        const isCommentTable = !!actionBtn.closest(".adminTable--comment");
+        const kind = isCommentTable ? "comment" : "post";
+        const id = row?.dataset?.id;
+        const isMissing = row?.dataset?.missing === "1";
+
+        if (kind === "post") {
+          if (action === "copy-user") {
+            const userId = row.querySelector(".adminUserId")?.textContent?.trim();
+            if (userId) {
+              try {
+                await navigator.clipboard.writeText(userId);
+                toast("Copied");
+              } catch (err) {
+                console.warn("[admin] Clipboard failed.", err);
+              }
+            }
+            return;
+          }
+          if (action === "ban-24h") {
+            const userId = row.querySelector(".adminUserId")?.textContent?.trim();
+            if (!userId) return;
+            const input = $("#banUserId");
+            if (input) input.value = userId;
+            await banUser(userId, "ban-24h");
+            return;
+          }
+          if (action === "clear-reports") {
+            const ok = await clearPostReports(isMissing ? null : Number(id));
+            if (ok) renderAdminTab("post");
+            return;
+          }
+          if (action === "quarantine") await updateModerationStatus(Number(id), "quarantined");
+          if (action === "hide") await updateModerationStatus(Number(id), "hidden", "Admin hidden");
+          if (action === "restore") await updateModerationStatus(Number(id), "active");
+          return;
+        }
+
+        if (action === "clear-reports") {
+          const ok = await clearCommentReports(id ? Number(id) : null);
+          if (ok) renderAdminTab("comment");
+          return;
+        }
+        if (action === "ban-24h") {
+          const userId = row.querySelector(".adminUserId")?.textContent?.trim();
+          if (!userId) return;
+          const ok = confirm("Ban this user for 24h?");
+          if (!ok) return;
+          await banUser(userId, "ban-24h");
+          renderAdminTab("comment");
+          return;
+        }
+        if (action === "quarantine") {
+          const ok = await updateCommentModerationStatus(Number(id), "quarantined", null, "Quarantined");
+          if (ok) renderAdminTab("comment");
+          return;
+        }
+        if (action === "hide") {
+          const ok = await updateCommentModerationStatus(
+            Number(id),
+            "hidden",
+            "Admin hidden",
+            "Hidden"
+          );
+          if (ok) renderAdminTab("comment");
+          return;
+        }
+        if (action === "restore") {
+          const ok = await updateCommentModerationStatus(Number(id), "active", null, "Restored");
+          if (ok) renderAdminTab("comment");
+        }
+      });
+    }
 
     if (!ADMIN_REFRESH_TIMER) {
       ADMIN_REFRESH_TIMER = setInterval(() => {
@@ -135,16 +244,31 @@ async function loadAdminPanel() {
 async function renderAdminTab(tab) {
   const panel = $("#adminPanel");
   if (!panel) return;
+  const panelHome = $("#adminPanelHome");
+  const panelDynamic = $("#adminPanelDynamic");
+  if (tab === "home") {
+    if (homePicksLoading) return;
+    homePicksLoading = true;
+    if (panelHome) panelHome.hidden = false;
+    if (panelDynamic) panelDynamic.hidden = true;
+    await renderHomePicksAdmin();
+    homePicksLoading = false;
+    return;
+  }
+  if (panelHome) panelHome.hidden = true;
+  if (panelDynamic) panelDynamic.hidden = false;
   if (tab === "users") {
-    panel.innerHTML = `
+    if (userManagementLoading) return;
+    userManagementLoading = true;
+    panelDynamic.innerHTML = `
       <div class="adminCard">
         <div class="label">User ID</div>
         <input class="input" id="banUserId" placeholder="uuid" />
         <div class="row">
-          <button class="btn btn--ghost btn--small" data-action="ban-24h">Ban 24h</button>
-          <button class="btn btn--ghost btn--small" data-action="ban-7d">Ban 7d</button>
-          <button class="btn btn--ghost btn--small" data-action="ban-perm">Ban permanent</button>
-          <button class="btn btn--ghost btn--small btn--danger" data-action="unban">Unban</button>
+          <button class="btn btn--ghost btn--small" data-action="ban-24h" type="button">Ban 24h</button>
+          <button class="btn btn--ghost btn--small" data-action="ban-7d" type="button">Ban 7d</button>
+          <button class="btn btn--ghost btn--small" data-action="ban-perm" type="button">Ban permanent</button>
+          <button class="btn btn--ghost btn--small btn--danger" data-action="unban" type="button">Unban</button>
         </div>
       </div>
       <div class="adminCard">
@@ -152,33 +276,125 @@ async function renderAdminTab(tab) {
         <div class="adminBans" id="adminActiveBans"></div>
       </div>
     `;
-    panel.querySelectorAll("[data-action]").forEach((btn) => {
-      btn.addEventListener("click", async () => {
-      if (btn.dataset.disabled === "1") return;
-        const userId = $("#banUserId")?.value?.trim();
-        if (!userId) return;
-        if (btn.dataset.action === "unban") {
-          console.log("UNBAN CLICK", userId);
-          await unbanUser(userId);
-        } else {
-          await banUser(userId, btn.dataset.action);
-        }
-      });
-    });
     renderActiveBans();
+    userManagementLoading = false;
     return;
   }
 
   if (tab === "comment") {
+    if (commentReportsLoading) return;
+    commentReportsLoading = true;
     const rows = await loadReportAggregates("comment_reports", "comment_id");
-    panel.innerHTML = await renderReportsTable(rows, "comment");
-    bindReportActions("comment");
+    panelDynamic.innerHTML = await renderReportsTable(rows, "comment");
+    commentReportsLoading = false;
     return;
   }
 
+  if (postReportsLoading) return;
+  postReportsLoading = true;
   const rows = await loadReportAggregates("post_reports", "post_id");
-  panel.innerHTML = await renderReportsTable(rows, "post");
-  bindReportActions("post");
+  panelDynamic.innerHTML = await renderReportsTable(rows, "post");
+  postReportsLoading = false;
+}
+
+async function renderHomePicksAdmin() {
+  const host = $("#adminHomePicks");
+  if (!host) return;
+  let draft = null;
+  try {
+    const raw = localStorage.getItem("admin_home_picks_draft");
+    draft = raw ? JSON.parse(raw) : null;
+  } catch {
+    draft = null;
+  }
+  const applyValues = (rows, preferDraft = true) => {
+    const map = new Map((rows || []).map((r) => [Number(r.slot), r]));
+    host.querySelectorAll("[data-slot][data-field]").forEach((input) => {
+      const slot = Number(input.dataset.slot);
+      const field = input.dataset.field;
+      const base = map.get(slot) || {};
+      const row = preferDraft && draft?.[slot] ? { ...base, ...draft[slot] } : base;
+      if (field === "source") {
+        input.value = row.source || "k_posts";
+      } else {
+        input.value = row[field] || "";
+      }
+    });
+  };
+
+  // restore draft immediately on load
+  if (draft) applyValues([], true);
+
+  if (!supabase) {
+    host.querySelector(".adminHomePicksError")?.remove();
+    host.insertAdjacentHTML(
+      "afterbegin",
+      `<div class="muted small adminHomePicksError">Supabase not configured.</div>`
+    );
+    return;
+  }
+  let data = [];
+  try {
+    const resp = await supabase.from("home_featured").select("*").order("slot");
+    if (resp.error) throw resp.error;
+    data = resp.data || [];
+    host.querySelector(".adminHomePicksError")?.remove();
+  } catch (err) {
+    host.querySelector(".adminHomePicksError")?.remove();
+    host.insertAdjacentHTML(
+      "afterbegin",
+      `<div class="muted small adminHomePicksError">Failed to load home picks.</div>`
+    );
+  }
+
+  // apply server data, draft wins if present
+  applyValues(data, true);
+  if (host.dataset.bound !== "1") {
+    host.dataset.bound = "1";
+    host.querySelectorAll("[data-slot][data-field]").forEach((input) => {
+    input.addEventListener("input", () => {
+      const draftNext = {};
+      host.querySelectorAll("[data-slot][data-field]").forEach((el) => {
+        const slot = Number(el.dataset.slot);
+        const field = el.dataset.field;
+        if (!draftNext[slot]) draftNext[slot] = {};
+        draftNext[slot][field] = String(el.value || "");
+      });
+      try {
+        localStorage.setItem("admin_home_picks_draft", JSON.stringify(draftNext));
+      } catch {}
+    });
+  });
+  }
+}
+
+async function saveHomePicksAdmin() {
+  if (!supabase) return;
+  const inputs = Array.from(document.querySelectorAll("#adminHomePicks [data-slot][data-field]"));
+  const bySlot = new Map();
+  inputs.forEach((el) => {
+    const slot = Number(el.dataset.slot);
+    const field = el.dataset.field;
+    if (!bySlot.has(slot)) bySlot.set(slot, {});
+    bySlot.get(slot)[field] = String(el.value || "").trim();
+  });
+  const rows = Array.from(bySlot.entries()).map(([slot, row]) => ({
+    slot,
+    source: row.source || "",
+    source_id: row.source_id || "",
+    title_override: row.title_override || null,
+    subtitle_override: row.subtitle_override || null,
+    link_hash: row.link_hash || null,
+  }));
+  const { error } = await supabase.from("home_featured").upsert(rows, { onConflict: "slot" });
+  if (error) {
+    toast(`${error.code || "ERR"} ${error.message || "Save failed"}`);
+    return;
+  }
+  try {
+    localStorage.removeItem("admin_home_picks_draft");
+  } catch {}
+  toast("Saved");
 }
 
 async function loadReportAggregates(table, idCol) {
@@ -268,7 +484,7 @@ async function renderActiveBans() {
               </div>
             </div>
             <div class="adminBanActions">
-              <button class="btn btn--ghost btn--small btn--danger" data-action="unban">Unban</button>
+              <button class="btn btn--ghost btn--small btn--danger" data-action="unban" type="button">Unban</button>
             </div>
           </div>
         `;
