@@ -135,8 +135,17 @@ async function loadAdminPanel() {
 async function renderAdminTab(tab) {
   const panel = $("#adminPanel");
   if (!panel) return;
+  const panelHome = $("#adminPanelHome");
+  const panelDynamic = $("#adminPanelDynamic");
+  if (tab === "home") {
+    if (panelHome) panelHome.hidden = false;
+    if (panelDynamic) panelDynamic.hidden = true;
+    return;
+  }
+  if (panelHome) panelHome.hidden = true;
+  if (panelDynamic) panelDynamic.hidden = false;
   if (tab === "users") {
-    panel.innerHTML = `
+    panelDynamic.innerHTML = `
       <div class="adminCard">
         <div class="label">User ID</div>
         <input class="input" id="banUserId" placeholder="uuid" />
@@ -152,7 +161,7 @@ async function renderAdminTab(tab) {
         <div class="adminBans" id="adminActiveBans"></div>
       </div>
     `;
-    panel.querySelectorAll("[data-action]").forEach((btn) => {
+    panelDynamic.querySelectorAll("[data-action]").forEach((btn) => {
       btn.addEventListener("click", async () => {
       if (btn.dataset.disabled === "1") return;
         const userId = $("#banUserId")?.value?.trim();
@@ -171,13 +180,13 @@ async function renderAdminTab(tab) {
 
   if (tab === "comment") {
     const rows = await loadReportAggregates("comment_reports", "comment_id");
-    panel.innerHTML = await renderReportsTable(rows, "comment");
+    panelDynamic.innerHTML = await renderReportsTable(rows, "comment");
     bindReportActions("comment");
     return;
   }
 
   const rows = await loadReportAggregates("post_reports", "post_id");
-  panel.innerHTML = await renderReportsTable(rows, "post");
+  panelDynamic.innerHTML = await renderReportsTable(rows, "post");
   bindReportActions("post");
 }
 
