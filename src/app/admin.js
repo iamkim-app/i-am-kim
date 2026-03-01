@@ -5,9 +5,26 @@ const { $, $$, supabase, toast, escapeHtml, truncateText, navigateToHome } = win
 
 /* ----------------------------- ADMIN ----------------------------------- */
 
+function getAdminRoot() {
+  return (
+    document.querySelector("#page-admin:not([data-admin-duplicate])") ||
+    document.querySelector("#page-admin")
+  );
+}
+
+function adminQuery(selector) {
+  const root = getAdminRoot();
+  return root ? root.querySelector(selector) : null;
+}
+
+function adminQueryAll(selector) {
+  const root = getAdminRoot();
+  return root ? root.querySelectorAll(selector) : [];
+}
+
 function ensureAdminUI() {
   const main = $(".main");
-  if (!main || $("#page-admin")) return;
+  if (!main || getAdminRoot()) return;
   const footer = main.querySelector(".footer");
   const section = document.createElement("section");
   section.className = "page";
@@ -55,8 +72,8 @@ function clearAdminState(message = "Not authorized.") {
     clearTimeout(ADMIN_REDIRECT_TIMER);
     ADMIN_REDIRECT_TIMER = null;
   }
-  const panel = $("#adminPanel");
-  const status = $("#adminStatus");
+  const panel = adminQuery("#adminPanel");
+  const status = adminQuery("#adminStatus");
   if (status) status.textContent = "not authorized";
   if (panel) panel.innerHTML = `<div class="muted small">${message}</div>`;
 }
@@ -70,8 +87,8 @@ function showNotAuthorizedAndRedirect() {
 }
 
 async function loadAdminPanel() {
-  const panel = $("#adminPanel");
-  const status = $("#adminStatus");
+  const panel = adminQuery("#adminPanel");
+  const status = adminQuery("#adminStatus");
   if (!panel || !status) return;
   status.textContent = "loading";
   panel.innerHTML = "";
@@ -106,25 +123,20 @@ async function loadAdminPanel() {
     status.textContent = "authorized";
     renderAdminTab("post");
 
-    $("#adminTabs")?.addEventListener("click", (e) => {
+    adminQuery("#adminTabs")?.addEventListener("click", (e) => {
       const btn = e.target?.closest?.("button[data-tab]");
       if (!btn) return;
-      $$("#adminTabs button").forEach((b) => b.classList.toggle("is-active", b === btn));
+      adminQueryAll("#adminTabs button").forEach((b) =>
+        b.classList.toggle("is-active", b === btn)
+      );
       renderAdminTab(btn.dataset.tab || "post");
     });
 
-    $("#adminRefresh")?.addEventListener("click", () => {
-      const active = $("#adminTabs .is-active")?.dataset?.tab || "post";
+    adminQuery("#adminRefresh")?.addEventListener("click", () => {
+      const active = adminQuery("#adminTabs .is-active")?.dataset?.tab || "post";
       renderAdminTab(active);
       loadBanStatus();
     });
-
-    if (!ADMIN_REFRESH_TIMER) {
-      ADMIN_REFRESH_TIMER = setInterval(() => {
-        const active = $("#adminTabs .is-active")?.dataset?.tab || "post";
-        renderAdminTab(active);
-      }, 10000);
-    }
   } catch (err) {
     console.warn("[admin] Load failed.", err);
     status.textContent = "not authorized";
@@ -133,10 +145,10 @@ async function loadAdminPanel() {
 }
 
 async function renderAdminTab(tab) {
-  const panel = $("#adminPanel");
+  const panel = adminQuery("#adminPanel");
   if (!panel) return;
-  const panelHome = $("#adminPanelHome");
-  const panelDynamic = $("#adminPanelDynamic");
+  const panelHome = adminQuery("#adminPanelHome");
+  const panelDynamic = adminQuery("#adminPanelDynamic");
   if (tab === "home") {
     if (panelHome) panelHome.hidden = false;
     if (panelDynamic) panelDynamic.hidden = true;
@@ -144,6 +156,7 @@ async function renderAdminTab(tab) {
   }
   if (panelHome) panelHome.hidden = true;
   if (panelDynamic) panelDynamic.hidden = false;
+  if (!panelDynamic) return;
   if (tab === "users") {
     panelDynamic.innerHTML = `
       <div class="adminCard">
@@ -164,7 +177,7 @@ async function renderAdminTab(tab) {
     panelDynamic.querySelectorAll("[data-action]").forEach((btn) => {
       btn.addEventListener("click", async () => {
       if (btn.dataset.disabled === "1") return;
-        const userId = $("#banUserId")?.value?.trim();
+        const userId = adminQuery("#banUserId")?.value?.trim();
         if (!userId) return;
         if (btn.dataset.action === "unban") {
           console.log("UNBAN CLICK", userId);
@@ -180,12 +193,14 @@ async function renderAdminTab(tab) {
 
   if (tab === "comment") {
     const rows = await loadReportAggregates("comment_reports", "comment_id");
+    if (!panelDynamic) return;
     panelDynamic.innerHTML = await renderReportsTable(rows, "comment");
     bindReportActions("comment");
     return;
   }
 
   const rows = await loadReportAggregates("post_reports", "post_id");
+  if (!panelDynamic) return;
   panelDynamic.innerHTML = await renderReportsTable(rows, "post");
   bindReportActions("post");
 }
@@ -243,7 +258,7 @@ async function loadReportAggregates(table, idCol) {
 }
 
 async function renderActiveBans() {
-  const host = $("#adminActiveBans");
+  const host = adminQuery("#adminActiveBans");
   if (!host) return;
   if (!supabase) {
     host.innerHTML = `<div class="muted small">Supabase is not set.</div>`;
@@ -288,7 +303,7 @@ async function renderActiveBans() {
         const row = btn.closest(".adminBanRow");
         const userId = row?.dataset?.userId?.trim();
         if (!userId) return;
-        const input = $("#banUserId");
+        const input = adminQuery("#banUserId");
         if (input) input.value = userId;
         await unbanUser(userId);
         renderActiveBans();
@@ -456,7 +471,7 @@ async function renderReportsTable(rows, kind) {
 }
 
 function bindReportActions(kind) {
-  const panel = $("#adminPanel");
+  const panel = adminQuery("#adminPanel");
   if (!panel) return;
   panel.querySelectorAll("[data-action]").forEach((btn) => {
     btn.addEventListener("click", async () => {
@@ -492,7 +507,7 @@ function bindReportActions(kind) {
             console.warn("No userId");
             return;
           }
-          const input = $("#banUserId");
+          const input = adminQuery("#banUserId");
           if (input) input.value = userId;
           await banUser(userId, "ban-24h");
           return;
