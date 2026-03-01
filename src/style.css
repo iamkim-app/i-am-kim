@@ -3619,11 +3619,11 @@ input[type="file"]:disabled{
   width: 34px;
   height: 34px;
   border-radius: 999px;
-  background: url("/icons/icon-192.png") center/contain no-repeat;
+  background: url("/logo.svg") center/contain no-repeat;
 }
 
 .mobileTopbar__mark.brand__mark{
-  background: url("/icons/icon-192.png") center/contain no-repeat;
+  background: url("/logo.svg") center/contain no-repeat;
 }
   .mobileTopbar__avatar{
     width: 32px;

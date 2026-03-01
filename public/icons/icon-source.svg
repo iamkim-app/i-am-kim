@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <clipPath id="k-clip">
+      <path d="M256 192h176v256l224-256h224L608 512l272 320H656L432 576v256H256z"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#k-clip)">
+    <rect x="0" y="0" width="1024" height="512" fill="#E5484D"/>
+    <rect x="0" y="512" width="1024" height="512" fill="#2563EB"/>
+  </g>
+</svg>

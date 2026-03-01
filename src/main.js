@@ -413,7 +413,7 @@ function ensureMobileTopbar() {
     bar.innerHTML = `
     <button class="mobileTopbar__btn mobileTopbar__iconBtn" id="btnMobileMenu" type="button" aria-label="Menu">${mobileIconSvg("menu")}</button>
     <button class="mobileTopbar__brand" id="mobileLogo" type="button" aria-label="I AM KIM">
-      <img class="brandLogo" src="/logo.png" alt="" />
+      <img class="brandLogo" src="/logo.svg" alt="" />
       <span class="brandWord">I AM KIM</span>
     </button>
     <div class="mobileTopbar__actions">
@@ -2713,7 +2713,7 @@ function replaceBrandMarkWithLogo() {
   const mark = document.querySelector(".brand__mark");
   if (!mark || mark.tagName === "IMG") return;
   const img = document.createElement("img");
-  img.src = "/icons/icon-192.png";
+  img.src = "/logo.svg";
   img.alt = "I AM KIM";
   img.className = "brandLogo";
   mark.replaceWith(img);
