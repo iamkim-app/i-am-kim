@@ -1,6 +1,37 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
-  <circle cx="64" cy="64" r="44" stroke="#2563EB" stroke-width="10" stroke-linecap="round"/>
-  <path d="M64 22a42 42 0 0 1 0 84c12.2-9.1 19.8-23.5 19.8-40S76.2 31.1 64 22z" fill="#E5484D"/>
-  <path d="M64 106a42 42 0 0 1 0-84c-12.2 9.1-19.8 23.5-19.8 40S51.8 96.9 64 106z" fill="#2563EB"/>
-  <circle cx="64" cy="64" r="18" fill="#fff" fill-opacity="0.06"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <defs>
+    <linearGradient id="redFill" x1="72" y1="48" x2="186" y2="152" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF9AA2"></stop>
+      <stop offset="0.42" stop-color="#F36B74"></stop>
+      <stop offset="1" stop-color="#E5484D"></stop>
+    </linearGradient>
+
+    <linearGradient id="blueFill" x1="74" y1="108" x2="190" y2="214" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8BB8FF"></stop>
+      <stop offset="0.42" stop-color="#4E86F8"></stop>
+      <stop offset="1" stop-color="#2563EB"></stop>
+    </linearGradient>
+
+    <clipPath id="markClip">
+      <circle cx="128" cy="128" r="92"></circle>
+    </clipPath>
+  </defs>
+
+  <!-- top red -->
+  <path fill="url(#redFill)" transform="rotate(-90 128 128)" d="M128 36
+       A92 92 0 0 1 128 220
+       A46 46 0 0 0 128 128
+       A46 46 0 0 1 128 36Z"></path>
+
+  <!-- bottom blue -->
+  <path fill="url(#blueFill)" transform="rotate(90 128 128)" d="M128 36
+       A92 92 0 0 1 128 220
+       A46 46 0 0 0 128 128
+       A46 46 0 0 1 128 36Z"></path>
+
+  <!-- subtle premium highlight -->
+  <g clip-path="url(#markClip)">
+    <ellipse cx="94" cy="82" rx="58" ry="26" transform="rotate(-18 94 82)" fill="white" opacity="0.20"></ellipse>
+    <ellipse cx="166" cy="176" rx="50" ry="22" transform="rotate(14 166 176)" fill="white" opacity="0.10"></ellipse>
+  </g>
 </svg>
