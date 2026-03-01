@@ -125,6 +125,7 @@ function timeAgo(iso) {
 function renderCommunityFeed(posts, currentUserId, likeCounts = {}, myLikes = new Set(), commentsMap = {}) {
   const feed = $("#communityFeed");
   if (!feed) return;
+  feed.classList.add("community-feed-bleed", "community-posts-bleed");
 
   const list = Array.isArray(posts) ? posts : [];
   if (!list.length) {
@@ -184,9 +185,10 @@ function renderCommunityFeed(posts, currentUserId, likeCounts = {}, myLikes = ne
         : "";
 
       return `
-      <article class="postCard" data-id="${p.id}">
-        <div class="postHead">
-          <div class="postUser">
+      <article class="postCard community-post-card" data-id="${p.id}">
+        <div class="community-post-inner">
+          <div class="postHead">
+            <div class="postUser">
             <div class="avatar">${avatar}</div>
             <div class="postUser__text">
               <div class="postUser__name">${name}</div>
@@ -197,32 +199,33 @@ function renderCommunityFeed(posts, currentUserId, likeCounts = {}, myLikes = ne
             </div>
           </div>
 
-        <div class="postActions">
-          <button class="btn btn--ghost btn--small ${canInteract ? "" : "is-disabled"}" data-action="report" type="button" data-disabled="${canInteract ? "0" : "1"}" style="${canInteract ? "" : "opacity:0.5"}">Report</button>
-          ${isMine ? `<button class="btn btn--ghost btn--small btn--danger" data-action="delete" type="button">Delete</button>` : ""}
-        </div>
-        </div>
-
-        ${title ? `<h3 class="postTitle">${title}</h3>` : ""}
-        ${body ? `<div class="postBody">${body}</div>` : ""}
-        ${imgBlock}
-
-        <div class="postActions">
-          <button class="btn btn--ghost btn--small ${liked ? "is-active" : ""} ${canInteract ? "" : "is-disabled"}" data-action="like" type="button" data-disabled="${canInteract ? "0" : "1"}" style="${canInteract ? "" : "opacity:0.5"}">
-            ${liked ? "Liked" : "Like"} ${likeCount}
-          </button>
-        </div>
-
-        <div class="comments">
-          <div class="commentsHead">Comments</div>
-          <div class="commentsList">
-            ${commentsHtml || `<div class="muted small">No comments yet.</div>`}
+          <div class="postActions">
+            <button class="btn btn--ghost btn--small ${canInteract ? "" : "is-disabled"}" data-action="report" type="button" data-disabled="${canInteract ? "0" : "1"}" style="${canInteract ? "" : "opacity:0.5"}">Report</button>
+            ${isMine ? `<button class="btn btn--ghost btn--small btn--danger" data-action="delete" type="button">Delete</button>` : ""}
           </div>
-          <div class="commentForm">
-            <textarea class="textarea commentInput" rows="2" placeholder="Write a comment..." ${canInteract ? "" : "disabled"}></textarea>
-            <button class="btn btn--primary btn--small ${canInteract ? "" : "is-disabled"}" data-action="send-comment" type="button" ${canInteract ? "" : ""} data-disabled="${canInteract ? "0" : "1"}">Send</button>
           </div>
-          ${canInteract ? "" : `<div class="muted small">${AUTH_STATE.isBanned ? "Account suspended." : "Please sign in to comment."}</div>`}
+
+          ${title ? `<h3 class="postTitle">${title}</h3>` : ""}
+          ${body ? `<div class="postBody">${body}</div>` : ""}
+          ${imgBlock}
+
+          <div class="postActions">
+            <button class="btn btn--ghost btn--small ${liked ? "is-active" : ""} ${canInteract ? "" : "is-disabled"}" data-action="like" type="button" data-disabled="${canInteract ? "0" : "1"}" style="${canInteract ? "" : "opacity:0.5"}">
+              ${liked ? "Liked" : "Like"} ${likeCount}
+            </button>
+          </div>
+
+          <div class="comments">
+            <div class="commentsHead">Comments</div>
+            <div class="commentsList">
+              ${commentsHtml || `<div class="muted small">No comments yet.</div>`}
+            </div>
+            <div class="commentForm">
+              <textarea class="textarea commentInput" rows="2" placeholder="Write a comment..." ${canInteract ? "" : "disabled"}></textarea>
+              <button class="btn btn--primary btn--small ${canInteract ? "" : "is-disabled"}" data-action="send-comment" type="button" ${canInteract ? "" : ""} data-disabled="${canInteract ? "0" : "1"}">Send</button>
+            </div>
+            ${canInteract ? "" : `<div class="muted small">${AUTH_STATE.isBanned ? "Account suspended." : "Please sign in to comment."}</div>`}
+          </div>
         </div>
       </article>
     `;

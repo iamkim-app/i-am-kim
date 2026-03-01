@@ -618,6 +618,18 @@ function renderHomeLayout() {
         </div>
       </div>
     </section>
+
+    <section class="homeSection">
+      <div class="sectionHead">
+        <div>
+          <div class="sectionTitle">Community picks</div>
+          <div class="sectionDesc">Top posts from the last 7 days.</div>
+        </div>
+      </div>
+      <div class="communityPreviewWrap community-preview-bleed">
+        <div class="communityPreviewGrid" id="homeCommunityPreview"></div>
+      </div>
+    </section>
   `;
 }
 
@@ -1103,6 +1115,55 @@ async function loadNowPreview(routeToken) {
   setupHomePreviewCarousel();
 }
 
+async function loadCommunityPreview(routeToken) {
+  if (routeToken && routeToken !== window.App?.routeToken) return;
+  const host = document.getElementById("homeCommunityPreview");
+  if (!host) return;
+
+  const supabase = getApp().supabase;
+  if (!supabase) {
+    host.innerHTML = `<div class="muted small">Sign in to view community highlights.</div>`;
+    return;
+  }
+
+  try {
+    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await supabase
+      .from("posts_with_likes")
+      .select("id,content,image_url,like_count,created_at")
+      .gte("created_at", since)
+      .order("like_count", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(6);
+    if (error) throw error;
+
+    const rows = Array.isArray(data) ? data : [];
+    if (!rows.length) {
+      host.innerHTML = `<div class="muted small">No community posts yet.</div>`;
+      return;
+    }
+
+    host.innerHTML = rows
+      .map((p) => {
+        const raw = String(p.content || "");
+        const title = escapeHtml(raw.split("\n")[0] || "Untitled");
+        const img = (p.image_url || "").trim();
+        const likeCount = Number(p.like_count || 0);
+        return `
+        <button class="communityPreviewCard" type="button" data-post-id="${p.id}">
+          ${img ? `<div class="communityPreviewImage"><img src="${escapeHtml(img)}" alt="Community post" loading="lazy" /></div>` : ""}
+          <div class="communityPreviewTitle">${title}</div>
+          <div class="communityPreviewMeta">❤️ ${likeCount}</div>
+        </button>
+      `;
+      })
+      .join("");
+  } catch (err) {
+    console.warn("[home] Community preview failed.", err);
+    host.innerHTML = `<div class="muted small">Failed to load community posts.</div>`;
+  }
+}
+
 function setupHome(routeToken) {
   if (!isHomeActive()) return;
   const root = document.querySelector("#page-home");
@@ -1182,6 +1243,7 @@ function setupHome(routeToken) {
 
   const localToken = routeToken;
   loadNowPreview(localToken);
+  loadCommunityPreview(localToken);
   if (!setupHome.nowPreviewBound) {
     setupHome.nowPreviewBound = true;
     window.addEventListener("koreaNow:updated", () => loadNowPreview(localToken));
@@ -1211,6 +1273,19 @@ function setupHome(routeToken) {
     });
     root.querySelector("#btnEditHomePicks")?.addEventListener("click", () => {
       window.location.href = "/#home-picks-admin";
+    });
+  }
+
+  if (!setupHome.communityPreviewBound) {
+    setupHome.communityPreviewBound = true;
+    root.querySelector("#homeCommunityPreview")?.addEventListener("click", (e) => {
+      const card = e.target?.closest?.(".communityPreviewCard");
+      if (!card) return;
+      if (typeof window.App?.openCommunityPost === "function") {
+        window.App.openCommunityPost(card.dataset.postId);
+        return;
+      }
+      window.location.href = "/#community";
     });
   }
 
