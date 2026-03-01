@@ -431,7 +431,10 @@
                 <button class="btn btn--ghost btn--small" data-tab="users" type="button">User Management</button>
                 <button class="btn btn--ghost btn--small" data-tab="home" type="button">Home Picks</button>
               </div>
-              <button class="btn btn--ghost btn--small" id="adminRefresh" type="button">Refresh</button>
+              <div class="row">
+                <a class="btn btn--ghost btn--small" href="#home-picks-admin">Open Home Picks Editor</a>
+                <button class="btn btn--ghost btn--small" id="adminRefresh" type="button">Refresh</button>
+              </div>
             </div>
             <div class="adminPanel" id="adminPanel">
               <div id="adminPanelHome" hidden>
@@ -646,6 +649,109 @@
                 </div>
               </div>
               <div id="adminPanelDynamic"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- HOME PICKS ADMIN -->
+        <section class="page" id="page-home-picks-admin" data-page="home-picks-admin" hidden>
+          <div class="pageHeader">
+            <h2 class="pageHeader__title">Home Picks Admin</h2>
+            <p class="pageHeader__desc">Edit Home Picks slots 1-3.</p>
+          </div>
+          <div class="card card--inner">
+            <div class="row row--space" style="margin-bottom:10px;">
+              <div class="status" id="homePicksAdminStatus" aria-live="polite"></div>
+              <div class="row">
+                <button class="btn btn--ghost btn--small" id="homePicksAdminRefresh" type="button">Refresh</button>
+                <button class="btn btn--primary btn--small" id="homePicksAdminSave" type="button">Save</button>
+              </div>
+            </div>
+            <div class="adminHomePicks" id="homePicksAdminForm">
+              <div class="card" style="margin-bottom:10px;">
+                <div class="muted small" style="margin-bottom:6px;">Slot 1</div>
+                <div class="grid">
+                  <label class="field">
+                    <div class="field__label">Source</div>
+                    <select class="input" data-slot="1" data-field="source">
+                      <option value="k_posts">k_posts</option>
+                      <option value="korea_now_posts">korea_now_posts</option>
+                    </select>
+                  </label>
+                  <label class="field">
+                    <div class="field__label">Source ID</div>
+                    <input class="input" data-slot="1" data-field="source_id" />
+                  </label>
+                  <label class="field">
+                    <div class="field__label">Title override</div>
+                    <input class="input" data-slot="1" data-field="title_override" />
+                  </label>
+                  <label class="field">
+                    <div class="field__label">Subtitle override</div>
+                    <input class="input" data-slot="1" data-field="subtitle_override" />
+                  </label>
+                  <label class="field">
+                    <div class="field__label">Link hash</div>
+                    <input class="input" data-slot="1" data-field="link_hash" />
+                  </label>
+                </div>
+              </div>
+              <div class="card" style="margin-bottom:10px;">
+                <div class="muted small" style="margin-bottom:6px;">Slot 2</div>
+                <div class="grid">
+                  <label class="field">
+                    <div class="field__label">Source</div>
+                    <select class="input" data-slot="2" data-field="source">
+                      <option value="k_posts">k_posts</option>
+                      <option value="korea_now_posts">korea_now_posts</option>
+                    </select>
+                  </label>
+                  <label class="field">
+                    <div class="field__label">Source ID</div>
+                    <input class="input" data-slot="2" data-field="source_id" />
+                  </label>
+                  <label class="field">
+                    <div class="field__label">Title override</div>
+                    <input class="input" data-slot="2" data-field="title_override" />
+                  </label>
+                  <label class="field">
+                    <div class="field__label">Subtitle override</div>
+                    <input class="input" data-slot="2" data-field="subtitle_override" />
+                  </label>
+                  <label class="field">
+                    <div class="field__label">Link hash</div>
+                    <input class="input" data-slot="2" data-field="link_hash" />
+                  </label>
+                </div>
+              </div>
+              <div class="card" style="margin-bottom:10px;">
+                <div class="muted small" style="margin-bottom:6px;">Slot 3</div>
+                <div class="grid">
+                  <label class="field">
+                    <div class="field__label">Source</div>
+                    <select class="input" data-slot="3" data-field="source">
+                      <option value="k_posts">k_posts</option>
+                      <option value="korea_now_posts">korea_now_posts</option>
+                    </select>
+                  </label>
+                  <label class="field">
+                    <div class="field__label">Source ID</div>
+                    <input class="input" data-slot="3" data-field="source_id" />
+                  </label>
+                  <label class="field">
+                    <div class="field__label">Title override</div>
+                    <input class="input" data-slot="3" data-field="title_override" />
+                  </label>
+                  <label class="field">
+                    <div class="field__label">Subtitle override</div>
+                    <input class="input" data-slot="3" data-field="subtitle_override" />
+                  </label>
+                  <label class="field">
+                    <div class="field__label">Link hash</div>
+                    <input class="input" data-slot="3" data-field="link_hash" />
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
         </section>

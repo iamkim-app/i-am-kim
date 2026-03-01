@@ -1210,12 +1210,7 @@ function setupHome(routeToken) {
       if (btn) btn.style.display = ok ? "inline-flex" : "none";
     });
     root.querySelector("#btnEditHomePicks")?.addEventListener("click", () => {
-      location.hash = "#admin";
-      setTimeout(() => {
-        const scope = root.parentElement || root;
-        const btn = scope.querySelector("#adminTabs button[data-tab='home']");
-        if (btn) btn.click();
-      }, 100);
+      location.hash = "#home-picks-admin";
     });
   }
 

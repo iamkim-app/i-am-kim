@@ -88,6 +88,8 @@ let initKoreaNow;
 let initKPage;
 let startHomeCarousel;
 let stopHomeCarousel;
+let setupHomePicksAdmin;
+let loadHomePicksAdmin;
 
 /* ----------------------------- PROFILE / NICKNAME ---------------------- */
 
@@ -858,6 +860,7 @@ const ROUTE_ALIASES = {
 const ROUTE_PAGE_MAP = {
   k: "kpop",
   news: "korea-now",
+  "home-picks-admin": "home-picks-admin",
 };
 
 function normalizeRoute(route) {
@@ -980,6 +983,10 @@ function setActiveRoute(route) {
   if (pageRoute === "community") loadCommunityPosts?.(false);
   if (pageRoute === "admin") loadAdminPanel?.(token);
   if (pageRoute !== "admin") clearAdminRefreshTimer?.();
+  if (pageRoute === "home-picks-admin") {
+    setupHomePicksAdmin?.();
+    loadHomePicksAdmin?.();
+  }
   if (pageRoute === "profile") refreshProfileStateFromStorage();
 }
 
@@ -2842,6 +2849,14 @@ async function loadAppModules() {
     loadAdminPanel,
     clearAdminState,
     clearAdminRefreshTimer,
+  });
+
+  // 5) HOME PICKS ADMIN
+  const homePicksAdmin = await import("./app/home_picks_admin.js");
+  ({ setupHomePicksAdmin, loadHomePicksAdmin } = homePicksAdmin);
+  Object.assign(app, {
+    setupHomePicksAdmin,
+    loadHomePicksAdmin,
   });
 }
 
