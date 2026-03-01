@@ -40,6 +40,30 @@ function applyValues(valuesBySlot) {
   });
 }
 
+function setSlotValues(slot, values) {
+  const root = document.querySelector("#page-home-picks-admin");
+  if (!root) return;
+  const inputs = Array.from(root.querySelectorAll(`[data-slot="${slot}"][data-field]`));
+  inputs.forEach((el) => {
+    const field = String(el.dataset.field || "");
+    if (!field || !(field in values)) return;
+    el.value = String(values[field] ?? "");
+  });
+}
+
+function clearSlot(slot) {
+  setSlotValues(slot, {
+    source: "k_posts",
+    source_id: "",
+    title_override: "",
+    subtitle_override: "",
+    link_hash: "",
+  });
+  setDirty(true);
+  saveDraft();
+  setStatus(`Slot ${slot} cleared.`);
+}
+
 function saveDraft() {
   const payload = {
     dirty: true,
@@ -86,8 +110,42 @@ function bindInputListeners() {
 
   const saveBtn = document.querySelector("#homePicksAdminSave");
   const refreshBtn = document.querySelector("#homePicksAdminRefresh");
+  const actionsRow = refreshBtn?.parentElement || null;
   saveBtn?.addEventListener("click", () => saveHomePicksAdmin());
   refreshBtn?.addEventListener("click", () => loadHomePicksAdmin());
+
+  if (actionsRow && !actionsRow.querySelector("#homePicksAdminClearAll")) {
+    const clearAllBtn = document.createElement("button");
+    clearAllBtn.className = "btn btn--ghost btn--small";
+    clearAllBtn.id = "homePicksAdminClearAll";
+    clearAllBtn.type = "button";
+    clearAllBtn.textContent = "Clear All";
+    clearAllBtn.addEventListener("click", () => {
+      ["1", "2", "3"].forEach((slot) => clearSlot(slot));
+    });
+    actionsRow.insertBefore(clearAllBtn, refreshBtn);
+  }
+
+  const slots = new Set(
+    Array.from(root.querySelectorAll("[data-slot][data-field]")).map((el) => el.dataset.slot)
+  );
+  slots.forEach((slot) => {
+    if (!slot) return;
+    const slotCard = root.querySelector(`[data-slot="${slot}"][data-field]`)?.closest(".card");
+    if (!slotCard || slotCard.querySelector(`[data-clear-slot="${slot}"]`)) return;
+    const row = document.createElement("div");
+    row.className = "row";
+    row.style.justifyContent = "flex-end";
+    row.style.marginTop = "8px";
+    const btn = document.createElement("button");
+    btn.className = "btn btn--ghost btn--small";
+    btn.type = "button";
+    btn.textContent = "Clear slot";
+    btn.dataset.clearSlot = String(slot);
+    btn.addEventListener("click", () => clearSlot(slot));
+    row.appendChild(btn);
+    slotCard.appendChild(row);
+  });
 }
 
 function applyDraftIfPresent() {
@@ -159,7 +217,7 @@ export async function saveHomePicksAdmin() {
     const slots = ["1", "2", "3"];
     const rows = slots.map((slot) => {
       const row = values?.[slot] || {};
-      const source = String(row.source || "").trim();
+      const source = String(row.source || "k_posts").trim() || "k_posts";
       const sourceId = String(row.source_id || "").trim();
       const titleOverride = String(row.title_override || "").trim();
       const subtitleOverride = String(row.subtitle_override || "").trim();
@@ -168,9 +226,9 @@ export async function saveHomePicksAdmin() {
         slot: Number(slot),
         source,
         source_id: sourceId,
-        title_override: titleOverride || null,
-        subtitle_override: subtitleOverride || null,
-        link_hash: linkHash || null,
+        title_override: titleOverride ? titleOverride : null,
+        subtitle_override: subtitleOverride ? subtitleOverride : null,
+        link_hash: linkHash ? linkHash : null,
       };
     });
 

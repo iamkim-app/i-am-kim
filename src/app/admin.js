@@ -42,6 +42,16 @@ function ensureAdminUI() {
 let ADMIN_REFRESH_TIMER = null;
 let ADMIN_REDIRECT_TIMER = null;
 
+function bindHomePicksEditorLink() {
+  const link = document.querySelector('#page-admin a[href="#home-picks-admin"]');
+  if (!link || link.dataset.bound === "1") return;
+  link.dataset.bound = "1";
+  link.addEventListener("click", (e) => {
+    e.preventDefault();
+    window.location.href = "/#home-picks-admin";
+  });
+}
+
 function clearAdminRefreshTimer() {
   if (ADMIN_REFRESH_TIMER) {
     clearInterval(ADMIN_REFRESH_TIMER);
@@ -73,6 +83,7 @@ async function loadAdminPanel() {
   const panel = $("#adminPanel");
   const status = $("#adminStatus");
   if (!panel || !status) return;
+  bindHomePicksEditorLink();
   status.textContent = "loading";
   panel.innerHTML = "";
 

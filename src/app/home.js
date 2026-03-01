@@ -1210,7 +1210,7 @@ function setupHome(routeToken) {
       if (btn) btn.style.display = ok ? "inline-flex" : "none";
     });
     root.querySelector("#btnEditHomePicks")?.addEventListener("click", () => {
-      location.hash = "#home-picks-admin";
+      window.location.href = "/#home-picks-admin";
     });
   }
 
