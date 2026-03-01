@@ -4007,12 +4007,27 @@ input[type="file"]:disabled{
   flex-wrap: wrap;
   margin: 12px 0 16px;
 }
-.kSubtab.is-active{
-  background: var(--accent);
-  color: #fff;
-  border-color: transparent;
+.kSubtab{
+  font-family: var(--font-sans);
+  background: transparent;
+  color: var(--muted);
+  position: relative;
 }
-.kSubtabContent{
+.kSubtab.is-active{
+  color: var(--ink);
+  background: transparent;
+}
+.kSubtab.is-active::after{
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 6px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--rgb);
+  opacity: 0.9;
+}.kSubtabContent{
   margin-top: 8px;
 }
 .kSubtabPanel{

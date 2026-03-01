@@ -213,38 +213,35 @@ async function analyzeHomeUrl() {
   if (HOME_LOADING) return;
   setHomeLoading(true);
 
-  const input = $("#homeYoutubeUrl");
-  const raw = (input?.value || "").trim();
-
-  if (!raw) {
-    setWatchStatus("Paste a YouTube link first.");
-    setHomeLoading(false);
-    return;
-  }
-
-  const url = normalizeYoutubeUrl(raw);
-
-  // render player immediately
-  renderVideoPlayer(url, 0, false);
-
-  // require backend origin for native shell
-  if (isNativeShell && isNativeShell() && !getBackendOrigin()) {
-    setWatchStatus("Set your backend URL in About -> Backend base URL.");
-    setHomeLoading(false);
-    return;
-  }
-
-  // require login
-  const token = await getAccessToken?.();
-  if (!token) {
-    setWatchStatus("Please sign in to use the free analysis.");
-    setHomeLoading(false);
-    return;
-  }
-
-  setWatchStatus("Extracting travel tips...");
-
   try {
+    const input = $("#homeYoutubeUrl");
+    const raw = (input?.value || "").trim();
+
+    if (!raw) {
+      setWatchStatus("Paste a YouTube link first.");
+      return;
+    }
+
+    const url = normalizeYoutubeUrl(raw);
+
+    // render player immediately
+    renderVideoPlayer(url, 0, false);
+
+    // require backend origin for native shell
+    if (isNativeShell && isNativeShell() && !getBackendOrigin()) {
+      setWatchStatus("Set your backend URL in About -> Backend base URL.");
+      return;
+    }
+
+    // require login
+    const token = await getAccessToken?.();
+    if (!token) {
+      setWatchStatus("Please sign in to use the free analysis.");
+      return;
+    }
+
+    setWatchStatus("Extracting travel tips...");
+
     const isLocalHost =
       location.hostname === "localhost" || location.hostname === "127.0.0.1";
     const summarizeEndpoint = isLocalHost
@@ -262,6 +259,11 @@ async function analyzeHomeUrl() {
 
     const data = await res.json().catch(() => ({}));
 
+    if (res.status === 401) {
+      window.App?.openAuthSheet?.();
+      setWatchStatus("Please sign in to use the free analysis.");
+      return;
+    }
     if (!res.ok) {
       const msg = data?.error || `Request failed (HTTP ${res.status})`;
       const details = data?.details ? ` - ${data.details}` : "";
@@ -272,7 +274,6 @@ async function analyzeHomeUrl() {
       } else {
         setWatchStatus(`Error: ${msg}${details}. Please try again.`);
       }
-      setHomeLoading(false);
       return;
     }
 
@@ -299,12 +300,10 @@ async function analyzeHomeUrl() {
 }
 
 function clearHome() {
-  const root = document.querySelector("#page-home");
-  if (!root) return;
-  const input = root.querySelector("#homeYoutubeUrl");
+  const input = $("#homeYoutubeUrl");
   if (input) input.value = "";
 
-  const player = root.querySelector("#videoPlayer");
+  const player = $("#videoPlayer");
   if (player) {
     player.innerHTML = `<div class="player__empty">
       <div class="player__emptyTitle">Paste a link</div>
@@ -313,17 +312,17 @@ function clearHome() {
   }
 
   setWatchStatus("Paste a link to generate insights.");
-  const watchTldr = root.querySelector("#watchTldr");
+  const watchTldr = $("#watchTldr");
   if (watchTldr) watchTldr.textContent = "No summary yet. Extract a video to get a quick skim.";
-  const mustKnows = root.querySelector("#watchMustKnows");
+  const mustKnows = $("#watchMustKnows");
   if (mustKnows) mustKnows.innerHTML = "";
-  const placesFoods = root.querySelector("#watchPlacesFoods");
+  const placesFoods = $("#watchPlacesFoods");
   if (placesFoods) placesFoods.innerHTML = "";
-  const moments = root.querySelector("#watchMoments");
+  const moments = $("#watchMoments");
   if (moments) moments.innerHTML = "";
-  const watchMore = root.querySelector("#watchMore");
+  const watchMore = $("#watchMore");
   if (watchMore) watchMore.style.display = "none";
-  const watchFull = root.querySelector("#watchFull");
+  const watchFull = $("#watchFull");
   if (watchFull) watchFull.textContent = "";
 }
 
@@ -1165,25 +1164,28 @@ async function loadCommunityPreview(routeToken) {
 }
 
 function setupHome(routeToken) {
-  if (!isHomeActive()) return;
-  const root = document.querySelector("#page-home");
-  if (!root) return;
+  const homeRoot = document.querySelector("#page-home");
+  const infoRoot = document.querySelector("#page-info");
+  if (!homeRoot || !infoRoot) return;
   renderHomeLayout();
   renderInfoLayout();
   clearHome();
 
-  root.querySelector("#btnHomeAnalyze")?.addEventListener("click", analyzeHomeUrl);
-  root.querySelector("#btnHomeClear")?.addEventListener("click", clearHome);
-  root.querySelector("#btnGoLibrary")?.addEventListener("click", async () => {
+  infoRoot.querySelector("#btnHomeAnalyze")?.addEventListener("click", () => {
+    console.log("PLAY_EXTRACT_CLICKED");
+    analyzeHomeUrl();
+  });
+  infoRoot.querySelector("#btnHomeClear")?.addEventListener("click", clearHome);
+  infoRoot.querySelector("#btnGoLibrary")?.addEventListener("click", async () => {
     if (location.hash !== "#info") location.hash = "#info";
     if (!HOME_LIBRARY_COLLECTIONS.length) {
       await loadHomeLibrary();
       renderCollectionsSection();
     }
-    const target = root.querySelector("#homeCollections");
+    const target = infoRoot.querySelector("#homeCollections");
     if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
   });
-  root.querySelector(".quickActions")?.addEventListener("click", (e) => {
+  homeRoot.querySelector(".quickActions")?.addEventListener("click", (e) => {
     const btn = e.target?.closest?.(".quickAction");
     if (!btn) return;
     const action = btn.dataset.action || "";
@@ -1228,13 +1230,13 @@ function setupHome(routeToken) {
       window.App?.openEmergencySheet?.();
     }
   });
-  root.querySelector(".spotlightGrid")?.addEventListener("click", (e) => {
+  homeRoot.querySelector(".spotlightGrid")?.addEventListener("click", (e) => {
     const card = e.target?.closest?.(".spotlightCard");
     if (!card) return;
     if (card.dataset.action === "kpop-now") {
       location.hash = "#kpop";
       setTimeout(() => {
-        root
+        homeRoot
           .querySelector("#nowKpop")
           ?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
@@ -1247,8 +1249,8 @@ function setupHome(routeToken) {
   if (!setupHome.nowPreviewBound) {
     setupHome.nowPreviewBound = true;
     window.addEventListener("koreaNow:updated", () => loadNowPreview(localToken));
-    root.querySelector("#homeNowPreview")?.addEventListener("click", (e) => {
-      const host = root.querySelector("#homeNowPreview");
+    homeRoot.querySelector("#homeNowPreview")?.addEventListener("click", (e) => {
+      const host = homeRoot.querySelector("#homeNowPreview");
       if (host?.dataset?.swiping === "1") return;
       const card = e.target?.closest?.(".previewCard");
       if (!card || card.dataset.placeholder === "1") return;
@@ -1271,14 +1273,14 @@ function setupHome(routeToken) {
       const btn = document.getElementById("btnEditHomePicks");
       if (btn) btn.style.display = ok ? "inline-flex" : "none";
     });
-    root.querySelector("#btnEditHomePicks")?.addEventListener("click", () => {
+    homeRoot.querySelector("#btnEditHomePicks")?.addEventListener("click", () => {
       window.location.href = "/#home-picks-admin";
     });
   }
 
   if (!setupHome.communityPreviewBound) {
     setupHome.communityPreviewBound = true;
-    root.querySelector("#homeCommunityPreview")?.addEventListener("click", (e) => {
+    homeRoot.querySelector("#homeCommunityPreview")?.addEventListener("click", (e) => {
       const card = e.target?.closest?.(".communityPreviewCard");
       if (!card) return;
       if (typeof window.App?.openCommunityPost === "function") {
@@ -1290,7 +1292,7 @@ function setupHome(routeToken) {
   }
 
   // Enter key in input triggers analyze
-  root.querySelector("#homeYoutubeUrl")?.addEventListener("keydown", (e) => {
+  infoRoot.querySelector("#homeYoutubeUrl")?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") analyzeHomeUrl();
   });
 

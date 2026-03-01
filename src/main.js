@@ -2744,6 +2744,11 @@ function buildAppContext() {
     currentRoute,
     navigateToHome,
     refreshQuotaPill,
+    apiUrl,
+    isNativeShell,
+    getBackendOrigin,
+    setQuotaPillText,
+    STORAGE_QUOTA_REMAINING,
     loadKoreaNow,
     initKoreaNow,
     ensureEmergencySheet,
@@ -2915,7 +2920,11 @@ async function init() {
   replaceBrandMarkWithLogo();
 
   // home
-  // home setup deferred to route guard
+  if (typeof setupHome === "function") {
+    setupHome();
+  } else {
+    console.warn("[home] setupHome missing");
+  }
 
   // phrases
   setupPhrases();

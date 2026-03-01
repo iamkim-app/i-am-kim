@@ -143,6 +143,12 @@ function ensureAuthSheetUI() {
         <button class="btn btn--primary authSheet__btn" id="btnSheetGoogle" type="button">Continue with Google</button>
         <button class="btn btn--ghost authSheet__btn" id="btnSheetApple" type="button">Continue with Apple</button>
       </div>
+      <div class="authSheet__actions">
+        <input id="authEmail" class="input" type="email" placeholder="Email" autocomplete="email" />
+        <input id="authPassword" class="input" type="password" placeholder="Password" autocomplete="current-password" />
+        <button class="btn btn--ghost authSheet__btn" id="btnAuthEmailLogin" type="button">Sign in with email</button>
+        <div class="status" id="authSheetStatus" aria-live="polite"></div>
+      </div>
     </div>
   `;
   document.body.appendChild(el);
@@ -155,6 +161,28 @@ function ensureAuthSheetUI() {
 
   $("#btnSheetGoogle")?.addEventListener("click", () => signInWith("google"));
   $("#btnSheetApple")?.addEventListener("click", () => signInWith("apple"));
+$("#btnAuthEmailLogin")?.addEventListener("click", async () => {
+    const supabase = getSupabase();
+    const status = document.getElementById("authSheetStatus");
+    const email = String(document.getElementById("authEmail")?.value || "").trim();
+    const password = String(document.getElementById("authPassword")?.value || "");
+    if (status) status.textContent = "";
+    if (!supabase) {
+      if (status) status.textContent = "Supabase is not set.";
+      return;
+    }
+    if (!email || !password) {
+      if (status) status.textContent = "Enter email and password.";
+      return;
+    }
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      if (status) status.textContent = error.message || "Sign-in failed.";
+      return;
+    }
+    closeAuthSheet();
+    try { window.dispatchEvent(new Event("auth:changed")); } catch {}
+  });
 }
 
 function openAuthSheet() {
