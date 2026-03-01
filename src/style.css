@@ -4053,13 +4053,19 @@ input[type="file"]:disabled{
 .kFoodHero__track::-webkit-scrollbar{ height: 6px; }
 .kFoodHero__card{
   scroll-snap-align: start;
-  background: linear-gradient(135deg, rgba(255,203,112,0.35), rgba(255,255,255,0.9));
-  border: 1px solid rgba(0,0,0,0.06);
-  border-radius: 18px;
+  background: rgba(255,255,255,0.94);
+  border: 1px solid rgba(11,18,32,0.08);
+  border-radius: 22px;
+  box-shadow: 0 18px 60px rgba(2,6,23,0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   padding: 16px;
   min-height: 140px;
   display: grid;
   gap: 8px;
+}
+.kFoodHero__card:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 24px 70px rgba(2,6,23,0.12);
 }
 .kFoodHero__tag{
   font-size: 12px;
@@ -4069,11 +4075,12 @@ input[type="file"]:disabled{
 }
 .kFoodHero__name{
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 950;
+  letter-spacing: -0.02em;
 }
 .kFoodHero__meta{
-  font-size: 13px;
-  color: rgba(0,0,0,0.55);
+  font-size: 12px;
+  color: rgba(11,18,32,0.6);
 }
 .kFoodHero__dots{
   display: flex;
@@ -4105,6 +4112,7 @@ input[type="file"]:disabled{
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  font-size: 12px;
 }
 
 /* --------------------------- IDOL MODAL ------------------------------ */
@@ -4326,4 +4334,45 @@ input[type="file"]:disabled{
     margin-left: -16px;
     margin-right: -16px;
   }
+}
+
+.kFoodHero__card{ position: relative; overflow: hidden; }
+
+.kFoodHero__logo{
+  position:absolute;
+  top:12px;
+  right:12px;
+  width:70px;
+  height:70px;
+  object-fit:contain;
+  opacity:0.15;
+  pointer-events:none;
+}
+
+.kFoodHero__actions .btn{
+  height: 36px;
+  border-radius: 999px;
+  padding: 0 14px;
+}
+.kFoodHero__actions .btn--ghost{
+  background: rgba(255,255,255,0.7);
+  border: 1px solid rgba(11,18,32,0.12);
+}
+.kFoodHero__actions .btn--primary{
+  background: rgba(11,18,32,0.95);
+  border: 1px solid rgba(11,18,32,0.95);
+  color: #fff;
+}
+
+body .kFoodHero__track .kFoodHero__card{
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,255,0.94)) !important;
+  border: 1px solid rgba(11,18,32,0.08) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 18px 60px rgba(2,6,23,0.08) !important;
+  transition: transform .2s ease, box-shadow .2s ease !important;
+}
+
+body .kFoodHero__track .kFoodHero__card:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 24px 70px rgba(2,6,23,0.12) !important;
 }

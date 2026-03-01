@@ -100,6 +100,14 @@ function renderIdolSpots(spots) {
     .map((spot) => {
       const name = escapeHtml(spot?.place_name || "Unknown place");
       const idol = escapeHtml(spot?.idol_name || "Idol");
+      const idolLogoMap = {
+        "Stray Kids": "/idol-logos/stray-kids.webp",
+        TWICE: "/idol-logos/twice.webp",
+        BTS: "/idol-logos/bts.webp",
+        SEVENTEEN: "/idol-logos/seventeen.webp",
+        BLACKPINK: "/idol-logos/blackpink.webp",
+      };
+      const idolLogo = idolLogoMap[spot?.idol_name] || "";
       const area = escapeHtml(spot?.area || "");
       const hours = escapeHtml(spot?.opening_hours || "");
       const bg = escapeHtml(spot?.background || "");
@@ -111,6 +119,7 @@ function renderIdolSpots(spots) {
       const checked = IDOL_STATE.selected.has(spot.id) ? "checked" : "";
       return `
         <article class="kFoodHero__card" ${bgStyle}>
+          ${idolLogo ? `<img class="kFoodHero__logo" src="${idolLogo}" alt="idol logo">` : ""}
           ${
             ADMIN_STATE.isAdmin
               ? `<label class="kFoodHero__select">
