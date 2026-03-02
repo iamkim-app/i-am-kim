@@ -166,6 +166,9 @@ function renderCards(active, items) {
   const host = $("#nowCards");
   if (!host) return;
   const list = items.filter((it) => it.section === active);
+  if (host.id === "nowCards") {
+    host.classList.toggle("is-single", list.length < 2);
+  }
   host.innerHTML = list.length
     ? list
         .map((it) => renderCard(it, NOW_STATE.isAdmin && it.canDelete))

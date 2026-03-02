@@ -26,13 +26,13 @@ html,body { overflow-x: hidden; }
 }
 
 :root{
-  --bg: #fbfbfc;
+  --bg: #FAFAFA;
   --ink: #0b1220;
   --muted: rgba(11,18,32,0.62);
   --muted2: rgba(11,18,32,0.48);
 
-  --border: rgba(11,18,32,0.10);
-  --border2: rgba(11,18,32,0.08);
+  --border: #EFEFEF;
+  --border2: #EFEFEF;
 
   --shadow: 0 8px 24px rgba(0,0,0,0.06);
   --shadow-sm: 0 8px 24px rgba(0,0,0,0.06);
@@ -52,8 +52,8 @@ html,body { overflow-x: hidden; }
     rgba(139,92,246,0.45)
   );
 
-  --surface: rgba(255,255,255,0.78);
-  --surface2: rgba(255,255,255,0.92);
+  --surface: #ffffff;
+  --surface2: #ffffff;
 
   --radius-lg: 24px;
   --radius: 18px;
@@ -90,10 +90,7 @@ body{
   color: var(--ink);
   line-height: 1.5;
   font-size: var(--text-base);
-  background:
-    radial-gradient(1200px 600px at 20% -10%, rgba(0,0,0,0.03), transparent 60%),
-    radial-gradient(1200px 600px at 80% -10%, rgba(0,0,0,0.025), transparent 60%),
-    var(--bg);
+  background: var(--bg);
 }
 
 .nickBanner{
@@ -1307,6 +1304,15 @@ code{
 
 /* -------------------- App Shell: Mobile + Native Shell ------------------ */
 @media (max-width: 768px){
+  body{
+    background-image: none !important;
+  }
+  #page-korea-now .nowCards{
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    overflow: visible;
+  }
   .nowCards{
     display:flex;
     flex-wrap:nowrap;
@@ -1687,6 +1693,60 @@ body.is-native-shell .main{
 }
 
 /* ----------------------- Korea Now: 3 category cards -------------------- */
+.nowSection{
+  width: 100%;
+}
+#page-korea-now #nowMyKoreaPosts{
+  width: 100%;
+  max-width: none;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+#page-korea-now .nowCards{
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+#page-korea-now .nowCards > *{
+  width: 100%;
+  min-width: 0;
+}
+@media (max-width: 900px){
+  #page-korea-now #nowMyKoreaPosts{
+    display: block;
+  }
+  #page-korea-now .nowCards{
+    width: 100%;
+    max-width: none;
+    grid-template-columns: 1fr;
+  }
+  #page-korea-now .nowCards > *{
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+  #page-korea-now .nowGrid{
+    grid-template-columns: 1fr;
+  }
+  #page-korea-now .nowCards{
+    grid-template-columns: 1fr;
+  }
+  #page-korea-now .grid--2{
+    grid-template-columns: 1fr;
+  }
+  #page-korea-now .nowSidebar,
+  #page-korea-now .rightCol{
+    display: none;
+  }
+}
+@media (min-width: 900px){
+  #page-korea-now .nowCards{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #page-korea-now .nowCards.is-single{
+    grid-template-columns: 1fr;
+  }
+}
 .nowGrid{
   display: grid;
   grid-template-columns: repeat(3, 1fr);
