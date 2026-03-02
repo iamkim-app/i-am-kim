@@ -130,6 +130,7 @@ function renderCommunityFeed(posts, currentUserId, likeCounts = {}, myLikes = ne
   const list = Array.isArray(posts) ? posts : [];
   if (!list.length) {
     feed.innerHTML = `<div class="muted small">No posts yet. Be the first to share a tip.</div>`;
+    applyCommunityFocusJump(feed);
     return;
   }
 
@@ -185,7 +186,7 @@ function renderCommunityFeed(posts, currentUserId, likeCounts = {}, myLikes = ne
         : "";
 
       return `
-      <article class="postCard community-post-card" data-id="${p.id}">
+      <article class="postCard community-post-card" data-id="${p.id}" data-post-id="${p.id}">
         <div class="community-post-inner">
           <div class="postHead">
             <div class="postUser">
@@ -282,6 +283,21 @@ function renderCommunityFeed(posts, currentUserId, likeCounts = {}, myLikes = ne
       }
     });
   });
+
+    const id = sessionStorage.getItem("communityFocusPostId");
+  if (id) {
+    requestAnimationFrame(() => {
+      const feedEl = $("#communityFeed");
+      const el = feedEl?.querySelector(`[data-post-id="${id}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("is-jumpTarget");
+        setTimeout(() => el.classList.remove("is-jumpTarget"), 2000);
+      }
+      sessionStorage.removeItem("communityFocusPostId");
+      console.log("[community]", id);
+    });
+  }
 }
 
 async function loadCommunityPosts(forceReload) {
