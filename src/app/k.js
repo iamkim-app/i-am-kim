@@ -473,11 +473,13 @@ function renderPlaceholder(tab, host) {
           async (pos) => {
             const lat = pos.coords.latitude;
             const lng = pos.coords.longitude;
-            const keyword = IDOL_STATE.idol === "all" ? "" : IDOL_STATE.idol;
+            const keyword = "";
+            
             const qs = new URLSearchParams({
               lat: String(lat),
               lng: String(lng),
-              radius: "1500",
+              radius: String(1500),
+              type: "restaurant",
               ...(keyword ? { keyword } : {}),
             });
             try {
