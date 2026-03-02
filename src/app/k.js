@@ -474,25 +474,41 @@ function renderPlaceholder(tab, host) {
             const lat = pos.coords.latitude;
             const lng = pos.coords.longitude;
             const keyword = "";
-            
-            const qs = new URLSearchParams({
-              lat: String(lat),
-              lng: String(lng),
-              radius: String(1500),
-              type: "restaurant",
-              ...(keyword ? { keyword } : {}),
-            });
+            const radii = [1500, 3000, 5000];
             try {
-              const resp = await fetch(`/api/places-nearby?${qs.toString()}`);
-              const data = await resp.json();
-              renderNearbyResults(data?.results || []);
+              let results = [];
+              for (const radius of radii) {
+                const qs = new URLSearchParams({
+                  lat: String(lat),
+                  lng: String(lng),
+                  radius: String(radius),
+                  type: "restaurant",
+                  ...(keyword ? { keyword } : {}),
+                });
+                const resp = await fetch(`/api/places-nearby?${qs.toString()}`, {
+                  cache: "no-store",
+                });
+                if (!resp.ok) {
+                  nearbyHost.innerHTML = `<div class="muted small">Failed to load nearby places.</div>`;
+                  return;
+                }
+                const data = await resp.json();
+                if (data?.ok === false) {
+                  nearbyHost.innerHTML = `<div class="muted small">Failed to load nearby places.</div>`;
+                  return;
+                }
+                results = data?.results || [];
+                if (results.length) break;
+              }
+              renderNearbyResults(results);
             } catch (err) {
               nearbyHost.innerHTML = `<div class="muted small">Failed to load nearby places.</div>`;
             }
           },
           () => {
-            nearbyHost.innerHTML = `<div class="muted small">Location permission needed.</div>`;
-          }
+            nearbyHost.innerHTML = `<div class="muted small">Location unavailable.</div>`;
+          },
+          { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
         );
       });
       nearbyHost.addEventListener("click", (e) => {
