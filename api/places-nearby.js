@@ -165,7 +165,7 @@ export default async function handler(req, res) {
         types: Array.isArray(place?.types) ? place.types : [],
       }));
 
-    return sendJson(res, 200, { ok: true, results });
+    return sendJson(res, 200, { ok: true, results, debugStatus, debugError, debugTotal });
   } catch (err) {
     return sendJson(res, 500, {
       ok: false,
@@ -175,5 +175,6 @@ export default async function handler(req, res) {
     });
   }
 }
+
 
 

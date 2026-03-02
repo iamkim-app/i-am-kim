@@ -1313,6 +1313,14 @@ code{
     gap: 16px;
     overflow: visible;
   }
+  #page-kpop .nowCards,
+  #page-korea-now .nowCards{
+    overflow-x: auto;
+    overflow-y: visible;
+    touch-action: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
   .nowCards{
     display:flex;
     flex-wrap:nowrap;
@@ -1320,7 +1328,7 @@ code{
     overflow-y:hidden;
     -webkit-overflow-scrolling:touch;
     scroll-snap-type:x mandatory;
-    touch-action:pan-x;
+    touch-action:pan-y;
     overscroll-behavior-x:contain;
   }
   .nowCards > *{
