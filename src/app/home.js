@@ -482,7 +482,7 @@ function renderHomeLayout() {
         <div class="homeHero__subtitle">Real places. Real moments. Built for international fans.</div>
         <section class="heroStrip">
           <div class="heroStrip__track">
-            <button class="heroCard" type="button" style="--bg:url('/hero/hero_kpop_concert.webp')" onclick="location.hash='#kpop'">
+            <button class="heroCard" type="button" style="--bg:url('/hero/hero_kpop_concert_v2.webp')" onclick="location.hash='#kpop'">
               <span class="heroCard__badge">K-POP</span>
               <span class="heroCard__title">Concert day essentials</span>
             </button>
