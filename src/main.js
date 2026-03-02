@@ -931,6 +931,33 @@ function navigateToHome() {
   setActiveRoute("home");
 }
 
+function scrollRouteToTop(route) {
+  const pageRoute = ROUTE_PAGE_MAP[route] || route;
+  const mainEl = document.querySelector(".main");
+  const pageEl = document.querySelector(`.page[data-page="${pageRoute}"]`);
+  const target = mainEl || pageEl;
+  if (target && typeof target.scrollTo === "function") {
+    target.scrollTo({ top: 0, behavior: "smooth" });
+  } else {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+}
+
+function bindTabbarScrollToTop() {
+  document.querySelectorAll(".tabbar__link").forEach((link) => {
+    if (link.dataset.boundScrollTop === "1") return;
+    link.dataset.boundScrollTop = "1";
+    link.addEventListener("click", (e) => {
+      const route = link.dataset.route || "";
+      if (!route) return;
+      const current = currentRoute();
+      if (route !== current) return;
+      e.preventDefault();
+      scrollRouteToTop(route);
+    });
+  });
+}
+
 function setActiveRoute(route) {
   ROUTE_TOKEN += 1;
   const token = ROUTE_TOKEN;
@@ -2954,6 +2981,7 @@ async function init() {
 
   // routing
   updateBottomTabbarRoutes();
+  bindTabbarScrollToTop();
   setActiveRoute(currentRoute());
   window.addEventListener("hashchange", () => setActiveRoute(currentRoute()));
 

@@ -1307,6 +1307,21 @@ code{
 
 /* -------------------- App Shell: Mobile + Native Shell ------------------ */
 @media (max-width: 768px){
+  .nowCards{
+    display:flex;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    scroll-snap-type:x mandatory;
+    touch-action:pan-x;
+    overscroll-behavior-x:contain;
+  }
+  .nowCards > *{
+    flex:0 0 82vw;
+    max-width:420px;
+    scroll-snap-align:start;
+  }
   .topbar__inner{ display: none; }
   .nav{ display: none; }
   .topbar__actions{ display: none; }

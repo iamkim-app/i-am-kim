@@ -648,6 +648,32 @@ export async function initKoreaNow(options = {}) {
     page.querySelector("#btnReloadNow")?.remove();
     ensureMyKoreaUI(page);
   }
+  const track = document.querySelector(".nowCards");
+  if (track && track.dataset.dragBound !== "1") {
+    track.dataset.dragBound = "1";
+    let startX = 0;
+    let dragging = false;
+
+    track.addEventListener("pointerdown", (e) => {
+      startX = e.clientX;
+      dragging = false;
+    });
+
+    track.addEventListener("pointermove", (e) => {
+      if (Math.abs(e.clientX - startX) > 8) dragging = true;
+    });
+
+    track.addEventListener(
+      "click",
+      (e) => {
+        if (dragging) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      },
+      true
+    );
+  }
 
   const refresh = async () => {
     let items = [];
