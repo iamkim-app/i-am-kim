@@ -4390,6 +4390,11 @@ input[type="file"]:disabled{
     object-fit: cover;
   }
 }
+#page-community .postCard.is-jumpTarget{
+  border-color: rgba(10,132,255,0.35);
+  background: linear-gradient(180deg, rgba(10,132,255,0.08), rgba(255,255,255,0.96));
+  box-shadow: 0 0 0 3px rgba(10,132,255,0.18), 0 16px 40px rgba(2,6,23,0.12);
+}
 .communityPreviewGrid{
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -4403,6 +4408,14 @@ input[type="file"]:disabled{
   border-radius: 14px;
   border: 1px solid var(--border2);
   background: rgba(255,255,255,0.78);
+}
+.homeCommunityCard{
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.homeCommunityCard img{
+  pointer-events: none;
 }
 .communityPreviewImage{
   border-radius: 12px;
@@ -4432,6 +4445,10 @@ input[type="file"]:disabled{
     margin-left: -16px;
     margin-right: -16px;
   }
+}
+.is-jumpTarget{
+  outline: 2px solid rgba(10,132,255,0.35);
+  border-radius: 16px;
 }
 
 .kFoodHero__card{ position: relative; overflow: hidden; }

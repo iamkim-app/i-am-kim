@@ -1278,18 +1278,32 @@ function setupHome(routeToken) {
     });
   }
 
-  if (!setupHome.communityPreviewBound) {
-    setupHome.communityPreviewBound = true;
-    homeRoot.querySelector("#homeCommunityPreview")?.addEventListener("click", (e) => {
-      const card = e.target?.closest?.(".communityPreviewCard");
-      if (!card) return;
-      if (typeof window.App?.openCommunityPost === "function") {
-        window.App.openCommunityPost(card.dataset.postId);
-        return;
-      }
-      window.location.href = "/#community";
-    });
-  }
+ if (!homeRoot.dataset.communityPreviewBound) {
+  homeRoot.dataset.communityPreviewBound = "1";
+
+  let lastTouch = 0;
+
+  const handlePick = (e) => {
+    const card = e.target?.closest?.("#homeCommunityPreview .communityPreviewCard[data-post-id]");
+    if (!card) return;
+
+    if (e.type === "touchend") {
+      lastTouch = Date.now();
+    } else if (Date.now() - lastTouch < 400) {
+      return;
+    }
+
+    const postId = card.dataset.postId || "";
+    if (!postId) return;
+
+    sessionStorage.setItem("communityFocusPostId", String(postId));
+    console.log("[home]", postId);
+    location.hash = "#community";
+  };
+
+  homeRoot.addEventListener("click", handlePick);
+  homeRoot.addEventListener("touchend", handlePick, { passive: true });
+}
 
   // Enter key in input triggers analyze
   infoRoot.querySelector("#homeYoutubeUrl")?.addEventListener("keydown", (e) => {
