@@ -4491,3 +4491,62 @@ body .kFoodHero__track .kFoodHero__card:hover{
   transform: translateY(-2px);
   box-shadow: 0 24px 70px rgba(2,6,23,0.12) !important;
 }
+
+@media (max-width: 768px){
+  .communityPreviewWrap{
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  .communityPreviewGrid{
+    grid-template-columns: none !important;
+    grid-auto-flow: column;
+    grid-auto-columns: 86vw;
+    align-items: start;
+  }
+  .communityPreviewCard{
+    width: 100%;
+    scroll-snap-align: start;
+  }
+}
+
+/* Home community preview mobile swipe overrides */
+@media (max-width: 768px){
+  .communityPreviewWrap{
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+  }
+
+  .communityPreviewGrid{
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(76%, 1fr);
+    align-items: start;
+    padding: 0 16px 6px;
+  }
+
+  .communityPreviewCard{
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    height: auto;
+  }
+
+  .communityPreviewImage{
+    aspect-ratio: 16 / 10;
+    background: linear-gradient(135deg, rgba(11,18,32,0.08), rgba(11,18,32,0.02));
+  }
+
+  .communityPreviewCard::before{
+    content: "";
+    display: block;
+    aspect-ratio: 16 / 10;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(11,18,32,0.08), rgba(11,18,32,0.02));
+  }
+
+  .communityPreviewCard:has(.communityPreviewImage)::before{
+    display: none;
+  }
+}

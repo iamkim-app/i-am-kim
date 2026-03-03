@@ -632,6 +632,20 @@ function renderHomeLayout() {
   `;
 }
 
+function bindCommunityPreviewNavigation() {
+  const host = document.getElementById("homeCommunityPreview");
+  if (!host || host.dataset.bound === "1") return;
+  host.dataset.bound = "1";
+  host.addEventListener("click", (e) => {
+    const card = e.target?.closest?.(".communityPreviewCard[data-post-id]");
+    if (!card) return;
+    const postId = card.dataset.postId;
+    if (!postId) return;
+    sessionStorage.setItem("communityFocusPostId", postId);
+    location.hash = "#community";
+  });
+}
+
 function renderInfoLayout() {
   const page = $("#page-info");
   if (!page) return;
@@ -1127,16 +1141,58 @@ async function loadCommunityPreview(routeToken) {
 
   try {
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const { data, error } = await supabase
-      .from("posts_with_likes")
-      .select("id,content,image_url,like_count,created_at")
-      .gte("created_at", since)
-      .order("like_count", { ascending: false })
-      .order("created_at", { ascending: false })
-      .limit(6);
-    if (error) throw error;
+    const { data: likeRows, error: likeError } = await supabase
+      .from("post_likes")
+      .select("post_id,created_at")
+      .gte("created_at", since);
+    if (likeError) throw likeError;
 
-    const rows = Array.isArray(data) ? data : [];
+    const recentLikeCounts = new Map();
+    (Array.isArray(likeRows) ? likeRows : []).forEach((row) => {
+      const key = String(row?.post_id || "").trim();
+      if (!key) return;
+      recentLikeCounts.set(key, (recentLikeCounts.get(key) || 0) + 1);
+    });
+
+    let rows = [];
+
+    if (recentLikeCounts.size) {
+      const recentIds = Array.from(recentLikeCounts.keys());
+      const { data: postsData, error: postsError } = await supabase
+        .from("posts_with_likes")
+        .select("id,content,image_url,like_count,created_at")
+        .in("id", recentIds);
+      if (postsError) throw postsError;
+
+      const deduped = new Map();
+      (Array.isArray(postsData) ? postsData : []).forEach((p) => {
+        const key = String(p?.id || "").trim();
+        if (!key || deduped.has(key)) return;
+        deduped.set(key, p);
+      });
+
+      rows = Array.from(deduped.values())
+        .sort((a, b) => {
+          const aId = String(a?.id || "");
+          const bId = String(b?.id || "");
+          const aRecent = recentLikeCounts.get(aId) || 0;
+          const bRecent = recentLikeCounts.get(bId) || 0;
+          if (aRecent !== bRecent) return bRecent - aRecent;
+          const aLikes = Number(a?.like_count || 0);
+          const bLikes = Number(b?.like_count || 0);
+          return bLikes - aLikes;
+        })
+        .slice(0, 6);
+    } else {
+      const { data: postsData, error: postsError } = await supabase
+        .from("posts_with_likes")
+        .select("id,content,image_url,like_count,created_at")
+        .order("like_count", { ascending: false })
+        .limit(6);
+      if (postsError) throw postsError;
+      rows = Array.isArray(postsData) ? postsData : [];
+    }
+
     if (!rows.length) {
       host.innerHTML = `<div class="muted small">No community posts yet.</div>`;
       return;
@@ -1148,8 +1204,9 @@ async function loadCommunityPreview(routeToken) {
         const title = escapeHtml(raw.split("\n")[0] || "Untitled");
         const img = (p.image_url || "").trim();
         const likeCount = Number(p.like_count || 0);
+        const postId = String(p.id || "");
         return `
-        <button class="communityPreviewCard" type="button" data-post-id="${p.id}">
+        <button class="communityPreviewCard" type="button" data-post-id="${escapeHtml(postId)}">
           ${img ? `<div class="communityPreviewImage"><img src="${escapeHtml(img)}" alt="Community post" loading="lazy" /></div>` : ""}
           <div class="communityPreviewTitle">${title}</div>
           <div class="communityPreviewMeta">❤️ ${likeCount}</div>
@@ -1168,6 +1225,7 @@ function setupHome(routeToken) {
   const infoRoot = document.querySelector("#page-info");
   if (!homeRoot || !infoRoot) return;
   renderHomeLayout();
+  bindCommunityPreviewNavigation();
   renderInfoLayout();
   clearHome();
 
@@ -1277,33 +1335,6 @@ function setupHome(routeToken) {
       window.location.href = "/#home-picks-admin";
     });
   }
-
- if (!homeRoot.dataset.communityPreviewBound) {
-  homeRoot.dataset.communityPreviewBound = "1";
-
-  let lastTouch = 0;
-
-  const handlePick = (e) => {
-    const card = e.target?.closest?.("#homeCommunityPreview .communityPreviewCard[data-post-id]");
-    if (!card) return;
-
-    if (e.type === "touchend") {
-      lastTouch = Date.now();
-    } else if (Date.now() - lastTouch < 400) {
-      return;
-    }
-
-    const postId = card.dataset.postId || "";
-    if (!postId) return;
-
-    sessionStorage.setItem("communityFocusPostId", String(postId));
-    console.log("[home]", postId);
-    location.hash = "#community";
-  };
-
-  homeRoot.addEventListener("click", handlePick);
-  homeRoot.addEventListener("touchend", handlePick, { passive: true });
-}
 
   // Enter key in input triggers analyze
   infoRoot.querySelector("#homeYoutubeUrl")?.addEventListener("keydown", (e) => {

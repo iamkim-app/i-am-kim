@@ -122,6 +122,20 @@ function timeAgo(iso) {
   return `${y}y ago`;
 }
 
+function applyCommunityFocusJump(feedEl) {
+  const id = sessionStorage.getItem("communityFocusPostId");
+  if (!id || !feedEl) return;
+  requestAnimationFrame(() => {
+    const el = feedEl.querySelector(`[data-post-id="${id}"]`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("is-jumpTarget");
+    setTimeout(() => el.classList.remove("is-jumpTarget"), 2000);
+    sessionStorage.removeItem("communityFocusPostId");
+    console.log("[community]", id);
+  });
+}
+
 function renderCommunityFeed(posts, currentUserId, likeCounts = {}, myLikes = new Set(), commentsMap = {}) {
   const feed = $("#communityFeed");
   if (!feed) return;
@@ -284,20 +298,7 @@ function renderCommunityFeed(posts, currentUserId, likeCounts = {}, myLikes = ne
     });
   });
 
-    const id = sessionStorage.getItem("communityFocusPostId");
-  if (id) {
-    requestAnimationFrame(() => {
-      const feedEl = $("#communityFeed");
-      const el = feedEl?.querySelector(`[data-post-id="${id}"]`);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        el.classList.add("is-jumpTarget");
-        setTimeout(() => el.classList.remove("is-jumpTarget"), 2000);
-      }
-      sessionStorage.removeItem("communityFocusPostId");
-      console.log("[community]", id);
-    });
-  }
+  applyCommunityFocusJump(feed);
 }
 
 async function loadCommunityPosts(forceReload) {
