@@ -488,13 +488,13 @@ function renderHomeLayout() {
               <span class="heroCard__badge">EVENT</span>
               <span class="heroCard__title">Festival sale & deals</span>
             </button>
-            <button class="heroCard" type="button" style="--bg:url('/hero/hero_album_display.webp')" onclick="location.hash='#kpop'">
-              <span class="heroCard__badge">K-POP</span>
-              <span class="heroCard__title">Album shops & exclusives</span>
+            <button class="heroCard" type="button" style="--bg:url('/hero/hero_album_display.webp')" onclick="location.hash='#k?tab=shopping'">
+              <span class="heroCard__badge">SHOPPING</span>
+              <span class="heroCard__title">Official merch & album shops</span>
             </button>
             <button class="heroCard" type="button" style="--bg:url('/hero/hero_seoul_night.webp')" onclick="location.hash='#news'">
               <span class="heroCard__badge">SEOUL</span>
-              <span class="heroCard__title">Night views & spots</span>
+              <span class="heroCard__title">Korea travel updates</span>
             </button>
             <button class="heroCard" type="button" style="--bg:url('/hero/hero_kbeauty_shop.webp')" onclick="location.hash='#k?tab=beauty'">
               <span class="heroCard__badge">BEAUTY</span>
@@ -1167,7 +1167,8 @@ async function loadCommunityPreview(routeToken) {
       const { data: postsData, error: postsError } = await supabase
         .from("posts_with_likes")
         .select("id,content,image_url,like_count,created_at")
-        .in("id", recentIds);
+        .in("id", recentIds)
+        .neq("category", "Trippal");
       if (postsError) throw postsError;
 
       const deduped = new Map();
@@ -1193,6 +1194,7 @@ async function loadCommunityPreview(routeToken) {
       const { data: postsData, error: postsError } = await supabase
         .from("posts_with_likes")
         .select("id,content,image_url,like_count,created_at")
+        .neq("category", "Trippal")
         .order("like_count", { ascending: false })
         .limit(6);
       if (postsError) throw postsError;

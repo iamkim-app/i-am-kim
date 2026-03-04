@@ -92,6 +92,36 @@ function closeCommentReportModal(reason) {
 let COMMUNITY_FILTER = "all";
 let COMMUNITY_LOADING = false;
 const ADMIN_USER_IDS = [];
+const TRIPPAL_TEMPLATE = `TRIPPAL REQUEST
+DATE: 
+TIME: 
+WHERE: [Area / Station]
+PLAN: 
+
+LOOKING FOR
+PEOPLE: 
+VIBE: 
+LANGUAGE: 
+
+ABOUT ME
+AGE RANGE: 
+NOTES: 
+
+CONTACT
+KAKAO / IG: `;
+const TRIPPAL_REQUIRED_LINES = [
+  "TRIPPAL REQUEST",
+  "DATE:",
+  "TIME:",
+  "WHERE:",
+  "PLAN:",
+  "LOOKING FOR",
+  "PEOPLE:",
+  "VIBE:",
+  "LANGUAGE:",
+  "ABOUT ME",
+  "CONTACT",
+];
 
 function categoryPill(cat) {
   const c = String(cat || "Tips");
@@ -156,6 +186,7 @@ function renderCommunityFeed(posts, currentUserId, likeCounts = {}, myLikes = ne
       const title = escapeHtml(firstLine);
       const body = escapeHtml(rawContent);
       const cat = p.category || "Tips";
+      const isTrippal = String(cat).toLowerCase() === "trippal";
       const when = timeAgo(p.created_at);
       const isMine = currentUserId && p.user_id === currentUserId;
       const likeCount = Number(likeCounts[p.id] || 0);
@@ -200,7 +231,7 @@ function renderCommunityFeed(posts, currentUserId, likeCounts = {}, myLikes = ne
         : "";
 
       return `
-      <article class="postCard community-post-card" data-id="${p.id}" data-post-id="${p.id}">
+      <article class="postCard community-post-card ${isTrippal ? "is-trippal" : ""}" data-id="${p.id}" data-post-id="${p.id}">
         <div class="community-post-inner">
           <div class="postHead">
             <div class="postUser">
@@ -413,6 +444,29 @@ function openModal() {
   const prev = $("#postPhotoPreview");
   prev.hidden = true;
   prev.innerHTML = "";
+
+  const categorySelect = $("#postCategory");
+  const bodyInput = $("#postBody");
+  if (categorySelect && !categorySelect.dataset.bound) {
+    categorySelect.dataset.bound = "1";
+    categorySelect.addEventListener("change", () => {
+      const val = String(categorySelect.value || "").trim().toLowerCase();
+      const isTrippal = val === "trippal";
+      if (bodyInput && isTrippal) {
+        const cur = String(bodyInput.value || "").trim();
+        if (!cur) bodyInput.value = TRIPPAL_TEMPLATE + "\n";
+      }
+      m.classList.toggle("is-trippal", isTrippal);
+    });
+  }
+
+  const isTrippal = String($("#postCategory")?.value || "").trim() === "Trippal";
+  if (bodyInput && isTrippal) {
+    bodyInput.value = TRIPPAL_TEMPLATE;
+    bodyInput.focus();
+    bodyInput.setSelectionRange(bodyInput.value.length, bodyInput.value.length);
+  }
+  m.classList.toggle("is-trippal", isTrippal);
 }
 
 function closeModal() {
@@ -859,6 +913,52 @@ function setupCommunity() {
     newPostBtn.insertAdjacentElement("afterend", hint);
   }
 
+  if (page && !$("#trippalHint")) {
+    const hint = document.createElement("div");
+    hint.id = "trippalHint";
+    hint.className = "muted small";
+    hint.textContent = "Trippal: Find a travel buddy (public place only).";
+    const head = page.querySelector(".pageHeader");
+    if (head) head.insertAdjacentElement("afterend", hint);
+    else page.insertAdjacentElement("afterbegin", hint);
+  }
+
+  const filters = $("#communityFilters");
+  if (filters && !filters.querySelector('button[data-filter="Trippal"]')) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "chip chip--filter";
+    btn.dataset.filter = "Trippal";
+    btn.textContent = "Trippal";
+    filters.appendChild(btn);
+  }
+
+  if (!setupCommunity.trippalBound) {
+    setupCommunity.trippalBound = true;
+
+    const categorySelect = $("#postCategory");
+    if (categorySelect && !categorySelect.querySelector('option[value="Trippal"]')) {
+      const opt = document.createElement("option");
+      opt.value = "Trippal";
+      opt.textContent = "Trippal";
+      categorySelect.appendChild(opt);
+    }
+
+    const bodyInput = $("#postBody");
+    if (bodyInput && !$("#btnInsertTrippal")) {
+      const btn = document.createElement("button");
+      btn.id = "btnInsertTrippal";
+      btn.type = "button";
+      btn.className = "btn btn--ghost btn--small";
+      btn.textContent = "Insert Trippal template";
+      btn.style.display = "none";
+      bodyInput.insertAdjacentElement("beforebegin", btn);
+    }
+
+    const insertBtn = $("#btnInsertTrippal");
+    if (insertBtn) insertBtn.style.display = "none";
+  }
+
   // filters
   $("#communityFilters")?.addEventListener("click", (e) => {
     const btn = e.target?.closest?.("button[data-filter]");
@@ -946,8 +1046,36 @@ function setupCommunity() {
       return;
     }
 
+    const categoryRaw = String($("#postCategory")?.value || "tips").trim().toLowerCase();
+    let body = String($("#postBody")?.value || "").trim();
+    if (categoryRaw === "trippal") {
+      const REQUIRED_PREFIX = [
+        "TRIPPAL REQUEST",
+        "DATE:",
+        "TIME:",
+        "WHERE:",
+        "PLAN:",
+        "LOOKING FOR",
+        "PEOPLE:",
+        "VIBE:",
+        "LANGUAGE:",
+        "ABOUT ME",
+        "AGE RANGE:",
+        "NOTES:",
+        "CONTACT",
+        "KAKAO / IG:",
+      ];
+      const esc = (s) => s.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&");
+      const missing = REQUIRED_PREFIX.filter((h) => {
+        const re = new RegExp(`^\\s*${esc(h)}`, "mi");
+        return !re.test(body);
+      });
+      if (missing.length) {
+        status.textContent = "Trippal post must keep all template headings.";
+        return;
+      }
+    }
     const category = ($("#postCategory")?.value || "Tips").trim();
-    const body = ($("#postBody")?.value || "").trim();
     const file = $("#postPhoto")?.files?.[0] || null;
 
     if (!body) {

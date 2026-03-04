@@ -4808,3 +4808,43 @@ font-weight:500;
   line-height:1.45;
   color:#2346c7;
 }
+#btnAskKim.askSearch:active{transform:translateY(1px);}
+
+/* Trippal highlight (subtle) */
+.postCard.is-trippal{
+  border: 1px solid rgba(10,132,255,.22);
+  background: linear-gradient(135deg,
+    rgba(10,132,255,.06),
+    rgba(255,59,48,.04),
+    rgba(255,255,255,1)
+  );
+}
+
+.postCard.is-trippal .nowTag{
+  border-color: rgba(10,132,255,.35);
+  color: rgba(10,132,255,.95);
+  background: rgba(10,132,255,.06);
+}
+
+.postCard.is-trippal .postTitle::before{
+  content: "TRIPPAL";
+  display: inline-block;
+  margin-right: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: rgba(17,17,17,.75);
+  background: rgba(17,17,17,.06);
+}
+
+.postCard.is-trippal{
+  border:1px solid rgba(10,132,255,.25);
+  background:linear-gradient(135deg,rgba(10,132,255,.06),rgba(255,255,255,1));
+}
+
+.postCard.is-trippal .nowTag{
+  color:#0a84ff;
+  border-color:rgba(10,132,255,.35);
+}
