@@ -507,7 +507,15 @@ function renderHomeLayout() {
           </div>
         </section>
         <div class="homeHero__cta">
-          <a class="btn btn--primary btn--small" href="#info">Open YouTube Summarizer</a>
+          <button class="askSearch" type="button" onclick="location.hash='#news'">
+            <span class="askSearch__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8"/>
+                <path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <span class="askSearch__text">Ask KIM anything</span>
+          </button>
         </div>
       </div>
     </section>
@@ -1285,6 +1293,12 @@ function setupHome(routeToken) {
     if (action === "safety") {
       window.App?.openEmergencySheet?.();
     }
+  });
+  homeRoot.querySelector("#btnAskKim")?.addEventListener("click", () => {
+    location.hash = "#news";
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("news:setChip", { detail: { chip: "FAQ" } }));
+    }, 50);
   });
   homeRoot.querySelector(".spotlightGrid")?.addEventListener("click", (e) => {
     const card = e.target?.closest?.(".spotlightCard");

@@ -4546,7 +4546,75 @@ body .kFoodHero__track .kFoodHero__card:hover{
     background: linear-gradient(135deg, rgba(11,18,32,0.08), rgba(11,18,32,0.02));
   }
 
-  .communityPreviewCard:has(.communityPreviewImage)::before{
+.communityPreviewCard:has(.communityPreviewImage)::before{
     display: none;
   }
 }
+
+#btnAskKim{
+  display:block;
+  width:100%;
+  margin:18px 0;
+  padding:20px;
+  border-radius:18px;
+
+  background:#111;
+  color:#fff;
+
+  font-size:18px;
+  font-weight:800;
+  text-align:center;
+  letter-spacing:0.02em;
+
+  border:none;
+  box-shadow:0 10px 24px rgba(0,0,0,0.18);
+}
+
+#btnAskKim small{
+  display:block;
+  margin-top:6px;
+  font-size:13px;
+  opacity:.75;
+}
+
+#btnAskKim *{
+  background:none !important;
+  color:#fff !important;
+}
+
+.askSearch{
+  width:100%;
+  margin:16px 0 22px;
+  padding:14px 16px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  background:#fff;
+  color:#111;
+  border:1px solid rgba(17,17,17,.14);
+  border-radius:999px;
+  box-shadow:0 1px 2px rgba(17,17,17,.06);
+}
+
+.askSearch__icon{
+  width:20px;
+  height:20px;
+  opacity:.55;
+  display:grid;
+  place-items:center;
+}
+
+.askSearch__icon svg{
+  width:20px;
+  height:20px;
+}
+
+.askSearch__text{
+  flex:1;
+  text-align:left;
+  font-size:15px;
+  font-weight:500;
+  color:rgba(17,17,17,.55);
+}
+
+.askSearch:active{ transform:scale(.99); }
