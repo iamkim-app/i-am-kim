@@ -74,10 +74,26 @@ function escapeHtml(s) {
 
 const NOW_STATE = {
   items: [],
+  faqQuestions: [],
   isAdmin: false,
+  isSignedIn: false,
   mode: "mykorea",
   refresh: null,
+  defaultChip: "",
 };
+
+let NEWS_READY_BOUND = false;
+if (!NEWS_READY_BOUND) {
+  NEWS_READY_BOUND = true;
+  window.addEventListener("news:ready", () => {
+    const want = sessionStorage.getItem("newsDefaultTab");
+    if (want !== "FAQ") return;
+    const btn = document.querySelector('[data-filter="FAQ"]');
+    console.log("[news] auto-select FAQ btn", !!btn);
+    if (btn) btn.click();
+    sessionStorage.removeItem("newsDefaultTab");
+  });
+}
 
 function getApp() {
   return window.App || {};
@@ -156,6 +172,10 @@ function mapFilterToSection(filter) {
 function renderCards(active, items) {
   const host = $("#nowCards");
   if (!host) return;
+  if (active === "FAQ") {
+    renderFaqList(items);
+    return;
+  }
   const section = mapFilterToSection(active);
   const list = items.filter((it) => it.section === section);
   if (host.id === "nowCards") {
@@ -164,6 +184,28 @@ function renderCards(active, items) {
   host.innerHTML = list.length
     ? list
         .map((it) => renderCard(it, NOW_STATE.isAdmin && it.canDelete))
+        .join("")
+    : `<div class="muted small">No items yet.</div>`;
+}
+
+function renderFaqList(items) {
+  const host = $("#nowCards");
+  if (!host) return;
+  const list = Array.isArray(NOW_STATE.faqQuestions) ? NOW_STATE.faqQuestions : [];
+  if (host.id === "nowCards") {
+    host.classList.toggle("is-single", list.length < 2);
+  }
+  host.innerHTML = list.length
+    ? list
+        .map((it) => {
+          const question = escapeHtml(it.question || "Untitled");
+          return `
+            <div class="faqItem">
+              <div class="faqItem__label">Question</div>
+              <div class="faqItem__question">${question}</div>
+            </div>
+          `;
+        })
         .join("")
     : `<div class="muted small">No items yet.</div>`;
 }
@@ -267,7 +309,7 @@ async function loadSupabaseItems(mode) {
   try {
     const { data, error } = await supabase
       .from("korea_now_posts")
-      .select("id,section,tag,title,summary,link,created_at,status")
+      .select("id,section,tag,title,summary,link,created_at,status,faq_answers(id,answer,created_at)")
       .eq("status", "active")
       .order("created_at", { ascending: false });
     if (error) throw error;
@@ -283,6 +325,15 @@ async function loadSupabaseItems(mode) {
           title: row.title || "Untitled",
           summary: row.summary || "",
           link: row.link || "",
+          latestAnswer: Array.isArray(row.faq_answers) && row.faq_answers.length
+            ? row.faq_answers
+                .slice()
+                .sort(
+                  (a, b) =>
+                    new Date(b?.created_at || 0).getTime() -
+                    new Date(a?.created_at || 0).getTime()
+                )[0]
+            : null,
           canDelete: true,
         };
       })
@@ -292,6 +343,22 @@ async function loadSupabaseItems(mode) {
   } catch (err) {
     console.warn("[korea-now] Supabase load failed.", err);
     return { ok: false, items: [] };
+  }
+}
+
+async function loadFaqQuestions() {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase
+      .from("faq_questions")
+      .select("id,question,created_at")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    console.warn("[korea-now] FAQ questions load failed.", err);
+    return [];
   }
 }
 
@@ -382,6 +449,17 @@ export async function isAdmin() {
   }
 }
 
+async function isSignedIn() {
+  const supabase = getSupabase();
+  if (!supabase) return false;
+  try {
+    const userResp = await supabase.auth.getUser();
+    return !!userResp?.data?.user?.id;
+  } catch {
+    return false;
+  }
+}
+
 let K_ADMIN_REFRESH = null;
 
 function ensureAdminModal() {
@@ -441,6 +519,90 @@ function ensureAdminModal() {
   });
 }
 
+function ensureFaqModal() {
+  if ($("#faqAskModal")) return;
+  const modal = document.createElement("div");
+  modal.className = "nowModal";
+  modal.id = "faqAskModal";
+  modal.hidden = true;
+  modal.innerHTML = `
+    <div class="nowModal__backdrop" data-close="1"></div>
+    <div class="nowModal__card" role="dialog" aria-modal="true" aria-label="Ask a question">
+      <div class="nowModal__head">
+        <div class="nowModal__title">Ask a question</div>
+        <button class="btn btn--ghost btn--small" data-close="1" type="button">Close</button>
+      </div>
+      <div class="nowModal__body">
+        <label class="field">
+          <div class="field__label">Question</div>
+          <textarea id="faqQuestionInput" class="input" rows="4" placeholder="Type your question"></textarea>
+        </label>
+        <div class="field__status" id="faqQuestionStatus"></div>
+      </div>
+      <div class="nowModal__actions">
+        <button class="btn btn--ghost" data-close="1" type="button">Cancel</button>
+        <button class="btn btn--primary" id="btnFaqQuestionSubmit" type="button">Submit</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  modal.addEventListener("click", (e) => {
+    if (e.target?.closest?.("[data-close='1']")) {
+      modal.hidden = true;
+    }
+  });
+
+  const submitBtn = $("#btnFaqQuestionSubmit");
+  if (submitBtn && submitBtn.dataset.bound !== "1") {
+    submitBtn.dataset.bound = "1";
+    submitBtn.addEventListener("click", () => {
+      submitFaqQuestion(NOW_STATE.refresh || (async () => {}));
+    });
+  }
+}
+
+async function submitFaqQuestion(refresh) {
+  console.log("[faq] submit");
+  const supabase = getSupabase();
+  const status = $("#faqQuestionStatus");
+  if (!supabase) {
+    if (status) status.textContent = "Supabase is not configured.";
+    return;
+  }
+  const input = $("#faqQuestionInput");
+  const q = String(input?.value || "").trim();
+  if (!q) {
+    if (status) status.textContent = "Question required";
+    return;
+  }
+  const { data: userResp } = await supabase.auth.getUser();
+  const uid = userResp?.user?.id || null;
+  try {
+    const { error } = await supabase
+      .from("faq_questions")
+      .insert({ question: q, user_id: uid, status: "active" });
+    if (error) {
+      console.warn("[faq] error", error);
+      if (status) status.textContent = `${error.code || "ERR"} ${error.message || "Save failed."}`;
+      return;
+    }
+    const modal = $("#faqAskModal");
+    if (modal) modal.hidden = true;
+    if (input) input.value = "";
+    if (status) status.textContent = "";
+    await refresh();
+  } catch (err) {
+    console.warn("[faq] error", err);
+    if (status) status.textContent = "Save failed.";
+  }
+}
+
+function setFaqAskVisibility() {
+  const bar = $("#nowFaqBar");
+  if (!bar) return;
+  bar.style.display = NOW_STATE.isSignedIn ? "flex" : "none";
+}
 async function handleAdminSaveClick() {
   const modal = $("#nowAdminModal");
   const mode = modal?.dataset?.mode || NOW_STATE.mode;
@@ -568,6 +730,53 @@ function bindCardActions(refresh) {
   bindHost("#nowCardsKpop");
 }
 
+function bindFaqActions(refresh) {
+  const host = $("#nowCards");
+  if (!host || host.dataset.faqBound === "1") return;
+  host.dataset.faqBound = "1";
+  host.addEventListener("click", async (e) => {
+    const answerBtn = e.target?.closest?.(".faqAnswerBtn");
+    if (answerBtn) {
+      const id = answerBtn.dataset.id || "";
+      if (!id) return;
+      const answer = window.prompt("Answer");
+      if (!answer || !answer.trim()) return;
+      const supabase = getSupabase();
+      if (!supabase) return;
+      try {
+        const { error } = await supabase
+          .from("faq_answers")
+          .insert({ question_id: id, answer: answer.trim() });
+        if (error) throw error;
+        await refresh();
+        try {
+          window.dispatchEvent(new Event("koreaNow:updated"));
+        } catch {}
+      } catch (err) {
+        console.warn("[korea-now] FAQ answer insert failed.", err);
+      }
+      return;
+    }
+    const delBtn = e.target?.closest?.(".faqAnswerDelete");
+    if (delBtn) {
+      const answerId = delBtn.dataset.answerId || "";
+      if (!answerId) return;
+      const supabase = getSupabase();
+      if (!supabase) return;
+      try {
+        const { error } = await supabase.from("faq_answers").delete().eq("id", answerId);
+        if (error) throw error;
+        await refresh();
+        try {
+          window.dispatchEvent(new Event("koreaNow:updated"));
+        } catch {}
+      } catch (err) {
+        console.warn("[korea-now] FAQ answer delete failed.", err);
+      }
+    }
+  });
+}
+
 export async function deleteKPost(id) {
   const supabase = getSupabase();
   if (!supabase || !id) return false;
@@ -589,6 +798,9 @@ function ensureMyKoreaUI(page) {
   section.innerHTML = `
     <div class="nowAdminBar" data-admin-bar="1" style="display:none">
       <button class="btn btn--primary btn--small nowAdminAddBtn" data-mode="mykorea" type="button">+ Add</button>
+    </div>
+    <div class="nowFaqBar" id="nowFaqBar" style="display:none">
+      <button class="btn btn--primary btn--small" id="btnFaqAsk" type="button">Ask</button>
     </div>
     <div class="nowFilters" id="nowChips"></div>
     <div class="nowCards" id="nowCards"></div>
@@ -688,6 +900,24 @@ export async function initKoreaNow(options = {}) {
     page.querySelector("#nowStatus")?.remove();
     page.querySelector("#btnReloadNow")?.remove();
     ensureMyKoreaUI(page);
+    if (page.dataset.faqBound !== "1") {
+      page.dataset.faqBound = "1";
+      page.addEventListener("click", async (e) => {
+        if (e.target?.closest?.("#btnFaqAsk")) {
+          ensureFaqModal();
+          const modal = $("#faqAskModal");
+          if (modal) modal.hidden = false;
+          const status = $("#faqQuestionStatus");
+          if (status) status.textContent = "";
+          return;
+        }
+      });
+    }
+    const t = sessionStorage.getItem("newsDefaultTab");
+    if (t === "faq") {
+      NOW_STATE.defaultChip = "FAQ";
+    }
+    sessionStorage.removeItem("newsDefaultTab");
   }
   const track = document.querySelector(".nowCards");
   if (track && track.dataset.dragBound !== "1") {
@@ -725,13 +955,18 @@ export async function initKoreaNow(options = {}) {
       items = await loadFallbackItems(mode);
     }
 
+    if (mode !== "kpop") {
+      NOW_STATE.faqQuestions = await loadFaqQuestions();
+    }
+
     NOW_STATE.items = items;
     if (mode === "kpop") {
       renderKpop(items);
       return;
     }
     const initial = FILTERS[0];
-    const active = $("#nowChips .is-active")?.dataset?.filter || initial;
+    const defaultActive = NOW_STATE.defaultChip || initial;
+    const active = $("#nowChips .is-active")?.dataset?.filter || defaultActive;
     renderChips(active);
     renderCards(active, items);
     bindChips(active, items);
@@ -741,7 +976,23 @@ export async function initKoreaNow(options = {}) {
 
   await refresh();
 
+  if (mode !== "kpop") {
+    const want = sessionStorage.getItem("newsDefaultTab");
+    if (want === "FAQ") {
+      const faqBtn =
+        document.querySelector('.nowFilters [data-filter="FAQ"]') ||
+        document.querySelector('.nowFilters button[data-filter="FAQ"]');
+      if (faqBtn) faqBtn.click();
+      console.log("[news] auto-select FAQ", !!faqBtn);
+      sessionStorage.removeItem("newsDefaultTab");
+    }
+  }
+
   NOW_STATE.isAdmin = await isAdmin();
+  NOW_STATE.isSignedIn = await isSignedIn();
+  if (mode !== "kpop") {
+    setFaqAskVisibility();
+  }
   if (NOW_STATE.isAdmin) {
     document.querySelectorAll("[data-admin-bar='1']").forEach((bar) => {
       bar.style.display = "flex";
@@ -775,9 +1026,13 @@ export async function initKoreaNow(options = {}) {
   if (mode === "kpop") {
     renderKpop(NOW_STATE.items);
   } else {
-    const active = $("#nowChips .is-active")?.dataset?.filter || FILTERS[0];
+    const defaultActive = NOW_STATE.defaultChip || FILTERS[0];
+    const active = $("#nowChips .is-active")?.dataset?.filter || defaultActive;
     renderCards(active, NOW_STATE.items);
   }
 
   bindCardActions(refresh);
+  if (mode !== "kpop") {
+    bindFaqActions(refresh);
+  }
 }
