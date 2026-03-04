@@ -1,9 +1,45 @@
 const STORAGE_KEY = "iamkim_home_picks_admin_draft_v1";
+const SLOT_IDS = ["1", "2", "3", "4", "5"];
 
 const getApp = () => window.App || {};
 
 let HOME_PICKS_ADMIN_DIRTY = false;
 let HOME_PICKS_ADMIN_BOUND = false;
+
+function ensureSlotCards() {
+  const root = document.querySelector("#page-home-picks-admin");
+  if (!root || root.dataset.slotsReady === "1") return;
+  const form = root.querySelector("#homePicksAdminForm");
+  if (!form) return;
+
+  const desc = root.querySelector(".pageHeader__desc");
+  if (desc && desc.textContent.includes("1-3")) {
+    desc.textContent = desc.textContent.replace("1-3", "1-5");
+  }
+
+  const cards = Array.from(form.querySelectorAll(".card"));
+  const template = cards[0] || null;
+  if (!template) return;
+
+  SLOT_IDS.forEach((slot, idx) => {
+    const exists = form.querySelector(`[data-slot="${slot}"][data-field]`);
+    if (exists) return;
+    const clone = template.cloneNode(true);
+    clone.querySelectorAll("[data-slot][data-field]").forEach((el) => {
+      el.dataset.slot = slot;
+      if (el.tagName === "SELECT") {
+        el.value = "k_posts";
+      } else {
+        el.value = "";
+      }
+    });
+    const label = clone.querySelector(".muted.small");
+    if (label) label.textContent = `Slot ${slot}`;
+    form.appendChild(clone);
+  });
+
+  root.dataset.slotsReady = "1";
+}
 
 function setStatus(message, isError = false) {
   const el = document.querySelector("#homePicksAdminStatus");
@@ -121,14 +157,12 @@ function bindInputListeners() {
     clearAllBtn.type = "button";
     clearAllBtn.textContent = "Clear All";
     clearAllBtn.addEventListener("click", () => {
-      ["1", "2", "3"].forEach((slot) => clearSlot(slot));
+      SLOT_IDS.forEach((slot) => clearSlot(slot));
     });
     actionsRow.insertBefore(clearAllBtn, refreshBtn);
   }
 
-  const slots = new Set(
-    Array.from(root.querySelectorAll("[data-slot][data-field]")).map((el) => el.dataset.slot)
-  );
+  const slots = new Set(SLOT_IDS);
   slots.forEach((slot) => {
     if (!slot) return;
     const slotCard = root.querySelector(`[data-slot="${slot}"][data-field]`)?.closest(".card");
@@ -158,6 +192,7 @@ function applyDraftIfPresent() {
 }
 
 export function setupHomePicksAdmin() {
+  ensureSlotCards();
   bindInputListeners();
   applyDraftIfPresent();
 }
@@ -214,8 +249,7 @@ export async function saveHomePicksAdmin() {
 
   try {
     const values = readInputs();
-    const slots = ["1", "2", "3"];
-    const rows = slots.map((slot) => {
+    const rows = SLOT_IDS.map((slot) => {
       const row = values?.[slot] || {};
       const source = String(row.source || "k_posts").trim() || "k_posts";
       const sourceId = String(row.source_id || "").trim();

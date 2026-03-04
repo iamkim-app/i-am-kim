@@ -923,6 +923,16 @@ function setupCommunity() {
     else page.insertAdjacentElement("afterbegin", hint);
   }
 
+  if (page && !$("#communitySafetyNote")) {
+    const note = document.createElement("div");
+    note.id = "communitySafetyNote";
+    note.className = "communitySafetyNote";
+    note.innerHTML = `Community posts are user-generated.<br/>Report content that violates guidelines.<br/><br/>For Trippal meetups:<br/>Always meet in public places and use caution when interacting with other users.`;
+    const head = page.querySelector(".pageHeader");
+    if (head) head.insertAdjacentElement("afterend", note);
+    else page.insertAdjacentElement("afterbegin", note);
+  }
+
   const filters = $("#communityFilters");
   if (filters && !filters.querySelector('button[data-filter="Trippal"]')) {
     const btn = document.createElement("button");

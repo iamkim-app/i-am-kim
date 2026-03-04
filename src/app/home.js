@@ -613,8 +613,15 @@ function renderHomeLayout() {
         </div>
         <button class="btn btn--ghost btn--small" id="btnEditHomePicks" type="button" style="display:none">Edit</button>
       </div>
-        <div class="homeNowPreview" id="homeNowPreview">
-          <div class="homeNowList" id="homeNowTrack"></div>
+        <div class="previewCarousel" id="homeNowPreview">
+        <div class="previewTrack homeNowTrack" id="homeNowTrack" data-scroll="1"></div>
+          <div class="previewDots" id="homeNowDots">
+            <button class="dot is-active" type="button" data-idx="0"></button>
+            <button class="dot" type="button" data-idx="1"></button>
+            <button class="dot" type="button" data-idx="2"></button>
+            <button class="dot" type="button" data-idx="3"></button>
+            <button class="dot" type="button" data-idx="4"></button>
+          </div>
         </div>
       </section>
 
@@ -782,8 +789,8 @@ function ensureHomePicksModal() {
 function renderHomePicksForm(rows) {
   const body = document.getElementById("homePicksBody");
   if (!body) return;
-  const map = new Map((rows || []).map((r) => [Number(r.slot), r]));
-  body.innerHTML = [1, 2, 3]
+    const map = new Map((rows || []).map((r) => [Number(r.slot), r]));
+    body.innerHTML = [1, 2, 3, 4, 5]
     .map((slot) => {
       const row = map.get(slot) || {};
       return `
@@ -872,14 +879,15 @@ function isHomeActive() {
   return page && !page.hidden;
 }
 
-function startHomeCarousel() {
-  if (HOME_CAROUSEL_TIMER) return;
-  const root = document.querySelector("#page-home");
-  if (!root) return;
-  const host = root.querySelector("#homeNowPreview");
-  const track = root.querySelector("#homeNowTrack");
-  const dots = root.querySelector("#homeNowDots");
-  if (!host || !track || !dots) return;
+  function startHomeCarousel() {
+    if (HOME_CAROUSEL_TIMER) return;
+    const root = document.querySelector("#page-home");
+    if (!root) return;
+    const host = root.querySelector("#homeNowPreview");
+    const track = root.querySelector("#homeNowTrack");
+    const dots = root.querySelector("#homeNowDots");
+    if (track?.dataset?.scroll === "1") return;
+    if (!host || !track || !dots) return;
 
   const total = () => track.querySelectorAll(".previewCard").length;
   const applyIndex = () => {
@@ -909,11 +917,12 @@ function stopHomeCarousel() {
   }
 }
 
-function setupHomePreviewCarousel() {
-  const host = document.getElementById("homeNowPreview");
-  const track = document.getElementById("homeNowTrack");
-  const dots = document.getElementById("homeNowDots");
-  if (!host || !track || !dots || host.dataset.bound === "1") return;
+  function setupHomePreviewCarousel() {
+    const host = document.getElementById("homeNowPreview");
+    const track = document.getElementById("homeNowTrack");
+    const dots = document.getElementById("homeNowDots");
+    if (track?.dataset?.scroll === "1") return;
+    if (!host || !track || !dots || host.dataset.bound === "1") return;
   host.dataset.bound = "1";
 
   let index = 0;
@@ -1020,8 +1029,8 @@ async function loadNowPreview(routeToken) {
         .order("slot", { ascending: true });
       if (error) throw error;
 
-      const slotMap = new Map((slots || []).map((s) => [Number(s.slot), s]));
-      const slotsNormalized = [1, 2, 3].map((n) => slotMap.get(n) || null);
+        const slotMap = new Map((slots || []).map((s) => [Number(s.slot), s]));
+        const slotsNormalized = [1, 2, 3, 4, 5].map((n) => slotMap.get(n) || null);
 
       const resolveSlot = async (slot) => {
         if (!slot) return { placeholder: true };
@@ -1111,7 +1120,22 @@ async function loadNowPreview(routeToken) {
           <div class="previewTitle homeNowCard__title">Transit changes</div>
           <div class="previewDesc homeNowCard__desc">Temporary line closures and bus reroutes.</div>
         </div>
+        <div class="previewCard homeNowCard" data-kind="guide">
+          <div class="previewTag">${homeNowIcon}<span class="homeNowCard__badge">GUIDE</span></div>
+          <div class="previewTitle homeNowCard__title">Transit passes</div>
+          <div class="previewDesc homeNowCard__desc">Which pass to buy for your routes.</div>
+        </div>
+        <div class="previewCard homeNowCard" data-kind="news">
+          <div class="previewTag">${homeNowIcon}<span class="homeNowCard__badge">NEWS</span></div>
+          <div class="previewTitle homeNowCard__title">Local events</div>
+          <div class="previewDesc homeNowCard__desc">Seasonal festivals and ticket tips.</div>
+        </div>
       `;
+      const dots = document.getElementById("homeNowDots");
+      if (dots) {
+        const count = track.querySelectorAll(".previewCard").length;
+        dots.style.display = count <= 1 ? "none" : "";
+      }
       return;
     }
 
@@ -1139,6 +1163,11 @@ async function loadNowPreview(routeToken) {
       `;
       })
       .join("");
+    const dots = document.getElementById("homeNowDots");
+    if (dots) {
+      const count = track.querySelectorAll(".previewCard").length;
+      dots.style.display = count <= 1 ? "none" : "";
+    }
   }
 
 async function loadCommunityPreview(routeToken) {

@@ -5037,6 +5037,46 @@ font-weight:500;
 .homeNowCard[data-kind="alert"] .homeNowCard__tag{ color:#ef4444; }
 .homeNowCard[data-kind="guide"] .homeNowCard__tag{ color:#7c3aed; }
 
+#homeNowTrack{
+  display:flex;
+  flex-wrap:nowrap;
+  gap:14px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;
+  padding:2px 12px 12px;
+  width:auto;
+  max-width:none;
+  touch-action:pan-x;
+}
+#homeNowTrack::-webkit-scrollbar{display:none;}
+#homeNowTrack .previewCard{
+  flex:0 0 78vw;
+  max-width:420px;
+  scroll-snap-align:start;
+}
+
+#homeNowPreview{ overflow:hidden; }
+
+.communitySafetyNote{
+  font-size:13px;
+  line-height:1.45;
+  color:rgba(17,17,17,.55);
+  background:rgba(17,17,17,.03);
+  padding:10px 12px;
+  border-radius:10px;
+  margin-bottom:14px;
+}
+
+.deleteAccountNotice{
+  font-size:13px;
+  color:rgba(17,17,17,.55);
+  line-height:1.4;
+  margin-top:8px;
+  margin-bottom:10px;
+}
+
 .koreaNowSection{
   margin-top:28px;
 }

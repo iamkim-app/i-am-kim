@@ -239,6 +239,12 @@ function ensureProfileUI() {
         <button class="btn btn--ghost btn--small" id="profileContact" type="button">Contact us</button>
         <button class="btn btn--primary btn--small" type="button" data-auth-action="open-auth" data-auth-visible="signed-out">Sign in</button>
         <button class="btn btn--ghost btn--small" id="profileLogout" type="button" data-auth-action="logout" data-auth-visible="signed-in">Sign out</button>
+        <div class="deleteAccountNotice">
+          Deleting your account will permanently remove your profile,
+          posts, comments and related data.
+          <br />
+          This action cannot be undone.
+        </div>
         <button class="btn btn--danger" id="btnDeleteAccount" type="button" data-auth-visible="signed-in">Delete account</button>
       </div>
     </div>
@@ -3136,7 +3142,17 @@ async function init() {
 
 boot().catch((err) => console.warn("[init] Failed.", err));
 
+function handleAppResume(){
+  window.dispatchEvent(new Event("app:resume"));
+}
 
+document.addEventListener("visibilitychange", ()=>{
+  if(document.visibilityState==="visible"){
+    handleAppResume();
+  }
+});
+
+window.addEventListener("focus", handleAppResume);
 
 
 
