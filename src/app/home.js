@@ -484,9 +484,9 @@ function renderHomeLayout() {
               <span class="heroCard__badge">K-POP</span>
               <span class="heroCard__title">Concert day essentials</span>
             </button>
-            <button class="heroCard" type="button" style="--bg:url('/hero/hero_fandom_line.webp')" onclick="location.hash='#kpop'">
-              <span class="heroCard__badge">K-POP</span>
-              <span class="heroCard__title">Fandom line etiquette</span>
+            <button class="heroCard" type="button" style="--bg:url('/hero/hero_fandom_line_v2.webp')" onclick="location.hash='#k?tab=deals'">
+              <span class="heroCard__badge">EVENT</span>
+              <span class="heroCard__title">Festival sale & deals</span>
             </button>
             <button class="heroCard" type="button" style="--bg:url('/hero/hero_album_display.webp')" onclick="location.hash='#kpop'">
               <span class="heroCard__badge">K-POP</span>
@@ -507,7 +507,7 @@ function renderHomeLayout() {
           </div>
         </section>
         <div class="homeHero__cta">
-          <button class="askSearch" type="button" onclick="location.hash='#news'">
+          <button class="askSearch" id="btnAskKim" type="button">
             <span class="askSearch__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
                 <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8"/>
@@ -1296,9 +1296,29 @@ function setupHome(routeToken) {
   });
   homeRoot.querySelector("#btnAskKim")?.addEventListener("click", () => {
     location.hash = "#news";
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent("news:setChip", { detail: { chip: "FAQ" } }));
-    }, 50);
+    const start = Date.now();
+    const poll = () => {
+      const btn =
+        document.querySelector('[data-filter="FAQ"]') ||
+        Array.from(document.querySelectorAll("#page-korea-now button, #page-korea-now .chip"))
+          .find((el) => (el.textContent || "").trim() === "FAQ");
+      if (btn) {
+        btn.click();
+        console.log("[ask] faq chip clicked", !!btn);
+        return true;
+      }
+      return false;
+    };
+    if (poll()) return;
+    const timer = setInterval(() => {
+      if (poll()) {
+        clearInterval(timer);
+        return;
+      }
+      if (Date.now() - start >= 3000) {
+        clearInterval(timer);
+      }
+    }, 100);
   });
   homeRoot.querySelector(".spotlightGrid")?.addEventListener("click", (e) => {
     const card = e.target?.closest?.(".spotlightCard");
