@@ -1304,7 +1304,6 @@ function setupHome(routeToken) {
           .find((el) => (el.textContent || "").trim() === "FAQ");
       if (btn) {
         btn.click();
-        console.log("[ask] faq chip clicked", !!btn);
         return true;
       }
       return false;
