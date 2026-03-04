@@ -251,7 +251,7 @@ function ensureProfileUI() {
 
   $("#profileContact")?.addEventListener("click", () => openContactModal());
   $("#privacyPolicyBtn")?.addEventListener("click", () => {
-    location.href = "https://iamkim.app/privacy";
+    location.hash = "#privacy";
   });
   $("#openTerms")?.addEventListener("click", () => {
     location.hash = "#terms";
@@ -290,6 +290,43 @@ function ensureProfileUI() {
   });
   ensureDeleteAccountModal();
   $("#btnDeleteAccount")?.addEventListener("click", () => openDeleteAccountModal());
+}
+
+function ensurePages() {
+  const main = $(".main");
+  if (!main) return;
+  const footer = main.querySelector(".footer");
+
+  const addPage = (id, title, desc, bodyHtml) => {
+    if ($(`#${id}`)) return;
+    const section = document.createElement("section");
+    section.className = "page";
+    section.id = id;
+    section.dataset.page = id.replace("page-", "");
+    section.hidden = true;
+    section.innerHTML = `
+      <div class="pageHeader">
+        <h2 class="pageHeader__title">${title}</h2>
+        <p class="pageHeader__desc">${desc}</p>
+      </div>
+      ${bodyHtml}
+    `;
+    if (footer) main.insertBefore(section, footer);
+    else main.appendChild(section);
+  };
+
+  addPage(
+    "page-privacy",
+    "Privacy Policy",
+    "How we handle your account and data.",
+    `<div class="card"><p>Contact: kstudyaiworld@gmail.com</p></div>`
+  );
+  addPage(
+    "page-terms",
+    "Terms of Service",
+    "Basic rules for using the app.",
+    `<div class="card"><p>Contact: kstudyaiworld@gmail.com</p></div>`
+  );
 }
 
 function ensureDeleteAccountModal() {
@@ -1072,16 +1109,18 @@ function setActiveRoute(route) {
   });
 
   // mobile tab bar
-  $$(".tabbar__link").forEach((a) => {
-    a.classList.toggle(
-      "is-active",
-      a.dataset.route === route || a.dataset.route === pageRoute
-    );
-  });
+    $$(".tabbar__link").forEach((a) => {
+      a.classList.toggle(
+        "is-active",
+        a.dataset.route === route || a.dataset.route === pageRoute
+      );
+    });
 
-  // route hooks
-  if (route === "news") {
-    initKoreaNow?.({ mode: "mykorea" });
+    if (route === "privacy") return;
+  
+    // route hooks
+    if (route === "news") {
+      initKoreaNow?.({ mode: "mykorea" });
     window.dispatchEvent(new Event("news:ready"));
   }
   if (route === "k") {
@@ -2986,6 +3025,8 @@ async function boot() {
 /* ----------------------------- INIT ------------------------------------ */
 
 async function init() {
+  if (location.pathname === "/privacy") location.replace("/#privacy");
+  if (location.pathname === "/terms") location.replace("/#terms");
   // 0) DEV: If a service worker was ever installed on this origin, it can keep
   // serving stale JS/CSS and make the UI feel "frozen". Nuke it in dev.
   if (isLocalhost()) {
@@ -3019,6 +3060,7 @@ async function init() {
   ensureNicknameUI();
   ensureNicknameBadge();
   ensureProfileUI();
+  ensurePages();
   loadAvatarFromLocalStorage();
   loadNicknameFromSupabase();
   loadBanStatus();

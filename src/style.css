@@ -4879,3 +4879,50 @@ font-weight:500;
   background:rgba(220,38,38,.08);
   color:#dc2626;
 }
+
+.legalCard{
+  line-height:1.6;
+  font-size:14px;
+}
+
+.legalCard h3{
+  margin-top:18px;
+  margin-bottom:6px;
+  font-size:16px;
+  font-weight:700;
+}
+
+.legalCard p{
+  margin:6px 0 12px;
+  color:rgba(17,17,17,.75);
+}
+
+.legalCard a{
+  color:#2563eb;
+  text-decoration:none;
+  font-weight:600;
+}
+
+.legalCard a:hover{
+  text-decoration:underline;
+}
+
+.legalCard{
+  padding:18px;
+}
+.legalCard h3{
+  margin:0 0 8px;
+  font-size:15px;
+  font-weight:800;
+}
+.legalCard p{
+  margin:0 0 14px;
+  line-height:1.55;
+  color:rgba(17,17,17,.82);
+}
+.legalCard a{
+  color:inherit;
+  text-decoration:underline;
+  text-underline-offset:3px;
+}
+.legalCard p:last-child{ margin-bottom:0; }

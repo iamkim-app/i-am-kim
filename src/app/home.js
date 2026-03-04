@@ -523,7 +523,6 @@ function renderHomeLayout() {
     <section class="homeSection">
       <div class="sectionHead">
         <div class="sectionTitle">Quick actions</div>
-        <div class="sectionDesc">Jump to essentials for your trip.</div>
       </div>
       <div class="quickActions">
         <button class="quickAction" type="button" data-action="travel">
