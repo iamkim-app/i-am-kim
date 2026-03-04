@@ -1085,53 +1085,63 @@ async function loadNowPreview(routeToken) {
   if (routeToken && routeToken !== window.App?.routeToken) return;
   if (!isHomeActive()) return;
 
-  if (!items.length) {
+    if (!items.length) {
+      track.innerHTML = `
+        <div class="koreaNowGrid">
+          <div class="previewCard homeNowCard">
+            <div class="previewTag">Essentials</div>
+            <div class="previewTitle homeNowCard__title">Arrival checklist</div>
+            <div class="previewDesc homeNowCard__desc">SIM, T-money, and airport transit tips.</div>
+          </div>
+          <div class="previewCard homeNowCard">
+            <div class="previewTag">Trending</div>
+            <div class="previewTitle homeNowCard__title">Seasonal hotspots</div>
+            <div class="previewDesc homeNowCard__desc">Popular areas and crowd windows this week.</div>
+          </div>
+          <div class="previewCard homeNowCard">
+            <div class="previewTag">Advisory</div>
+            <div class="previewTitle homeNowCard__title">Transit changes</div>
+            <div class="previewDesc homeNowCard__desc">Temporary line closures and bus reroutes.</div>
+          </div>
+        </div>
+      `;
+      setupHomePreviewCarousel();
+      return;
+    }
+
     track.innerHTML = `
-      <div class="previewCard">
-        <div class="previewTag">Essentials</div>
-        <div class="previewTitle">Arrival checklist</div>
-        <div class="previewDesc">SIM, T-money, and airport transit tips.</div>
-      </div>
-      <div class="previewCard">
-        <div class="previewTag">Trending</div>
-        <div class="previewTitle">Seasonal hotspots</div>
-        <div class="previewDesc">Popular areas and crowd windows this week.</div>
-      </div>
-      <div class="previewCard">
-        <div class="previewTag">Advisory</div>
-        <div class="previewTitle">Transit changes</div>
-        <div class="previewDesc">Temporary line closures and bus reroutes.</div>
+      <div class="koreaNowGrid">
+        ${items
+          .map(
+            (it) => `
+            ${
+              it.placeholder
+                ? `<div class="previewCard homeNowCard" data-placeholder="1">
+                    <div class="previewTag">Admin</div>
+                    <div class="previewTitle homeNowCard__title">Pick an item (admin)</div>
+                    <div class="previewDesc homeNowCard__desc">Assign a slot in home_featured.</div>
+                  </div>`
+                : `<button class="previewCard homeNowCard" type="button" data-link="${escapeHtml(
+                    it.link || ""
+                  )}" data-link-hash="${escapeHtml(it.linkHash || "")}" data-source="${escapeHtml(
+                    it.source || ""
+                  )}">
+                    <div class="previewTag">${
+                      String(it.tag || "").toUpperCase() === "NEWS"
+                        ? '<span class="homeNowCard__badge">NEWS</span>'
+                        : escapeHtml(it.tag || "Update")
+                    }</div>
+                    <div class="previewTitle homeNowCard__title">${escapeHtml(it.title || "Untitled")}</div>
+                    <div class="previewDesc homeNowCard__desc">${escapeHtml(it.summary || "")}</div>
+                  </button>`
+            }
+          `
+          )
+          .join("")}
       </div>
     `;
     setupHomePreviewCarousel();
-    return;
   }
-
-  track.innerHTML = items
-    .map(
-      (it) => `
-      ${
-        it.placeholder
-          ? `<div class="previewCard" data-placeholder="1">
-              <div class="previewTag">Admin</div>
-              <div class="previewTitle">Pick an item (admin)</div>
-              <div class="previewDesc">Assign a slot in home_featured.</div>
-            </div>`
-          : `<button class="previewCard" type="button" data-link="${escapeHtml(
-              it.link || ""
-            )}" data-link-hash="${escapeHtml(it.linkHash || "")}" data-source="${escapeHtml(
-              it.source || ""
-            )}">
-              <div class="previewTag">${escapeHtml(it.tag || "Update")}</div>
-              <div class="previewTitle">${escapeHtml(it.title || "Untitled")}</div>
-              <div class="previewDesc">${escapeHtml(it.summary || "")}</div>
-            </button>`
-      }
-    `
-    )
-    .join("");
-  setupHomePreviewCarousel();
-}
 
 async function loadCommunityPreview(routeToken) {
   if (routeToken && routeToken !== window.App?.routeToken) return;
