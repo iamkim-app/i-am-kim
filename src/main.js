@@ -233,10 +233,12 @@ function ensureProfileUI() {
         </div>
       </div>
 
-      <div class="profileActions">
+      <div class="profileActionsStack">
+        <button class="btn btn--ghost btn--small" id="privacyPolicyBtn" type="button">Privacy policy</button>
         <button class="btn btn--ghost btn--small" id="profileContact" type="button">Contact us</button>
         <button class="btn btn--primary btn--small" type="button" data-auth-action="open-auth" data-auth-visible="signed-out">Sign in</button>
-        <button class="btn btn--ghost btn--danger" id="profileLogout" type="button" data-auth-action="logout" data-auth-visible="signed-in">Logout</button>
+        <button class="btn btn--ghost btn--small" id="profileLogout" type="button" data-auth-action="logout" data-auth-visible="signed-in">Sign out</button>
+        <button class="btn btn--danger" id="btnDeleteAccount" type="button" data-auth-visible="signed-in">Delete account</button>
       </div>
     </div>
   `;
@@ -247,6 +249,9 @@ function ensureProfileUI() {
   }
 
   $("#profileContact")?.addEventListener("click", () => openContactModal());
+  $("#privacyPolicyBtn")?.addEventListener("click", () => {
+    location.href = "https://iamkim.app/privacy";
+  });
   $("#profileEditNick")?.addEventListener("click", () => {
     setNicknameBannerVisible(true);
     const input = $("#nicknameInput");
@@ -279,6 +284,79 @@ function ensureProfileUI() {
     const el = $("#packsArea");
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   });
+  ensureDeleteAccountModal();
+  $("#btnDeleteAccount")?.addEventListener("click", () => openDeleteAccountModal());
+}
+
+function ensureDeleteAccountModal() {
+  if ($("#deleteAccountModal")) return;
+  const modal = document.createElement("div");
+  modal.className = "modal";
+  modal.id = "deleteAccountModal";
+  modal.hidden = true;
+  modal.innerHTML = `
+    <div class="modal__backdrop" data-close="1"></div>
+    <div class="modal__card">
+      <div class="modal__head">
+        <div class="modal__title">Delete your account?</div>
+        <button class="btn btn--ghost btn--small" data-close="1" type="button">Close</button>
+      </div>
+      <div class="modal__body">
+        <div class="muted small">This permanently removes:</div>
+        <ul class="list">
+          <li>profile</li>
+          <li>posts</li>
+          <li>comments</li>
+          <li>favorites</li>
+        </ul>
+      </div>
+      <div class="modal__actions">
+        <button class="btn btn--ghost btn--small" data-close="1" type="button">Cancel</button>
+        <button class="btn btn--danger btn--small" id="btnDeleteAccountConfirm" type="button">Delete permanently</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  modal.addEventListener("click", (e) => {
+    if (e.target?.closest?.("[data-close='1']")) closeDeleteAccountModal();
+  });
+  $("#btnDeleteAccountConfirm")?.addEventListener("click", async () => {
+    await runDeleteAccountFlow();
+    closeDeleteAccountModal();
+  });
+}
+
+function openDeleteAccountModal() {
+  const modal = $("#deleteAccountModal");
+  if (modal) modal.hidden = false;
+}
+
+function closeDeleteAccountModal() {
+  const modal = $("#deleteAccountModal");
+  if (modal) modal.hidden = true;
+}
+
+async function runDeleteAccountFlow() {
+  const { data } = await window.App.supabase.auth.getSession();
+  const token = data?.session?.access_token;
+
+  const res = await fetch("/api/account-delete", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token,
+    },
+    body: "{}",
+  });
+
+  const out = await res.json().catch(() => ({}));
+  if (res.ok && out?.ok) {
+    await window.App.supabase.auth.signOut();
+    location.hash = "#home";
+  } else {
+    alert("Account delete failed");
+  }
 }
 
 function updateProfileUI() {

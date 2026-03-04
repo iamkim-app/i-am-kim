@@ -5,6 +5,7 @@ import placesNearbyHandler from "./places-nearby.js";
 import placesPhotoHandler from "./places-photo.js";
 import idolSpotsSyncPhotosHandler from "./idol-spots-sync-photos.js";
 import placesTextSearchHandler from "./places-textsearch.js";
+import accountDeleteHandler from "./account-delete.js";
 dotenv.config({ path: ".env.local" });
 
 
@@ -36,6 +37,7 @@ async function readJson(req) {
 }
 
 const server = http.createServer(async (req, res) => {
+  const url = new URL(req.url || "/", "http://localhost");
   if (req.method === "OPTIONS") {
     res.writeHead(200, {
       "Access-Control-Allow-Origin": "*",
@@ -107,6 +109,11 @@ const server = http.createServer(async (req, res) => {
         details: String(e?.message || e),
       });
     }
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/account-delete") {
+    const mod = await import("./account-delete.js");
+    return mod.default(req, res);
   }
 
   if (req.url?.startsWith("/api/places-textsearch") && req.method === "GET") {
