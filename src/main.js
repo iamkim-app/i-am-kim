@@ -235,6 +235,7 @@ function ensureProfileUI() {
 
       <div class="profileActionsStack">
         <button class="btn btn--ghost btn--small" id="privacyPolicyBtn" type="button">Privacy policy</button>
+        <button class="btn btn--ghost" id="openTerms" type="button">Terms of service</button>
         <button class="btn btn--ghost btn--small" id="profileContact" type="button">Contact us</button>
         <button class="btn btn--primary btn--small" type="button" data-auth-action="open-auth" data-auth-visible="signed-out">Sign in</button>
         <button class="btn btn--ghost btn--small" id="profileLogout" type="button" data-auth-action="logout" data-auth-visible="signed-in">Sign out</button>
@@ -251,6 +252,9 @@ function ensureProfileUI() {
   $("#profileContact")?.addEventListener("click", () => openContactModal());
   $("#privacyPolicyBtn")?.addEventListener("click", () => {
     location.href = "https://iamkim.app/privacy";
+  });
+  $("#openTerms")?.addEventListener("click", () => {
+    location.hash = "#terms";
   });
   $("#profileEditNick")?.addEventListener("click", () => {
     setNicknameBannerVisible(true);
@@ -939,6 +943,8 @@ const ROUTE_PAGE_MAP = {
   k: "kpop",
   news: "korea-now",
   "home-picks-admin": "home-picks-admin",
+  privacy: "privacy",
+  terms: "terms",
 };
 
 function normalizeRoute(route) {
