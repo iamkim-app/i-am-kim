@@ -4928,11 +4928,10 @@ font-weight:500;
 .legalCard p:last-child{ margin-bottom:0; }
 
 /* Korea Now -> card grid */
-.homeNowTrack{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-  gap:16px;
-  margin-top:14px;
+.homeNowList{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
 }
 
 .homeNowCard{
@@ -4940,6 +4939,11 @@ font-weight:500;
   border:1px solid rgba(17,17,17,.08);
   border-radius:18px;
   padding:16px;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.homeNowCard:active{
+  transform: translateY(1px) scale(.99);
 }
 
 .homeNowCard__badge{
@@ -4952,6 +4956,50 @@ font-weight:500;
   background:rgba(30,60,120,.06);
   border:1px solid rgba(30,60,120,.12);
   border-radius:999px;
+}
+
+.homeNowCard__icon{
+  display:inline-flex;
+  width:16px;
+  height:16px;
+  margin-right:6px;
+  align-items:center;
+  justify-content:center;
+  color:rgba(30,60,120,.7);
+  vertical-align:middle;
+}
+
+.homeNowCard__icon svg{
+  width:16px;
+  height:16px;
+  display:block;
+}
+
+.homeNowCard[data-kind="news"] .homeNowCard__badge{
+  color:#556;
+  background:rgba(30,60,120,.06);
+  border-color:rgba(30,60,120,.12);
+}
+.homeNowCard[data-kind="news"] .homeNowCard__icon{
+  color:rgba(30,60,120,.7);
+}
+
+.homeNowCard[data-kind="alert"] .homeNowCard__badge{
+  color:#b42318;
+  background:rgba(220,38,38,.08);
+  border-color:rgba(220,38,38,.18);
+}
+.homeNowCard[data-kind="alert"] .homeNowCard__icon{
+  color:rgba(220,38,38,.75);
+}
+
+.homeNowCard[data-kind="guide"] .homeNowCard__badge{
+  color:#4c1d95;
+  background:rgba(124,58,237,.08);
+  border-color:rgba(124,58,237,.18);
+}
+.homeNowCard[data-kind="guide"] .homeNowCard__icon{
+  color:rgba(124,58,237,.75);
 }
 
 .homeNowCard__title{

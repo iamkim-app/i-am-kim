@@ -613,15 +613,10 @@ function renderHomeLayout() {
         </div>
         <button class="btn btn--ghost btn--small" id="btnEditHomePicks" type="button" style="display:none">Edit</button>
       </div>
-      <div class="previewCarousel" id="homeNowPreview">
-        <div class="previewTrack" id="homeNowTrack"></div>
-        <div class="previewDots" id="homeNowDots" aria-hidden="true">
-          <button class="dot is-active" type="button" data-idx="0"></button>
-          <button class="dot" type="button" data-idx="1"></button>
-          <button class="dot" type="button" data-idx="2"></button>
+        <div class="homeNowPreview" id="homeNowPreview">
+          <div class="homeNowList" id="homeNowTrack"></div>
         </div>
-      </div>
-    </section>
+      </section>
 
     <section class="homeSection">
       <div class="sectionHead">
@@ -1085,62 +1080,65 @@ async function loadNowPreview(routeToken) {
   if (routeToken && routeToken !== window.App?.routeToken) return;
   if (!isHomeActive()) return;
 
+    const mapHomeNowTag = (raw) => {
+      const t = String(raw || "").trim().toLowerCase();
+      if (["advisory", "alert", "major"].includes(t)) return { label: "ALERT", kind: "alert" };
+      if (["guide", "how to", "tips"].includes(t)) return { label: "GUIDE", kind: "guide" };
+      return { label: "NEWS", kind: "news" };
+    };
+    const homeNowIcon = `
+      <span class="homeNowCard__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M4 6h16M4 12h10M4 18h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </span>
+    `;
+
     if (!items.length) {
       track.innerHTML = `
-        <div class="koreaNowGrid">
-          <div class="previewCard homeNowCard">
-            <div class="previewTag">Essentials</div>
-            <div class="previewTitle homeNowCard__title">Arrival checklist</div>
-            <div class="previewDesc homeNowCard__desc">SIM, T-money, and airport transit tips.</div>
-          </div>
-          <div class="previewCard homeNowCard">
-            <div class="previewTag">Trending</div>
-            <div class="previewTitle homeNowCard__title">Seasonal hotspots</div>
-            <div class="previewDesc homeNowCard__desc">Popular areas and crowd windows this week.</div>
-          </div>
-          <div class="previewCard homeNowCard">
-            <div class="previewTag">Advisory</div>
-            <div class="previewTitle homeNowCard__title">Transit changes</div>
-            <div class="previewDesc homeNowCard__desc">Temporary line closures and bus reroutes.</div>
-          </div>
+        <div class="previewCard homeNowCard" data-kind="news">
+          <div class="previewTag">${homeNowIcon}<span class="homeNowCard__badge">NEWS</span></div>
+          <div class="previewTitle homeNowCard__title">Arrival checklist</div>
+          <div class="previewDesc homeNowCard__desc">SIM, T-money, and airport transit tips.</div>
+        </div>
+        <div class="previewCard homeNowCard" data-kind="news">
+          <div class="previewTag">${homeNowIcon}<span class="homeNowCard__badge">NEWS</span></div>
+          <div class="previewTitle homeNowCard__title">Seasonal hotspots</div>
+          <div class="previewDesc homeNowCard__desc">Popular areas and crowd windows this week.</div>
+        </div>
+        <div class="previewCard homeNowCard" data-kind="alert">
+          <div class="previewTag">${homeNowIcon}<span class="homeNowCard__badge">ALERT</span></div>
+          <div class="previewTitle homeNowCard__title">Transit changes</div>
+          <div class="previewDesc homeNowCard__desc">Temporary line closures and bus reroutes.</div>
         </div>
       `;
-      setupHomePreviewCarousel();
       return;
     }
 
-    track.innerHTML = `
-      <div class="koreaNowGrid">
-        ${items
-          .map(
-            (it) => `
-            ${
-              it.placeholder
-                ? `<div class="previewCard homeNowCard" data-placeholder="1">
-                    <div class="previewTag">Admin</div>
-                    <div class="previewTitle homeNowCard__title">Pick an item (admin)</div>
-                    <div class="previewDesc homeNowCard__desc">Assign a slot in home_featured.</div>
-                  </div>`
-                : `<button class="previewCard homeNowCard" type="button" data-link="${escapeHtml(
-                    it.link || ""
-                  )}" data-link-hash="${escapeHtml(it.linkHash || "")}" data-source="${escapeHtml(
-                    it.source || ""
-                  )}">
-                    <div class="previewTag">${
-                      String(it.tag || "").toUpperCase() === "NEWS"
-                        ? '<span class="homeNowCard__badge">NEWS</span>'
-                        : escapeHtml(it.tag || "Update")
-                    }</div>
-                    <div class="previewTitle homeNowCard__title">${escapeHtml(it.title || "Untitled")}</div>
-                    <div class="previewDesc homeNowCard__desc">${escapeHtml(it.summary || "")}</div>
-                  </button>`
-            }
-          `
-          )
-          .join("")}
-      </div>
-    `;
-    setupHomePreviewCarousel();
+    track.innerHTML = items
+      .map((it) => {
+        const mapped = mapHomeNowTag(it.tag);
+        return `
+        ${
+          it.placeholder
+            ? `<div class="previewCard homeNowCard" data-placeholder="1" data-kind="news">
+                <div class="previewTag">${homeNowIcon}<span class="homeNowCard__badge">NEWS</span></div>
+                <div class="previewTitle homeNowCard__title">Pick an item (admin)</div>
+                <div class="previewDesc homeNowCard__desc">Assign a slot in home_featured.</div>
+              </div>`
+            : `<button class="previewCard homeNowCard" type="button" data-kind="${mapped.kind}" data-link="${escapeHtml(
+                it.link || ""
+              )}" data-link-hash="${escapeHtml(it.linkHash || "")}" data-source="${escapeHtml(
+                it.source || ""
+              )}">
+                <div class="previewTag">${homeNowIcon}<span class="homeNowCard__badge">${mapped.label}</span></div>
+                <div class="previewTitle homeNowCard__title">${escapeHtml(it.title || "Untitled")}</div>
+                <div class="previewDesc homeNowCard__desc">${escapeHtml(it.summary || "")}</div>
+              </button>`
+        }
+      `;
+      })
+      .join("");
   }
 
 async function loadCommunityPreview(routeToken) {
