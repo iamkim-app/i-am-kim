@@ -478,8 +478,6 @@ function renderHomeLayout() {
   page.innerHTML = `
     <section class="homeSection homeSection--hero">
       <div class="homeHero">
-        <div class="homeHero__title">Your Guide to Korea, Inspired by K‑POP.</div>
-        <div class="homeHero__subtitle">Real places. Real moments. Built for international fans.</div>
         <section class="heroStrip">
           <div class="heroStrip__track">
             <button class="heroCard" type="button" style="--bg:url('/hero/hero_kpop_concert_v2.webp')" onclick="location.hash='#kpop'">
