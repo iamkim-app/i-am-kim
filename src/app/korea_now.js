@@ -50,12 +50,12 @@ const SEED_ITEMS = [
   },
 ];
 
-const FILTERS = ["Major Issues", "Travel Tips", "Trends", "Deals"];
+const FILTERS = ["Major Issues", "Travel Tips", "Trends", "FAQ"];
 const SECTION_LABELS = {
   "Major Issues": "Major Issues",
   "Travel Tips": "Travel Tips",
   Trends: "Trends",
-  Deals: "Deals",
+  FAQ: "FAQ",
   "K-POP Now": "K-POP Now",
 };
 
@@ -124,19 +124,6 @@ function openUrl(url) {
   window.open(normalized, "_blank");
 }
 
-function renderChips(active) {
-  const host = $("#nowChips");
-  if (!host) return;
-  host.innerHTML = FILTERS.map((label) => {
-    const isActive = label === active;
-    return `
-      <button class="chip chip--filter ${isActive ? "is-active" : ""}" data-filter="${label}" type="button">
-        ${label}
-      </button>
-    `;
-  }).join("");
-}
-
 function renderCard(it, canDelete) {
   const tag = it.tag || it.section || "";
   const link = it.link || "";
@@ -162,10 +149,15 @@ function renderCard(it, canDelete) {
     `;
 }
 
+function mapFilterToSection(filter) {
+  return filter === "FAQ" ? "Deals" : filter;
+}
+
 function renderCards(active, items) {
   const host = $("#nowCards");
   if (!host) return;
-  const list = items.filter((it) => it.section === active);
+  const section = mapFilterToSection(active);
+  const list = items.filter((it) => it.section === section);
   if (host.id === "nowCards") {
     host.classList.toggle("is-single", list.length < 2);
   }
@@ -176,15 +168,17 @@ function renderCards(active, items) {
     : `<div class="muted small">No items yet.</div>`;
 }
 
-function renderKpop(items) {
-  const host = $("#nowCardsKpop");
+function renderChips(active) {
+  const host = $("#nowChips");
   if (!host) return;
-  const list = items.filter((it) => it.section === "K-POP Now");
-  host.innerHTML = list.length
-    ? list
-        .map((it) => renderCard(it, NOW_STATE.isAdmin && it.canDelete))
-        .join("")
-    : `<div class="muted small">No K-POP updates yet.</div>`;
+  host.innerHTML = FILTERS.map((label) => {
+    const isActive = label === active;
+    return `
+      <button class="chip chip--filter ${isActive ? "is-active" : ""}" data-filter="${label}" type="button">
+        ${label}
+      </button>
+    `;
+  }).join("");
 }
 
 function bindChips(active, items) {
@@ -196,6 +190,17 @@ function bindChips(active, items) {
       bindChips(next, items);
     });
   });
+}
+
+function renderKpop(items) {
+  const host = $("#nowCardsKpop");
+  if (!host) return;
+  const list = items.filter((it) => it.section === "K-POP Now");
+  host.innerHTML = list.length
+    ? list
+        .map((it) => renderCard(it, NOW_STATE.isAdmin && it.canDelete))
+        .join("")
+    : `<div class="muted small">No K-POP updates yet.</div>`;
 }
 
 async function loadFallbackItems(mode) {
@@ -294,34 +299,46 @@ export async function fetchKPosts(category) {
   const supabase = getSupabase();
   if (!supabase) return [];
 
-  // TODO (migration plan):
-  // 1) Create `k_posts` table with columns: id, category, title, summary, link, status, created_at.
-  // 2) Backfill from `korea_now_posts` where section = 'K-POP Now' -> category 'kpop'.
-  // 3) Update fetchKPosts to query `k_posts` by category.
-
-  const section = K_CATEGORY_SECTION_MAP[String(category || "").toLowerCase()] || "K-POP Now";
+  const allowed = new Set(["kpop", "food", "beauty", "deals", "shopping"]);
+  const catRaw = String(category || "kpop").toLowerCase();
+  const cat = allowed.has(catRaw) ? catRaw : "kpop";
+  const tagFromCat = (value) => {
+    switch (value) {
+      case "kpop":
+        return "K-POP";
+      case "food":
+        return "K-FOOD";
+      case "beauty":
+        return "K-BEAUTY";
+      case "deals":
+        return "DEALS";
+      case "shopping":
+        return "SHOPPING";
+      default:
+        return "K-POP";
+    }
+  };
 
   try {
     const { data, error } = await supabase
-      .from("korea_now_posts")
-      .select("id,section,tag,title,summary,link,created_at,status")
+      .from("k_posts")
+      .select("id,category,title,summary,link,status,created_at,created_by")
       .eq("status", "active")
+      .eq("category", cat)
       .order("created_at", { ascending: false });
     if (error) throw error;
 
     return (data || [])
       .map((row) => {
-        const normalized = normalizeSection(row.section) || row.section;
         return {
           id: row.id,
-          section: normalized,
-          tag: row.tag || normalized,
           title: row.title || "Untitled",
           summary: row.summary || "",
           link: row.link || "",
+          tag: tagFromCat(cat),
         };
       })
-      .filter((row) => row.section === section);
+      .filter(Boolean);
   } catch (err) {
     console.warn("[korea-now] fetchKPosts failed.", err);
     return [];
@@ -405,7 +422,7 @@ function ensureAdminModal() {
         </label>
         <label class="field">
           <div class="field__label">Link (optional)</div>
-          <input id="nowFormLink" class="input" placeholder="#mykorea, #kpop, or https://" />
+          <input id="nowFormLink" class="input" placeholder="#news, #kpop, or https://" />
         </label>
         <div class="field__status" id="nowFormStatus"></div>
       </div>
@@ -454,6 +471,11 @@ async function handleCreatePost(refresh, mode, category) {
   const title = titleEl ? titleEl.value : "";
   const summary = summaryEl ? summaryEl.value : "";
   const link = linkEl ? linkEl.value : "";
+  const normalizeLink = (raw) => {
+    const v = String(raw || "").trim();
+    if (!v) return "";
+    return v.startsWith("http") ? v : `https://${v}`;
+  };
 
   if (!title.trim() || !summary.trim()) {
     if (status) status.textContent = "Title and summary are required.";
@@ -463,23 +485,34 @@ async function handleCreatePost(refresh, mode, category) {
   if (status) status.textContent = "Saving...";
 
   try {
-    if (mode === "kpop") {
-      section = "K-POP Now";
-    }
     if (mode === "k") {
-      const mapped = K_CATEGORY_SECTION_MAP[String(category || "").toLowerCase()];
-      if (mapped) section = mapped;
+      const allowed = new Set(["kpop", "food", "beauty", "deals", "shopping"]);
+      const catRaw = String(category || "kpop").toLowerCase();
+      const cat = allowed.has(catRaw) ? catRaw : "kpop";
+      const payload = {
+        category: cat,
+        title: title.trim(),
+        summary: summary.trim(),
+        link: normalizeLink(link),
+        status: "active",
+      };
+      const { error } = await supabase.from("k_posts").insert(payload);
+      if (error) throw error;
+    } else {
+      if (mode === "kpop") {
+        section = "K-POP Now";
+      }
+      const payload = {
+        section,
+        tag,
+        title: title.trim(),
+        summary: summary.trim(),
+        link: link.trim(),
+        status: "active",
+      };
+      const { error } = await supabase.from("korea_now_posts").insert(payload);
+      if (error) throw error;
     }
-    const payload = {
-      section,
-      tag,
-      title: title.trim(),
-      summary: summary.trim(),
-      link: link.trim(),
-      status: "active",
-    };
-    const { error } = await supabase.from("korea_now_posts").insert(payload);
-    if (error) throw error;
 
     if (status) status.textContent = "Saved.";
     const modal = $("#nowAdminModal");
@@ -539,7 +572,7 @@ export async function deleteKPost(id) {
   const supabase = getSupabase();
   if (!supabase || !id) return false;
   try {
-    const { error } = await supabase.from("korea_now_posts").delete().eq("id", id);
+    const { error } = await supabase.from("k_posts").delete().eq("id", id);
     if (error) throw error;
     return true;
   } catch (err) {
@@ -549,19 +582,13 @@ export async function deleteKPost(id) {
 }
 
 function ensureMyKoreaUI(page) {
-  if (!page || $("#nowChips")) return;
+  if (!page || $("#nowMyKoreaPosts")) return;
   const section = document.createElement("section");
   section.className = "nowSection";
   section.id = "nowMyKoreaPosts";
   section.innerHTML = `
-    <div class="sectionHead">
-      <div>
-        <div class="sectionTitle">MyKorea Updates</div>
-        <div class="sectionDesc">Major issues, travel tips, trends, and deals.</div>
-      </div>
-      <div class="nowAdminBar" data-admin-bar="1" style="display:none">
-        <button class="btn btn--primary btn--small nowAdminAddBtn" data-mode="mykorea" type="button">+ Add</button>
-      </div>
+    <div class="nowAdminBar" data-admin-bar="1" style="display:none">
+      <button class="btn btn--primary btn--small nowAdminAddBtn" data-mode="mykorea" type="button">+ Add</button>
     </div>
     <div class="nowFilters" id="nowChips"></div>
     <div class="nowCards" id="nowCards"></div>
@@ -646,6 +673,17 @@ export async function initKoreaNow(options = {}) {
   if (mode === "kpop") {
     ensureKpopUI(page);
   } else {
+    const desc = page.querySelector(".pageHeader__desc");
+    if (desc) {
+      desc.textContent = "";
+      desc.style.display = "none";
+    }
+    page.querySelectorAll("*").forEach((el) => {
+      if (el && el.children?.length === 0) {
+        const t = (el.textContent || "").trim();
+        if (t.includes("Edit public/data/korea_now.json")) el.remove();
+      }
+    });
     page.querySelector(".nowGrid")?.remove();
     page.querySelector("#nowStatus")?.remove();
     page.querySelector("#btnReloadNow")?.remove();

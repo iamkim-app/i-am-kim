@@ -494,7 +494,7 @@ function renderHomeLayout() {
               <span class="heroCard__badge">K-POP</span>
               <span class="heroCard__title">Album shops & exclusives</span>
             </button>
-            <button class="heroCard" type="button" style="--bg:url('/hero/hero_seoul_night.webp')" onclick="location.hash='#mykorea'">
+            <button class="heroCard" type="button" style="--bg:url('/hero/hero_seoul_night.webp')" onclick="location.hash='#news'">
               <span class="heroCard__badge">SEOUL</span>
               <span class="heroCard__title">Night views & spots</span>
             </button>
