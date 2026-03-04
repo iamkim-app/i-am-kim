@@ -199,11 +199,55 @@ function renderFaqList(items) {
     ? list
         .map((it) => {
           const question = escapeHtml(it.question || "Untitled");
+          const answers = Array.isArray(it.faq_answers)
+            ? it.faq_answers
+                .filter((a) => !a?.status || a.status === "active")
+                .slice()
+                .sort(
+                  (a, b) =>
+                    new Date(b?.created_at || 0).getTime() -
+                    new Date(a?.created_at || 0).getTime()
+                )
+            : [];
+          const metaText = answers.length ? `${answers.length} answer${answers.length === 1 ? "" : "s"}.` : "No answers yet.";
+          const answersHtml = answers.length
+            ? answers
+                .map((a) => {
+                  const text = escapeHtml(a.answer || "");
+                  const adminDelete =
+                    NOW_STATE.isAdmin && a.id
+                      ? `<button class="btn btn--ghost btn--small faqAnswerDelete" type="button" data-answer-id="${escapeHtml(
+                          a.id
+                        )}" data-question-id="${escapeHtml(it.id || "")}">Delete</button>`
+                      : "";
+                  return `
+                    <div class="faqA">
+                      <div class="faqA__txt">${text}</div>
+                      ${adminDelete}
+                    </div>
+                  `;
+                })
+                .join("")
+            : "";
+          const adminAnswer =
+            NOW_STATE.isAdmin && it.id
+              ? `<button class="btn btn--ghost btn--small faqAnswerBtn" type="button" data-question-id="${escapeHtml(
+                  it.id
+                )}">Answer</button>`
+              : "";
+          const adminDeleteQuestion =
+            NOW_STATE.isAdmin && it.id
+              ? `<button class="btn btn--ghost btn--small btn--danger faqQ__del" type="button" data-qid="${escapeHtml(
+                  it.id
+                )}">Delete</button>`
+              : "";
           return `
-            <div class="faqItem">
-              <div class="faqItem__label">Question</div>
-              <div class="faqItem__question">${question}</div>
-            </div>
+            <article class="faqQ" data-qid="${escapeHtml(it.id || "")}">
+              <div class="faqQ__q">${question}</div>
+              <div class="faqQ__meta">${metaText}</div>
+              <div class="faqQ__actions">${adminAnswer}${adminDeleteQuestion}</div>
+              <div class="faqAList">${answersHtml}</div>
+            </article>
           `;
         })
         .join("")
@@ -309,7 +353,7 @@ async function loadSupabaseItems(mode) {
   try {
     const { data, error } = await supabase
       .from("korea_now_posts")
-      .select("id,section,tag,title,summary,link,created_at,status,faq_answers(id,answer,created_at)")
+      .select("id,section,tag,title,summary,link,created_at,status")
       .eq("status", "active")
       .order("created_at", { ascending: false });
     if (error) throw error;
@@ -352,7 +396,7 @@ async function loadFaqQuestions() {
   try {
     const { data, error } = await supabase
       .from("faq_questions")
-      .select("id,question,created_at")
+      .select("id,question,created_at,faq_answers(id,answer,created_at,status)")
       .order("created_at", { ascending: false });
     if (error) throw error;
     return Array.isArray(data) ? data : [];
@@ -737,8 +781,8 @@ function bindFaqActions(refresh) {
   host.addEventListener("click", async (e) => {
     const answerBtn = e.target?.closest?.(".faqAnswerBtn");
     if (answerBtn) {
-      const id = answerBtn.dataset.id || "";
-      if (!id) return;
+      const questionId = answerBtn.dataset.questionId || "";
+      if (!questionId) return;
       const answer = window.prompt("Answer");
       if (!answer || !answer.trim()) return;
       const supabase = getSupabase();
@@ -746,7 +790,7 @@ function bindFaqActions(refresh) {
       try {
         const { error } = await supabase
           .from("faq_answers")
-          .insert({ question_id: id, answer: answer.trim() });
+          .insert({ question_id: questionId, answer: answer.trim(), status: "active" });
         if (error) throw error;
         await refresh();
         try {
@@ -754,6 +798,24 @@ function bindFaqActions(refresh) {
         } catch {}
       } catch (err) {
         console.warn("[korea-now] FAQ answer insert failed.", err);
+      }
+      return;
+    }
+    const delQuestionBtn = e.target?.closest?.(".faqQ__del");
+    if (delQuestionBtn) {
+      const qid = delQuestionBtn.dataset.qid || "";
+      if (!qid) return;
+      const supabase = getSupabase();
+      if (!supabase) return;
+      try {
+        const { error } = await supabase.from("faq_questions").delete().eq("id", qid);
+        if (error) {
+          console.warn("[korea-now] FAQ question delete failed.", error);
+          return;
+        }
+        await refresh();
+      } catch (err) {
+        console.warn("[korea-now] FAQ question delete failed.", err);
       }
       return;
     }

@@ -4610,6 +4610,50 @@ body .kFoodHero__track .kFoodHero__card:hover{
   transform:translateY(1px);
 }
 
+.faqQ {
+  padding:14px 14px;
+  border:1px solid rgba(17,17,17,.10);
+  border-radius:16px;
+  background:#fff;
+}
+
+.faqQ__q {
+  font-size:16px;
+  font-weight:700;
+  line-height:1.35;
+}
+
+.faqQ__meta {
+  margin-top:6px;
+  color:rgba(17,17,17,.55);
+  font-size:13px;
+}
+
+.faqQ__actions {
+  margin-top:10px;
+  display:flex;
+  gap:10px;
+}
+
+.faqAList {
+  margin-top:10px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.faqA {
+  padding:12px;
+  border-radius:14px;
+  background:rgba(17,17,17,.03);
+}
+
+.faqA__txt {
+  font-size:14px;
+  line-height:1.45;
+  color:rgba(17,17,17,.85);
+}
+
 #btnAskKim.askSearch{
 display:flex;
 align-items:center;
@@ -4639,4 +4683,49 @@ flex:1;
 color:rgba(17,17,17,.58);
 font-size:15px;
 font-weight:500;
+}
+/* FAQ Question */
+.faqQ{
+  padding:16px;
+  border-radius:16px;
+  border:1px solid rgba(255,80,80,.22);
+  background:rgba(255,80,80,.04);
+}
+
+/* Question text */
+.faqQ__q{
+  font-size:16px;
+  font-weight:700;
+  line-height:1.35;
+  color:#d33;
+}
+
+/* meta text */
+.faqQ__meta{
+  margin-top:6px;
+  font-size:13px;
+  color:rgba(0,0,0,.55);
+}
+
+/* answers container */
+.faqAList{
+  margin-top:12px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+/* answer block */
+.faqA{
+  padding:14px;
+  border-radius:14px;
+  border:1px solid rgba(80,120,255,.22);
+  background:rgba(80,120,255,.05);
+}
+
+/* answer text */
+.faqA__txt{
+  font-size:14px;
+  line-height:1.45;
+  color:#2346c7;
 }

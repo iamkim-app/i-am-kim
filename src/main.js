@@ -996,7 +996,10 @@ function setActiveRoute(route) {
   });
 
   // route hooks
-  if (route === "news") initKoreaNow?.({ mode: "mykorea" });
+  if (route === "news") {
+    initKoreaNow?.({ mode: "mykorea" });
+    window.dispatchEvent(new Event("news:ready"));
+  }
   if (route === "k") {
     const tab = getKTabFromHash();
     initKPage?.({ tab });
