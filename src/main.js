@@ -3146,6 +3146,17 @@ function handleAppResume(){
   window.dispatchEvent(new Event("app:resume"));
 }
 
+let APP_RESUME_LAST = 0;
+window.addEventListener("app:resume", () => {
+  const now = Date.now();
+  if (now - APP_RESUME_LAST < 1000) return;
+  APP_RESUME_LAST = now;
+  console.log("[app] resume refresh");
+  window.dispatchEvent(new Event("community:refresh"));
+  window.dispatchEvent(new Event("koreanow:refresh"));
+  window.dispatchEvent(new Event("home:refresh"));
+});
+
 document.addEventListener("visibilitychange", ()=>{
   if(document.visibilityState==="visible"){
     handleAppResume();

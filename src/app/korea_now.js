@@ -1157,3 +1157,5 @@ export async function initKoreaNow(options = {}) {
     bindFaqActions(refresh);
   }
 }
+
+window.addEventListener("koreanow:refresh", () => initKoreaNow({ mode: "mykorea" }));

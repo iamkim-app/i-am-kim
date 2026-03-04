@@ -1142,3 +1142,5 @@ export {
   loadCommunityPosts,
   timeAgo,
 };
+
+window.addEventListener("community:refresh", () => loadCommunityPosts(true));
