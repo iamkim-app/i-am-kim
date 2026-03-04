@@ -72,6 +72,15 @@ function escapeHtml(s) {
     .replaceAll("'", "&#039;");
 }
 
+function tokenize(raw) {
+  return String(raw || "")
+    .toLowerCase()
+    .replace(/[^0-9a-z\uac00-\ud7a3]+/g, " ")
+    .split(/\s+/)
+    .map((t) => t.trim())
+    .filter((t) => t && t.length >= 2);
+}
+
 const NOW_STATE = {
   items: [],
   faqQuestions: [],
@@ -89,7 +98,6 @@ if (!NEWS_READY_BOUND) {
     const want = sessionStorage.getItem("newsDefaultTab");
     if (want !== "FAQ") return;
     const btn = document.querySelector('[data-filter="FAQ"]');
-    console.log("[news] auto-select FAQ btn", !!btn);
     if (btn) btn.click();
     sessionStorage.removeItem("newsDefaultTab");
   });
@@ -173,7 +181,15 @@ function renderCards(active, items) {
   const host = $("#nowCards");
   if (!host) return;
   if (active === "FAQ") {
-    renderFaqList(items);
+    const input = $("#faqSearch");
+    const tokens = tokenize(input?.value || "");
+    const list = tokens.length
+      ? NOW_STATE.faqQuestions.filter((q) => {
+          const hay = tokenize(q.question || "").join(" ");
+          return tokens.every((t) => hay.includes(t));
+        })
+      : NOW_STATE.faqQuestions;
+    renderFaqList(list);
     return;
   }
   const section = mapFilterToSection(active);
@@ -191,7 +207,7 @@ function renderCards(active, items) {
 function renderFaqList(items) {
   const host = $("#nowCards");
   if (!host) return;
-  const list = Array.isArray(NOW_STATE.faqQuestions) ? NOW_STATE.faqQuestions : [];
+  const list = Array.isArray(items) ? items : [];
   if (host.id === "nowCards") {
     host.classList.toggle("is-single", list.length < 2);
   }
@@ -209,11 +225,17 @@ function renderFaqList(items) {
                     new Date(a?.created_at || 0).getTime()
                 )
             : [];
-          const metaText = answers.length ? `${answers.length} answer${answers.length === 1 ? "" : "s"}.` : "No answers yet.";
+          const metaText = answers.length
+            ? `${answers.length} answer${answers.length === 1 ? "" : "s"}.`
+            : "No answers yet.";
           const answersHtml = answers.length
             ? answers
                 .map((a) => {
                   const text = escapeHtml(a.answer || "");
+                  const isBest = !!a.is_best;
+                  const bestBadge = isBest ? `<span class="bestBadge">Best</span>` : "";
+                  const adminBadge = NOW_STATE.isAdmin ? `<span class="adminBadge">ADMIN</span>` : "";
+                  const aBadge = `<span class="qaBadge">A</span>`;
                   const adminDelete =
                     NOW_STATE.isAdmin && a.id
                       ? `<button class="btn btn--ghost btn--small faqAnswerDelete" type="button" data-answer-id="${escapeHtml(
@@ -221,7 +243,12 @@ function renderFaqList(items) {
                         )}" data-question-id="${escapeHtml(it.id || "")}">Delete</button>`
                       : "";
                   return `
-                    <div class="faqA">
+                    <div class="faqA ${isBest ? "is-best" : ""}">
+                      <div class="faqA__meta">
+                        ${aBadge}
+                        ${adminBadge}
+                        ${bestBadge}
+                      </div>
                       <div class="faqA__txt">${text}</div>
                       ${adminDelete}
                     </div>
@@ -243,7 +270,7 @@ function renderFaqList(items) {
               : "";
           return `
             <article class="faqQ" data-qid="${escapeHtml(it.id || "")}">
-              <div class="faqQ__q">${question}</div>
+              <div class="faqQ__q"><span class="qaBadge">Q</span>${question}</div>
               <div class="faqQ__meta">${metaText}</div>
               <div class="faqQ__actions">${adminAnswer}${adminDeleteQuestion}</div>
               <div class="faqAList">${answersHtml}</div>
@@ -265,6 +292,13 @@ function renderChips(active) {
       </button>
     `;
   }).join("");
+  const search = document.querySelector("#faqSearch");
+  if (search) {
+    search.style.display = active === "FAQ" ? "block" : "none";
+    if (active !== "FAQ") {
+      search.value = "";
+    }
+  }
 }
 
 function bindChips(active, items) {
@@ -274,6 +308,10 @@ function bindChips(active, items) {
       renderChips(next);
       renderCards(next, items);
       bindChips(next, items);
+      const search = $("#faqSearch");
+      if (search && next !== "FAQ") {
+        search.value = "";
+      }
     });
   });
 }
@@ -396,12 +434,16 @@ async function loadFaqQuestions() {
   try {
     const { data, error } = await supabase
       .from("faq_questions")
-      .select("id,question,created_at,faq_answers(id,answer,created_at,status)")
+      .select("id,question,created_at,faq_answers(id,answer,created_at,status,is_best)")
       .order("created_at", { ascending: false });
     if (error) throw error;
     return Array.isArray(data) ? data : [];
   } catch (err) {
     console.warn("[korea-now] FAQ questions load failed.", err);
+    try {
+      const msg = `${err?.code || "ERR"} ${err?.message || ""}`.trim();
+      window.App?.toast?.(msg || "FAQ load failed.");
+    } catch {}
     return [];
   }
 }
@@ -579,7 +621,7 @@ function ensureFaqModal() {
       <div class="nowModal__body">
         <label class="field">
           <div class="field__label">Question</div>
-          <textarea id="faqQuestionInput" class="input" rows="4" placeholder="Type your question"></textarea>
+          <textarea id="faqQuestionInput" class="input" rows="4" maxlength="500" placeholder="Type your question"></textarea>
         </label>
         <div class="field__status" id="faqQuestionStatus"></div>
       </div>
@@ -607,7 +649,6 @@ function ensureFaqModal() {
 }
 
 async function submitFaqQuestion(refresh) {
-  console.log("[faq] submit");
   const supabase = getSupabase();
   const status = $("#faqQuestionStatus");
   if (!supabase) {
@@ -618,6 +659,10 @@ async function submitFaqQuestion(refresh) {
   const q = String(input?.value || "").trim();
   if (!q) {
     if (status) status.textContent = "Question required";
+    return;
+  }
+  if (q.length > 500) {
+    if (status) status.textContent = "Max 500 characters";
     return;
   }
   const { data: userResp } = await supabase.auth.getUser();
@@ -785,6 +830,10 @@ function bindFaqActions(refresh) {
       if (!questionId) return;
       const answer = window.prompt("Answer");
       if (!answer || !answer.trim()) return;
+      if (answer.length > 2000) {
+        alert("Max 2000 characters");
+        return;
+      }
       const supabase = getSupabase();
       if (!supabase) return;
       try {
@@ -864,6 +913,7 @@ function ensureMyKoreaUI(page) {
     <div class="nowFaqBar" id="nowFaqBar" style="display:none">
       <button class="btn btn--primary btn--small" id="btnFaqAsk" type="button">Ask</button>
     </div>
+    <input id="faqSearch" class="input faqSearch" type="search" placeholder="Search FAQ (keywords)" />
     <div class="nowFilters" id="nowChips"></div>
     <div class="nowCards" id="nowCards"></div>
   `;
@@ -962,6 +1012,16 @@ export async function initKoreaNow(options = {}) {
     page.querySelector("#nowStatus")?.remove();
     page.querySelector("#btnReloadNow")?.remove();
     ensureMyKoreaUI(page);
+    const search = $("#faqSearch");
+    if (search && search.dataset.bound !== "1") {
+      search.dataset.bound = "1";
+      search.addEventListener("input", () => {
+        const active = $("#nowChips .is-active")?.dataset?.filter || FILTERS[0];
+        if (active === "FAQ") {
+          renderCards("FAQ", NOW_STATE.items);
+        }
+      });
+    }
     if (page.dataset.faqBound !== "1") {
       page.dataset.faqBound = "1";
       page.addEventListener("click", async (e) => {
@@ -1045,7 +1105,6 @@ export async function initKoreaNow(options = {}) {
         document.querySelector('.nowFilters [data-filter="FAQ"]') ||
         document.querySelector('.nowFilters button[data-filter="FAQ"]');
       if (faqBtn) faqBtn.click();
-      console.log("[news] auto-select FAQ", !!faqBtn);
       sessionStorage.removeItem("newsDefaultTab");
     }
   }
