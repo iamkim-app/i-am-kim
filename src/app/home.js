@@ -1081,15 +1081,15 @@ async function loadNowPreview(routeToken) {
   if (!isHomeActive()) return;
 
     const mapHomeNowTag = (raw) => {
-      const t = String(raw || "").trim().toLowerCase();
-      if (["advisory", "alert", "major"].includes(t)) return { label: "ALERT", kind: "alert" };
-      if (["guide", "how to", "tips"].includes(t)) return { label: "GUIDE", kind: "guide" };
+      const t = String(raw || "").toUpperCase();
+      if (t.includes("ALERT")) return { label: "ALERT", kind: "alert" };
+      if (t.includes("GUIDE")) return { label: "GUIDE", kind: "guide" };
       return { label: "NEWS", kind: "news" };
     };
     const homeNowIcon = `
       <span class="homeNowCard__icon" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none">
-          <path d="M4 6h16M4 12h10M4 18h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M5 12h14M12 5v14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
         </svg>
       </span>
     `;

@@ -5014,6 +5014,29 @@ font-weight:500;
   margin-top:4px;
 }
 
+.homeNowCard{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  padding:14px;
+  border-radius:16px;
+  border:1px solid rgba(17,17,17,.08);
+  background:#fff;
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.homeNowCard:active{ transform:scale(.98); }
+
+.homeNowCard__icon{
+  width:18px; height:18px;
+  display:flex; align-items:center; justify-content:center;
+  opacity:.75;
+}
+.homeNowCard__icon svg{ width:18px; height:18px; display:block; }
+
+.homeNowCard[data-kind="news"] .homeNowCard__tag{ color:#2563eb; }
+.homeNowCard[data-kind="alert"] .homeNowCard__tag{ color:#ef4444; }
+.homeNowCard[data-kind="guide"] .homeNowCard__tag{ color:#7c3aed; }
+
 .koreaNowSection{
   margin-top:28px;
 }
