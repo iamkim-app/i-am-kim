@@ -628,8 +628,8 @@ function renderHomeLayout() {
     <section class="homeSection">
       <div class="sectionHead">
         <div>
-          <div class="sectionTitle">Community picks</div>
-          <div class="sectionDesc">Top posts from the last 7 days.</div>
+          <div class="sectionTitle">HOT</div>
+          <div class="sectionDesc">Most liked posts this week.</div>
         </div>
       </div>
       <div class="communityPreviewWrap community-preview-bleed">
