@@ -22,6 +22,15 @@ const IDOL_STATE = {
 };
 let K_LOAD_TOKEN = 0;
 let K_LOAD_TIMEOUT = null;
+let K_LOADING = false;
+
+function setKLoading(value) {
+  K_LOADING = value;
+  try {
+    if (!window.App) window.App = {};
+    window.App.kLoading = value;
+  } catch {}
+}
 
 function ensureIdolSpotModal() {
   if (document.querySelector("#idolSpotModal")) return;
@@ -589,31 +598,47 @@ export async function initKPage({ tab = "kpop" } = {}) {
     if (btn && !btn.dataset.bound) {
       btn.dataset.bound = "1";
       btn.addEventListener("click", () => {
-        host.innerHTML = `<div class="muted small">Loading...</div>`;
-        loadFn();
+        clearLoadTimeout();
+        setKLoading(false);
+        host.innerHTML = "";
+        loadTab();
       });
     }
   };
   const loadTab = async () => {
     const requestId = ++K_LOAD_TOKEN;
     clearLoadTimeout();
+    setKLoading(true);
+    host.innerHTML = "";
     if (typeof navigator !== "undefined" && navigator.onLine === false) {
       if (isVisible()) {
         host.innerHTML = `<div class="muted small">You are offline. Connect to the internet to load updates.</div>`;
       }
+      setKLoading(false);
       return;
     }
     host.innerHTML = `<div class="muted small">Loading...</div>`;
     K_LOAD_TIMEOUT = setTimeout(() => {
       if (requestId !== K_LOAD_TOKEN) return;
+      K_LOAD_TOKEN += 1;
+      clearLoadTimeout();
+      setKLoading(false);
       showRetry(loadTab);
     }, 8000);
     try {
       const items = await fetchKPosts(tab);
       if (requestId !== K_LOAD_TOKEN) return;
       renderPosts(items, host, { isAdmin: ADMIN_STATE.isAdmin, tab });
+    } catch {
+      if (requestId !== K_LOAD_TOKEN) return;
+      clearLoadTimeout();
+      setKLoading(false);
+      showRetry(loadTab);
     } finally {
-      if (requestId === K_LOAD_TOKEN) clearLoadTimeout();
+      if (requestId === K_LOAD_TOKEN) {
+        clearLoadTimeout();
+        setKLoading(false);
+      }
     }
   };
   const refreshTab = async () => loadTab();
@@ -623,6 +648,7 @@ export async function initKPage({ tab = "kpop" } = {}) {
     host.hidden = true;
     host.innerHTML = "";
     clearLoadTimeout();
+    setKLoading(false);
     return;
   }
 
@@ -657,9 +683,11 @@ function getActiveRouteAndTab() {
 
 if (!initKPage.resumeBound) {
   initKPage.resumeBound = true;
-  window.addEventListener("app:resume", () => {
+
+  window.addEventListener("k:refresh", () => {
     const { route, tab } = getActiveRouteAndTab();
     if (route !== "k" && route !== "kpop") return;
+    setKLoading(false);
     initKPage({ tab: tab || "kpop" });
   });
 }

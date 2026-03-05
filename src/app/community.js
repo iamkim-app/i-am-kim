@@ -1178,14 +1178,6 @@ function getActiveRoute() {
   return route || "home";
 }
 
-if (!setupCommunity.resumeBound) {
-  setupCommunity.resumeBound = true;
-  window.addEventListener("app:resume", () => {
-    if (getActiveRoute() !== "community") return;
-    loadCommunityPosts(true);
-  });
-}
-
 export {
   ensureCommentReportModal,
   openCommentReportModal,

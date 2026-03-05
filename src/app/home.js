@@ -719,25 +719,15 @@ function getApp() {
   return window.App || {};
 }
 
-function isStandaloneMode() {
-  try {
-    if (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) {
-      return true;
-    }
-    return window.navigator && window.navigator.standalone === true;
-  } catch {
-    return false;
-  }
-}
-
-function openUrl(url) {
+function openExternal(url) {
   const target = String(url || "").trim();
   if (!target) return;
-  if (isStandaloneMode()) {
-    location.href = target;
-    return;
-  }
-  window.open(target, "_blank", "noopener");
+  // Capacitor 래핑 시 아래 주석을 활성화하고 위의 window.open을 제거하세요:
+  // if (isNativeShell && isNativeShell()) {
+  //   import("@capacitor/browser").then(({ Browser }) => Browser.open({ url: target }));
+  //   return;
+  // }
+  window.open(target, "_blank", "noopener,noreferrer");
 }
 
 async function isAdminUser() {
@@ -1118,6 +1108,14 @@ async function loadNowPreview(routeToken) {
     }
   } catch (err) {
     console.warn("[home] Korea Now preview failed.", err);
+    if (requestId === loadNowPreview.requestId && isVisible()) {
+      track.innerHTML = `<div class="muted small">Failed to load. <button class="btn btn--ghost btn--small" type="button" data-retry="home-now">Retry</button></div>`;
+      const btn = track.querySelector('[data-retry="home-now"]');
+      if (btn && !btn.dataset.bound) {
+        btn.dataset.bound = "1";
+        btn.addEventListener("click", () => { track.innerHTML = `<div class="muted small">Loading...</div>`; loadNowPreview(routeToken); });
+      }
+    }
   } finally {
     if (requestId === loadNowPreview.requestId) clearLoadingTimeout();
   }
@@ -1408,8 +1406,7 @@ function setupHome(routeToken) {
       return;
     }
     if (action === "exchange") {
-      window.location.href =
-        "https://www.xe.com/currencyconverter/convert/?Amount=1&From=USD&To=KRW";
+      openExternal("https://www.xe.com/currencyconverter/convert/?Amount=1&From=USD&To=KRW");
       return;
     }
     if (action === "phrases") {
@@ -1477,7 +1474,7 @@ function setupHome(routeToken) {
         return;
       }
       if (source === "korea_now_posts" && link) {
-        openUrl(link);
+        openExternal(link);
       }
     });
   }
@@ -1562,8 +1559,7 @@ function getActiveRoute() {
 
 if (!setupHome.resumeBound) {
   setupHome.resumeBound = true;
-  window.addEventListener("app:resume", () => {
-    if (getActiveRoute() !== "home") return;
+  window.addEventListener("home:refresh", () => {
     const token = Number(window.App?.routeToken) || 0;
     setupHome(token);
   });

@@ -105,49 +105,19 @@ body{
   font-size: var(--text-base);
   background: var(--bg);
   -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
   user-select: none;
   touch-action: manipulation;
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-.offlineBanner{
-  position: fixed;
-  top: calc(env(safe-area-inset-top) + 76px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(420px, calc(100vw - 32px));
-  z-index: 1000;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: #fff;
-  color: var(--ink);
-  border: 1px solid rgba(17,17,17,0.10);
-  box-shadow: 0 8px 24px rgba(17,17,17,0.08);
-  font-size: var(--fs-caption);
-  pointer-events: auto;
-}
-.offlineBanner__text{
-  white-space: nowrap;
-}
-.offlineBanner__btn{
-  border: 1px solid rgba(17,17,17,0.12);
-  background: rgba(17,17,17,0.04);
-  color: inherit;
-  font-size: var(--fs-caption);
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 999px;
-  cursor: pointer;
-}
 
 input,
 textarea,
 select,
 [contenteditable]{
+  -webkit-user-select: text;
   user-select: text;
 }
 
@@ -664,10 +634,10 @@ code{
 .main{
   max-width: var(--max);
   margin: 0 auto;
-  padding: 22px 18px calc(96px + env(safe-area-inset-bottom));
+  padding: 8px 18px calc(96px + env(safe-area-inset-bottom));
 }
 
-.page{ margin-top: 14px; }
+.page{ margin-top: 8px; }
 
 .grid{ display: grid; gap: 16px; }
 .grid--2{ grid-template-columns: 1.2fr 0.8fr; }
@@ -685,10 +655,25 @@ code{
   #homeNowPreview,
   #homeNowTrack,
   .homeNowList,
-  #page-community .feed,
-  #page-kpop .nowList{
+  #page-community .feed{
     width: min(100%, 760px);
     margin-inline: auto;
+  }
+}
+
+@media (min-width: 900px){
+  #page-kpop,
+  #page-kpop .pageHeader,
+  #page-kpop .kSubtabs,
+  #page-kpop #kSubtabContent,
+  #page-kpop .kSubtabContent,
+  #page-kpop .kSubtabPanel,
+  #page-kpop #nowKpop,
+  #page-kpop .nowList,
+  #page-kpop .nowCards{
+    width: 100% !important;
+    max-width: none !important;
+    margin-inline: 0 !important;
   }
 }
 
@@ -3996,7 +3981,7 @@ input[type="file"]:disabled{
   display: block !important;
 }
 
-.heroStrip { margin: 24px 0; }
+.heroStrip { margin: 0 0 16px; }
 .heroStrip__track {
   display: flex;
   flex-wrap: nowrap;
@@ -5014,8 +4999,10 @@ font-weight:500;
 .kSubtabPanel .nowItemCard{
   background: #fff !important;
   border: 0 !important;
-  box-shadow: 0 8px 24px rgba(17,17,17,.06) !important;
-  border-radius: 16px !important;
+  border-bottom: 0 !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04) !important;
+  border-radius: 14px !important;
+  padding: 16px !important;
 }
 
 /* Remove inner strip/box backgrounds inside post-like cards */
@@ -5328,4 +5315,81 @@ font-weight:500;
 .travelCategories button{
   flex:1 1 calc(33% - 10px);
   min-width:100px;
+}
+
+
+#page-kpop .nowCards{
+  grid-template-columns:1fr !important;
+  overflow-x:visible !important;
+  flex-wrap:wrap !important;
+}
+
+#page-kpop .nowCards > *{
+  flex:none !important;
+  width:100% !important;
+  max-width:none !important;
+  scroll-snap-align:none !important;
+}
+
+#page-kpop .kSubtabPanel{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:12px;
+  width:100% !important;
+  max-width:none !important;
+  min-width:0;
+  justify-items:stretch;
+}
+
+#page-kpop .kSubtabPanel > .nowItemCard{
+  display:block;
+  width:100% !important;
+  max-width:none !important;
+  min-width:0;
+}
+
+/* Special K: 그라디언트 보더 제거 → 심플 카드 스타일 */
+#nowKpop{
+  background: #fff;
+  border: 1px solid rgba(11,18,32,0.07);
+  box-shadow: 0 4px 20px rgba(11,18,32,0.07);
+}
+
+/* Special K 피드 카드: 좌우 패딩 복구 */
+#page-kpop .nowItemCard{
+  padding: 16px !important;
+  border-bottom: 0 !important;
+}
+
+/* ----------------------- Offline Banner ----------------------- */
+.offlineBanner{
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-120%);
+  width: min(360px, calc(100vw - 32px));
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(11,18,32,0.92);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 8px 32px rgba(11,18,32,0.18);
+  transition: transform 280ms cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events: none;
+}
+.offlineBanner.is-visible{
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+.offlineBanner__dot{
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #FF2D55;
+  flex-shrink: 0;
 }

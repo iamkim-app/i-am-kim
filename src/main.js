@@ -1070,7 +1070,6 @@ function navigateToHome() {
     history.replaceState({}, "", "/");
   }
   location.hash = "#home";
-  setActiveRoute("home");
 }
 
 function scrollRouteToTop(route) {
@@ -1112,8 +1111,7 @@ function setActiveRoute(route) {
     setupHome?.(token);
   }
   if (route === "k" && !String(location.hash || "").includes("tab=")) {
-    location.hash = "#k?tab=kpop";
-    route = "k";
+    history.replaceState(null, "", "#k?tab=kpop");
   }
   const pageRoute = ROUTE_PAGE_MAP[route] || route;
   // pages
@@ -3096,13 +3094,6 @@ async function init() {
   }
   replaceBrandMarkWithLogo();
 
-  // home
-  if (typeof setupHome === "function") {
-    setupHome();
-  } else {
-    console.warn("[home] setupHome missing");
-  }
-
   // phrases
   setupPhrases();
   setupTravelMode();
@@ -3138,14 +3129,6 @@ async function init() {
     setActiveRoute(currentRoute());
   });
 
-  const offlineRetry = $("#offlineRetry");
-  if (offlineRetry && !offlineRetry.dataset.bound) {
-    offlineRetry.dataset.bound = "1";
-    offlineRetry.addEventListener("click", () => {
-      window.dispatchEvent(new Event("app:resume"));
-    });
-  }
-
   // logout delegation for dynamic elements
   document.addEventListener("click", (e) => {
     const btn = e.target?.closest?.('[data-auth-action="logout"]');
@@ -3169,6 +3152,7 @@ async function init() {
 boot().catch((err) => console.warn("[init] Failed.", err));
 
 function handleAppResume(){
+  if (window.__safeOpenActive) return;
   const now = Date.now();
   if (now - APP_RESUME_LAST < 1000) return;
   APP_RESUME_LAST = now;
@@ -3208,10 +3192,6 @@ document.addEventListener("visibilitychange", ()=>{
   }
 });
 
-window.addEventListener("focus", handleAppResume);
-window.addEventListener("online", handleAppResume);
-window.addEventListener("online", () => updateOfflineBanner(false));
-window.addEventListener("offline", () => updateOfflineBanner(true));
 
 window.IAMKIMBridge = {
   ping: () => "ok",
@@ -3220,15 +3200,76 @@ window.IAMKIMBridge = {
   resume: () => handleAppResume(),
 };
 
-function updateOfflineBanner(isOffline) {
-  const banner = $("#offlineBanner");
-  if (!banner) return;
-  const offlineRetry = $("#offlineRetry");
-  banner.hidden = !isOffline;
-  if (offlineRetry) offlineRetry.hidden = !isOffline;
+/* ----------------------- Offline Banner ----------------------- */
+function ensureOfflineBanner() {
+  let el = document.getElementById("offlineBanner");
+  if (el) return el;
+  el = document.createElement("div");
+  el.id = "offlineBanner";
+  el.className = "offlineBanner";
+  el.setAttribute("role", "status");
+  el.setAttribute("aria-live", "polite");
+  el.innerHTML = `<span class="offlineBanner__dot"></span><span>You're offline. Some content may not load.</span>`;
+  document.body.appendChild(el);
+  return el;
 }
 
-updateOfflineBanner(typeof navigator !== "undefined" && navigator.onLine === false);
+function setOfflineBanner(isOffline) {
+  const el = ensureOfflineBanner();
+  el.classList.toggle("is-visible", isOffline);
+}
+
+window.addEventListener("online", () => {
+  setOfflineBanner(false);
+  // 오프라인 중 멈춘 페이지를 자동으로 재시도
+  // visibilitychange와 달리 1초 디바운스만 적용하고 resume 트리거
+  const now = Date.now();
+  if (now - APP_RESUME_LAST < 1000) return;
+  APP_RESUME_LAST = now;
+  window.dispatchEvent(new Event("app:resume"));
+});
+window.addEventListener("offline", () => setOfflineBanner(true));
+
+if (typeof navigator !== "undefined" && navigator.onLine === false) {
+  setOfflineBanner(true);
+}
+
+/* ----------------------- Global Error Handler ----------------------- */
+let _lastErrMsg = "";
+let _lastErrTime = 0;
+
+function handleGlobalError(msg) {
+  const text = String(msg || "").trim();
+  if (!text) return;
+  const now = Date.now();
+  if (text === _lastErrMsg && now - _lastErrTime < 3000) return;
+  _lastErrMsg = text;
+  _lastErrTime = now;
+  toast("Something went wrong. Please try again.");
+}
+
+window.onerror = (_msg, _src, _line, _col, err) => {
+  const msg = (err && err.message) || String(_msg || "");
+  handleGlobalError(msg);
+  return false;
+};
+
+window.addEventListener("unhandledrejection", (e) => {
+  const reason = e.reason;
+  // 네트워크 에러, AbortError 등 정상적인 PWA 동작 중 예상되는 에러는 무시
+  if (reason && (
+    reason.name === "AbortError" ||
+    reason.name === "NetworkError" ||
+    (typeof reason.message === "string" && (
+      reason.message.includes("Failed to fetch") ||
+      reason.message.includes("Load failed") ||
+      reason.message.includes("NetworkError") ||
+      reason.message.includes("The operation was aborted")
+    ))
+  )) return;
+  const msg = (reason && reason.message) || String(reason || "");
+  handleGlobalError(msg);
+});
 
 
 

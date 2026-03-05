@@ -14,18 +14,34 @@ export function safeOpen(urlScheme, androidUrl, iosUrl) {
   }
 
   let didHide = false;
-  const onVis = () => {
-    if (document.hidden) didHide = true;
+  let done = false;
+
+  const finish = (navigateFallback) => {
+    if (done) return;
+    done = true;
+    window.__safeOpenActive = false;
+    document.removeEventListener("visibilitychange", onVis);
+    if (navigateFallback && fallback) window.location.href = fallback;
   };
-  document.addEventListener("visibilitychange", onVis, { once: true });
+
+  const onVis = () => {
+    if (document.hidden) {
+      didHide = true;
+    } else if (didHide) {
+      finish(false);
+    }
+  };
+
+  window.__safeOpenActive = true;
+  document.addEventListener("visibilitychange", onVis);
 
   try {
     window.location.href = scheme;
   } catch {}
 
   setTimeout(() => {
-    document.removeEventListener("visibilitychange", onVis);
-    if (didHide) return;
-    if (fallback) window.location.href = fallback;
+    if (!didHide) finish(true);
   }, 1200);
+
+  setTimeout(() => finish(false), 30000);
 }

@@ -1205,10 +1205,3 @@ function getActiveRoute() {
   return route || "home";
 }
 
-if (!initKoreaNow.resumeBound) {
-  initKoreaNow.resumeBound = true;
-  window.addEventListener("app:resume", () => {
-    if (getActiveRoute() !== "news") return;
-    initKoreaNow({ mode: "mykorea" });
-  });
-}

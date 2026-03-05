@@ -26,10 +26,6 @@
         <div class="loadingOverlay__desc">Extracting travel tips and timestamps.</div>
       </div>
     </div>
-    <div id="offlineBanner" class="offlineBanner" role="status" aria-live="polite" hidden>
-      <span class="offlineBanner__text">You're offline. Some features may be unavailable.</span>
-      <button class="offlineBanner__btn" id="offlineRetry" type="button">Retry</button>
-    </div>
     <div class="app">
       <header class="topbar">
         <div class="topbar__inner">
@@ -499,123 +495,6 @@
                 <div class="adminCard">
                   <div class="label">Home Picks (Slots 1-3)</div>
                   <div class="adminHomePicks">
-                    <div class="card" style="margin-bottom:10px;">
-                      <div class="muted small" style="margin-bottom:6px;">Slot 1</div>
-                      <div class="grid">
-                        <label class="field">
-                          <div class="field__label">Source</div>
-                          <select class="input" data-slot="1" data-field="source">
-                            <option value="k_posts">k_posts</option>
-                            <option value="korea_now_posts">korea_now_posts</option>
-                          </select>
-                        </label>
-                        <label class="field">
-                          <div class="field__label">Source ID</div>
-                          <input class="input" data-slot="1" data-field="source_id" />
-                        </label>
-                        <label class="field">
-                          <div class="field__label">Title override</div>
-                          <input class="input" data-slot="1" data-field="title_override" />
-                        </label>
-                        <label class="field">
-                          <div class="field__label">Subtitle override</div>
-                          <input class="input" data-slot="1" data-field="subtitle_override" />
-                        </label>
-                        <label class="field">
-                          <div class="field__label">Link hash</div>
-                          <input class="input" data-slot="1" data-field="link_hash" />
-                        </label>
-                      </div>
-                    </div>
-                    <div class="card" style="margin-bottom:10px;">
-                      <div class="muted small" style="margin-bottom:6px;">Slot 2</div>
-                      <div class="grid">
-                        <label class="field">
-                          <div class="field__label">Source</div>
-                          <select class="input" data-slot="2" data-field="source">
-                            <option value="k_posts">k_posts</option>
-                            <option value="korea_now_posts">korea_now_posts</option>
-                          </select>
-                        </label>
-                        <label class="field">
-                          <div class="field__label">Source ID</div>
-                          <input class="input" data-slot="2" data-field="source_id" />
-                        </label>
-                        <label class="field">
-                          <div class="field__label">Title override</div>
-                          <input class="input" data-slot="2" data-field="title_override" />
-                        </label>
-                        <label class="field">
-                          <div class="field__label">Subtitle override</div>
-                          <input class="input" data-slot="2" data-field="subtitle_override" />
-                        </label>
-                        <label class="field">
-                          <div class="field__label">Link hash</div>
-                          <input class="input" data-slot="2" data-field="link_hash" />
-                        </label>
-                      </div>
-                    </div>
-                    <div class="card" style="margin-bottom:10px;">
-                      <div class="muted small" style="margin-bottom:6px;">Slot 3</div>
-                      <div class="grid">
-                        <label class="field">
-                          <div class="field__label">Source</div>
-                          <select class="input" data-slot="3" data-field="source">
-                            <option value="k_posts">k_posts</option>
-                            <option value="korea_now_posts">korea_now_posts</option>
-                          </select>
-                        </label>
-                        <label class="field">
-                          <div class="field__label">Source ID</div>
-                          <input class="input" data-slot="3" data-field="source_id" />
-                        </label>
-                        <label class="field">
-                          <div class="field__label">Title override</div>
-                          <input class="input" data-slot="3" data-field="title_override" />
-                        </label>
-                        <label class="field">
-                          <div class="field__label">Subtitle override</div>
-                          <input class="input" data-slot="3" data-field="subtitle_override" />
-                        </label>
-                        <label class="field">
-                          <div class="field__label">Link hash</div>
-                          <input class="input" data-slot="3" data-field="link_hash" />
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="row">
-                    <button class="btn btn--primary btn--small" id="adminSaveHomePicks" type="button">Save</button>
-                  </div>
-                </div>
-              </div>
-              <div id="adminPanelDynamic"></div>
-            </div>
-          </div>
-        </section>
-
-        <!-- ADMIN -->
-        <section class="page" id="page-admin" data-page="admin" hidden style="display:none" data-admin-duplicate="1">
-          <div class="pageHeader">
-            <h2 class="pageHeader__title">Admin</h2>
-            <p class="pageHeader__desc">Moderation & safety tools.</p>
-          </div>
-          <div class="card card--inner">
-            <div class="status" id="adminStatus">loading</div>
-            <div class="row row--space">
-              <div class="adminTabs" id="adminTabs">
-                <button class="btn btn--ghost btn--small is-active" data-tab="post">Post Reports</button>
-                <button class="btn btn--ghost btn--small" data-tab="comment">Comment Reports</button>
-                <button class="btn btn--ghost btn--small" data-tab="users">User Management</button>
-                <button class="btn btn--ghost btn--small" data-tab="home" type="button">Home Picks</button>
-              </div>
-              <button class="btn btn--ghost btn--small" id="adminRefresh" type="button">Refresh</button>
-            </div>
-            <div class="adminPanel" id="adminPanel">
-              <div id="adminPanelHome" hidden>
-                <div class="adminCard">
-                  <div class="label">Home Picks (Slots 1-3)</div>
-                  <div class="adminHomePicks" id="adminHomePicks">
                     <div class="card" style="margin-bottom:10px;">
                       <div class="muted small" style="margin-bottom:6px;">Slot 1</div>
                       <div class="grid">
