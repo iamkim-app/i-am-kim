@@ -608,8 +608,8 @@ function renderHomeLayout() {
     <section class="homeSection">
       <div class="sectionHead">
         <div>
-          <div class="sectionTitle">Korea Now</div>
-          <div class="sectionDesc">Latest travel notes and quick alerts.</div>
+          <div class="sectionTitle">Note</div>
+          <div class="sectionDesc">Travel updates and useful information.</div>
         </div>
         <button class="btn btn--ghost btn--small" id="btnEditHomePicks" type="button" style="display:none">Edit</button>
       </div>
