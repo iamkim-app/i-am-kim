@@ -2546,9 +2546,9 @@ body.is-native-shell .main{
   border-radius: 0;
   max-width: none;
   padding: 14px;
-  background: rgba(255,255,255,0.78);
-  border: 1px solid var(--border2);
-  box-shadow: 0 18px 60px rgba(2,6,23,0.06);
+  background: #fff;
+  border: 1px solid rgba(17,17,17,.10);
+  box-shadow: none;
   overflow: hidden;
 }
 .postHead{
@@ -3048,6 +3048,11 @@ input[type="file"]:disabled{
   gap: 10px;
   padding: 18px 0 8px;
 }
+@media (max-width: 768px){
+  .homeHero{
+    padding-top: 6px;
+  }
+}
 .homeHero__title{
   font-size: clamp(24px, 6vw, 34px);
   font-weight: var(--heading-weight);
@@ -3211,9 +3216,9 @@ input[type="file"]:disabled{
   gap: 12px;
 }
 .nowItemCard{
-  border: 1px solid var(--border2);
+  border: 1px solid rgba(17,17,17,.10);
   border-radius: 14px;
-  background: rgba(255,255,255,0.95);
+  background: #fff;
   padding: 14px;
   display: grid;
   gap: 8px;
@@ -3936,6 +3941,12 @@ input[type="file"]:disabled{
   overflow: hidden;
   scroll-snap-align: start;
 }
+@media (max-width: 768px){
+  .heroCard{
+    height: 220px;
+    max-height: 240px;
+  }
+}
 
 .heroCard::before {
   content: "";
@@ -4392,8 +4403,8 @@ input[type="file"]:disabled{
 }
 #page-community .postCard.is-jumpTarget{
   border-color: rgba(10,132,255,0.35);
-  background: linear-gradient(180deg, rgba(10,132,255,0.08), rgba(255,255,255,0.96));
-  box-shadow: 0 0 0 3px rgba(10,132,255,0.18), 0 16px 40px rgba(2,6,23,0.12);
+  background: #fff;
+  box-shadow: none;
 }
 .communityPreviewGrid{
   display: grid;
@@ -4404,10 +4415,10 @@ input[type="file"]:disabled{
   display: grid;
   gap: 8px;
   text-align: left;
-  padding: 10px;
+  padding: 14px;
   border-radius: 14px;
-  border: 1px solid var(--border2);
-  background: rgba(255,255,255,0.78);
+  border: 1px solid rgba(17,17,17,.10);
+  background: #fff;
 }
 .homeCommunityCard{
   cursor: pointer;
@@ -4543,7 +4554,7 @@ body .kFoodHero__track .kFoodHero__card:hover{
     display: block;
     aspect-ratio: 16 / 10;
     border-radius: 12px;
-    background: linear-gradient(135deg, rgba(11,18,32,0.08), rgba(11,18,32,0.02));
+    background: transparent;
   }
 
   .communityPreviewCard:has(.communityPreviewImage)::before{
@@ -4615,7 +4626,7 @@ body .kFoodHero__track .kFoodHero__card:hover{
   padding:14px;
   border:1px solid rgba(17,17,17,.10);
   border-radius:16px;
-  background:rgba(255,255,255,0.6);
+  background:#fff;
 }
 
 .faqQ::before{
@@ -4626,7 +4637,7 @@ body .kFoodHero__track .kFoodHero__card:hover{
   bottom:10px;
   width:2px;
   border-radius:2px;
-  background: linear-gradient(180deg, rgba(255,45,85,0.35), rgba(10,132,255,0.35));
+  background: transparent;
 }
 
 .faqQ__q {
@@ -4763,12 +4774,17 @@ color:rgba(17,17,17,.58);
 font-size:15px;
 font-weight:500;
 }
+@media (max-width: 768px){
+  #btnAskKim.askSearch{
+    margin-top: 10px;
+  }
+}
 /* FAQ Question */
 .faqQ{
-  padding:16px;
+  padding:14px;
   border-radius:16px;
-  border:1px solid rgba(255,80,80,.22);
-  background:rgba(255,80,80,.04);
+  border:1px solid rgba(17,17,17,.10);
+  background:#fff;
 }
 
 /* Question text */
@@ -4812,12 +4828,8 @@ font-weight:500;
 
 /* Trippal highlight (subtle) */
 .postCard.is-trippal{
-  border: 1px solid rgba(10,132,255,.22);
-  background: linear-gradient(135deg,
-    rgba(10,132,255,.06),
-    rgba(255,59,48,.04),
-    rgba(255,255,255,1)
-  );
+  border: 1px solid rgba(10,132,255,.25);
+  background: #fff;
 }
 
 .postCard.is-trippal .nowTag{
@@ -4841,7 +4853,7 @@ font-weight:500;
 
 .postCard.is-trippal{
   border:1px solid rgba(10,132,255,.25);
-  background:linear-gradient(135deg,rgba(10,132,255,.06),rgba(255,255,255,1));
+  background:#fff;
 }
 
 .postCard.is-trippal .nowTag{
@@ -4858,6 +4870,53 @@ font-weight:500;
   background:rgba(220,38,38,.08);
   color:#dc2626;
   font-weight:600;
+}
+
+/* ---------------- Flat list cards (posts/now/faq/preview) --------------- */
+.nowItemCard,
+.postCard,
+.community-post-card,
+.faqQ,
+.communityPreviewCard{
+  background: #fff !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 14px 0 !important;
+  margin: 0 !important;
+  border-bottom: 1px solid rgba(17,17,17,.08) !important;
+}
+.nowItemCard:last-child,
+.postCard:last-child,
+.community-post-card:last-child,
+.faqQ:last-child,
+.communityPreviewCard:last-child{
+  border-bottom: 0 !important;
+}
+
+.nowItemCard__tag,
+.nowItemCard__title,
+.nowItemCard__summary{
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Strip removal: clear inner boxes, keep buttons intact */
+.nowItemCard :not(button):not(.btn),
+.postCard :not(button):not(.btn),
+.community-post-card :not(button):not(.btn),
+.faqQ :not(button):not(.btn),
+.communityPreviewCard :not(button):not(.btn){
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.postCard.is-trippal,
+#page-community .postCard.is-jumpTarget{
+  background: #fff !important;
+  box-shadow: none !important;
 }
 
 #btnDeleteAccount:active{

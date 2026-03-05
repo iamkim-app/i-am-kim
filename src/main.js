@@ -1016,7 +1016,7 @@ function getKTabFromHash() {
 function updateBottomTabbarRoutes() {
   const mappings = [
     { from: "home", to: { route: "home", href: "#home", label: "Home" } },
-    { from: "kpop", to: { route: "k", href: "#k", label: "K" } },
+    { from: "kpop", to: { route: "k", href: "#k", label: "Special K" } },
     { from: "mykorea", to: { route: "news", href: "#news", label: "News" } },
     { from: "community", to: { route: "community", href: "#community", label: "Board" } },
     { from: "info", to: { route: "info", href: "#info", label: "Information" } },
