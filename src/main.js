@@ -1041,12 +1041,27 @@ function updateBottomTabbarRoutes() {
 }
 
 let ROUTE_TOKEN = 0;
+const LAST_ROUTE_KEY = "iamkim_last_route_v1";
 
 function currentRoute() {
   const path = (location.pathname || "").toLowerCase();
   if (path.endsWith("/admin")) return "admin";
   const { route } = getHashParts();
   return normalizeRoute(route);
+}
+
+function getLastRouteHash() {
+  try {
+    return localStorage.getItem(LAST_ROUTE_KEY) || "#home";
+  } catch {
+    return "#home";
+  }
+}
+
+function saveLastRouteHash() {
+  try {
+    localStorage.setItem(LAST_ROUTE_KEY, location.hash || "#home");
+  } catch {}
 }
 
 function navigateToHome() {
@@ -2300,7 +2315,7 @@ const TRAVEL_CATEGORIES = [
   { key: "Transport", label: "Transit" },
   { key: "Food", label: "Food" },
   { key: "Emergency", label: "Emergency" },
-  { key: "Favorites", label: "Polite" },
+  { key: "Favorites", label: "Favorites" },
   { key: "MyPacks", label: "My Packs" },
 ];
 
@@ -3118,7 +3133,18 @@ async function init() {
   updateBottomTabbarRoutes();
   bindTabbarScrollToTop();
   setActiveRoute(currentRoute());
-  window.addEventListener("hashchange", () => setActiveRoute(currentRoute()));
+  window.addEventListener("hashchange", () => {
+    saveLastRouteHash();
+    setActiveRoute(currentRoute());
+  });
+
+  const offlineRetry = $("#offlineRetry");
+  if (offlineRetry && !offlineRetry.dataset.bound) {
+    offlineRetry.dataset.bound = "1";
+    offlineRetry.addEventListener("click", () => {
+      window.dispatchEvent(new Event("app:resume"));
+    });
+  }
 
   // logout delegation for dynamic elements
   document.addEventListener("click", (e) => {
@@ -3143,18 +3169,37 @@ async function init() {
 boot().catch((err) => console.warn("[init] Failed.", err));
 
 function handleAppResume(){
+  const now = Date.now();
+  if (now - APP_RESUME_LAST < 1000) return;
+  APP_RESUME_LAST = now;
   window.dispatchEvent(new Event("app:resume"));
 }
 
 let APP_RESUME_LAST = 0;
 window.addEventListener("app:resume", () => {
-  const now = Date.now();
-  if (now - APP_RESUME_LAST < 1000) return;
-  APP_RESUME_LAST = now;
-  console.log("[app] resume refresh");
-  window.dispatchEvent(new Event("community:refresh"));
-  window.dispatchEvent(new Event("koreanow:refresh"));
-  window.dispatchEvent(new Event("home:refresh"));
+  const getSession = supabase?.auth?.getSession;
+  if (typeof getSession === "function") {
+    try {
+      const pending = getSession.call(supabase.auth);
+      if (pending?.catch) pending.catch(() => {});
+    } catch {}
+  }
+  const route = currentRoute();
+  if (route === "home") {
+    window.dispatchEvent(new Event("home:refresh"));
+    return;
+  }
+  if (route === "community") {
+    window.dispatchEvent(new Event("community:refresh"));
+    return;
+  }
+  if (route === "news") {
+    window.dispatchEvent(new Event("koreanow:refresh"));
+    return;
+  }
+  if (route === "k") {
+    window.dispatchEvent(new Event("k:refresh"));
+  }
 });
 
 document.addEventListener("visibilitychange", ()=>{
@@ -3164,6 +3209,26 @@ document.addEventListener("visibilitychange", ()=>{
 });
 
 window.addEventListener("focus", handleAppResume);
+window.addEventListener("online", handleAppResume);
+window.addEventListener("online", () => updateOfflineBanner(false));
+window.addEventListener("offline", () => updateOfflineBanner(true));
+
+window.IAMKIMBridge = {
+  ping: () => "ok",
+  getCurrentRoute: () => location.hash || "#home",
+  getLastRoute: () => getLastRouteHash(),
+  resume: () => handleAppResume(),
+};
+
+function updateOfflineBanner(isOffline) {
+  const banner = $("#offlineBanner");
+  if (!banner) return;
+  const offlineRetry = $("#offlineRetry");
+  banner.hidden = !isOffline;
+  if (offlineRetry) offlineRetry.hidden = !isOffline;
+}
+
+updateOfflineBanner(typeof navigator !== "undefined" && navigator.onLine === false);
 
 
 

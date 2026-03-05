@@ -218,7 +218,7 @@ async function processOAuthCallback() {
   AUTH_OAUTH_IN_PROGRESS = true;
 
   try {
-    // 1) PKCE/code flow ?�선 처리
+    // 1) PKCE/code flow ?�선 처리
     if (code && typeof supabase.auth.exchangeCodeForSession === "function") {
       await supabase.auth.exchangeCodeForSession(code);
     }
@@ -244,7 +244,7 @@ async function processOAuthCallback() {
     AUTH_OAUTH_IN_PROGRESS = false;
   }
 
-  // URL ?�리 (code/state ?�거 + hash ?�큰 ?�거)
+  // URL ?�리 (code/state ?�거 + hash ?�큰 ?�거)
   try {
     const cleanParams = new URLSearchParams(window.location.search || "");
     cleanParams.delete("code");

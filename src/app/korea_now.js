@@ -90,6 +90,8 @@ const NOW_STATE = {
   refresh: null,
   defaultChip: "",
 };
+let NOW_LOAD_TOKEN = 0;
+let NOW_LOAD_TIMEOUT = null;
 
 let NEWS_READY_BOUND = false;
 if (!NEWS_READY_BOUND) {
@@ -1069,29 +1071,66 @@ export async function initKoreaNow(options = {}) {
   }
 
   const refresh = async () => {
-    let items = [];
-    const supa = await loadSupabaseItems(mode);
-    if (supa.ok && supa.items.length) {
-      items = supa.items;
-    } else {
-      items = await loadFallbackItems(mode);
+    const host = mode === "kpop" ? $("#nowCardsKpop") : $("#nowCards");
+    const requestId = ++NOW_LOAD_TOKEN;
+    const page = document.getElementById(mode === "kpop" ? "page-kpop" : "page-korea-now");
+    const isVisible = () => page && !page.hidden;
+    if (NOW_LOAD_TIMEOUT) {
+      clearTimeout(NOW_LOAD_TIMEOUT);
+      NOW_LOAD_TIMEOUT = null;
     }
+    if (host) {
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        host.innerHTML = `<div class="muted small">You are offline. Connect to the internet to load updates.</div>`;
+        return;
+      }
+      host.innerHTML = `<div class="muted small">Loading...</div>`;
+      NOW_LOAD_TIMEOUT = setTimeout(() => {
+        if (requestId !== NOW_LOAD_TOKEN) return;
+        if (!isVisible()) return;
+        host.innerHTML = `Still loading. <button class="btn btn--ghost btn--small" type="button" data-retry="korea-now">Retry</button>`;
+        const btn = host.querySelector('button[data-retry="korea-now"]');
+        if (btn && !btn.dataset.bound) {
+          btn.dataset.bound = "1";
+          btn.addEventListener("click", () => {
+            host.innerHTML = `<div class="muted small">Loading...</div>`;
+            refresh();
+          });
+        }
+      }, 8000);
+    }
+    try {
+      let items = [];
+      const supa = await loadSupabaseItems(mode);
+      if (requestId !== NOW_LOAD_TOKEN) return;
+      if (supa.ok && supa.items.length) {
+        items = supa.items;
+      } else {
+        items = await loadFallbackItems(mode);
+      }
 
-    if (mode !== "kpop") {
-      NOW_STATE.faqQuestions = await loadFaqQuestions();
-    }
+      if (mode !== "kpop") {
+        NOW_STATE.faqQuestions = await loadFaqQuestions();
+      }
 
-    NOW_STATE.items = items;
-    if (mode === "kpop") {
-      renderKpop(items);
-      return;
+      if (requestId !== NOW_LOAD_TOKEN) return;
+      NOW_STATE.items = items;
+      if (mode === "kpop") {
+        renderKpop(items);
+        return;
+      }
+      const initial = FILTERS[0];
+      const defaultActive = NOW_STATE.defaultChip || initial;
+      const active = $("#nowChips .is-active")?.dataset?.filter || defaultActive;
+      renderChips(active);
+      renderCards(active, items);
+      bindChips(active, items);
+    } finally {
+      if (requestId === NOW_LOAD_TOKEN) {
+        if (NOW_LOAD_TIMEOUT) clearTimeout(NOW_LOAD_TIMEOUT);
+        NOW_LOAD_TIMEOUT = null;
+      }
     }
-    const initial = FILTERS[0];
-    const defaultActive = NOW_STATE.defaultChip || initial;
-    const active = $("#nowChips .is-active")?.dataset?.filter || defaultActive;
-    renderChips(active);
-    renderCards(active, items);
-    bindChips(active, items);
   };
 
   NOW_STATE.refresh = refresh;
@@ -1159,3 +1198,17 @@ export async function initKoreaNow(options = {}) {
 }
 
 window.addEventListener("koreanow:refresh", () => initKoreaNow({ mode: "mykorea" }));
+
+function getActiveRoute() {
+  const raw = String(location.hash || "#home").replace("#", "");
+  const route = raw.split("?")[0].trim().toLowerCase();
+  return route || "home";
+}
+
+if (!initKoreaNow.resumeBound) {
+  initKoreaNow.resumeBound = true;
+  window.addEventListener("app:resume", () => {
+    if (getActiveRoute() !== "news") return;
+    initKoreaNow({ mode: "mykorea" });
+  });
+}

@@ -28,5 +28,10 @@
   {"id":27,"rank":27,"category":"Other","en":"Where is the restroom?","ko":"화장실이 어디예요?","romanization":"hwajangsiri eodiyeyo?"},
   {"id":28,"rank":28,"category":"Other","en":"Is there Wi-Fi here?","ko":"여기 와이파이 있나요?","romanization":"yeogi waipa-i innayo?"},
   {"id":29,"rank":29,"category":"Other","en":"Please speak slowly.","ko":"천천히 말씀해 주세요.","romanization":"cheoncheonhi malsseumhae juseyo."},
-  {"id":30,"rank":30,"category":"Other","en":"Thank you.","ko":"감사합니다.","romanization":"gamsahamnida."}
+  {"id":30,"rank":30,"category":"Polite","en":"Excuse me.","ko":"실례합니다.","romanization":"sillyehamnida."},
+  {"id":31,"rank":31,"category":"Polite","en":"Please.","ko":"부탁드립니다.","romanization":"butakdeurimnida."},
+  {"id":32,"rank":32,"category":"Polite","en":"Thank you.","ko":"감사합니다.","romanization":"gamsahamnida."},
+  {"id":33,"rank":33,"category":"Polite","en":"Sorry.","ko":"죄송합니다.","romanization":"joesonghamnida."},
+  {"id":34,"rank":34,"category":"Polite","en":"Its okay.","ko":"괜찮아요.","romanization":"gwaenchanayo."},
+  {"id":35,"rank":35,"category":"Polite","en":"One moment, please.","ko":"잠시만요.","romanization":"jamsimanyo."}
 ]

@@ -1016,11 +1016,45 @@ async function loadNowPreview(routeToken) {
   const track = document.getElementById("homeNowTrack");
   if (!host || !track) return;
 
+  const requestId = ++loadNowPreview.requestId;
+  const isVisible = () => isHomeActive() && !host.closest(".page")?.hidden;
+  const clearLoadingTimeout = () => {
+    if (loadNowPreview.timeoutId) clearTimeout(loadNowPreview.timeoutId);
+    loadNowPreview.timeoutId = null;
+  };
+  const setRetry = () => {
+    if (!isVisible()) return;
+    track.innerHTML = `
+      <div class="muted small">
+        Still loading.
+        <button class="btn btn--ghost btn--small" type="button" data-retry="home-now">Retry</button>
+      </div>
+    `;
+    const btn = track.querySelector('button[data-retry="home-now"]');
+    if (btn && !btn.dataset.bound) {
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", () => {
+        track.innerHTML = `<div class="muted small">Loading...</div>`;
+        loadNowPreview(routeToken);
+      });
+    }
+  };
+  clearLoadingTimeout();
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    track.innerHTML = `<div class="muted small">You are offline. Connect to the internet to load updates.</div>`;
+    return;
+  }
+  track.innerHTML = `<div class="muted small">Loading...</div>`;
+  loadNowPreview.timeoutId = setTimeout(() => {
+    if (requestId !== loadNowPreview.requestId) return;
+    setRetry();
+  }, 8000);
+
   const supabase = getApp().supabase;
   let items = [];
 
-  if (supabase) {
-    try {
+  try {
+    if (supabase) {
       const { data: slots, error } = await supabase
         .from("home_featured")
         .select(
@@ -1029,8 +1063,8 @@ async function loadNowPreview(routeToken) {
         .order("slot", { ascending: true });
       if (error) throw error;
 
-        const slotMap = new Map((slots || []).map((s) => [Number(s.slot), s]));
-        const slotsNormalized = [1, 2, 3, 4, 5].map((n) => slotMap.get(n) || null);
+      const slotMap = new Map((slots || []).map((s) => [Number(s.slot), s]));
+      const slotsNormalized = [1, 2, 3, 4, 5].map((n) => slotMap.get(n) || null);
 
       const resolveSlot = async (slot) => {
         if (!slot) return { placeholder: true };
@@ -1081,13 +1115,16 @@ async function loadNowPreview(routeToken) {
       };
 
       items = await Promise.all(slotsNormalized.map((slot) => resolveSlot(slot)));
-    } catch (err) {
-      console.warn("[home] Korea Now preview failed.", err);
     }
+  } catch (err) {
+    console.warn("[home] Korea Now preview failed.", err);
+  } finally {
+    if (requestId === loadNowPreview.requestId) clearLoadingTimeout();
   }
 
+  if (requestId !== loadNowPreview.requestId) return;
   if (routeToken && routeToken !== window.App?.routeToken) return;
-  if (!isHomeActive()) return;
+  if (!isVisible()) return;
 
     const mapHomeNowTag = (raw) => {
       const t = String(raw || "").toUpperCase();
@@ -1168,16 +1205,56 @@ async function loadNowPreview(routeToken) {
       const count = track.querySelectorAll(".previewCard").length;
       dots.style.display = count <= 1 ? "none" : "";
     }
-  }
+}
+
+loadNowPreview.requestId = 0;
+loadNowPreview.timeoutId = null;
 
 async function loadCommunityPreview(routeToken) {
   if (routeToken && routeToken !== window.App?.routeToken) return;
   const host = document.getElementById("homeCommunityPreview");
   if (!host) return;
 
+  const requestId = ++loadCommunityPreview.requestId;
+  const isVisible = () => isHomeActive() && !host.closest(".page")?.hidden;
+  if (loadCommunityPreview.timeoutId) {
+    clearTimeout(loadCommunityPreview.timeoutId);
+    loadCommunityPreview.timeoutId = null;
+  }
+  const setRetry = () => {
+    if (!isVisible()) return;
+    host.innerHTML = `
+      <div class="muted small">
+        Still loading.
+        <button class="btn btn--ghost btn--small" type="button" data-retry="home-community">Retry</button>
+      </div>
+    `;
+    const btn = host.querySelector('button[data-retry="home-community"]');
+    if (btn && !btn.dataset.bound) {
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", () => {
+        host.innerHTML = `<div class="muted small">Loading...</div>`;
+        loadCommunityPreview(routeToken);
+      });
+    }
+  };
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    host.innerHTML = `<div class="muted small">You are offline. Connect to the internet to load updates.</div>`;
+    return;
+  }
+  host.innerHTML = `<div class="muted small">Loading...</div>`;
+  loadCommunityPreview.timeoutId = setTimeout(() => {
+    if (requestId !== loadCommunityPreview.requestId) return;
+    setRetry();
+  }, 8000);
+
   const supabase = getApp().supabase;
   if (!supabase) {
     host.innerHTML = `<div class="muted small">Sign in to view community highlights.</div>`;
+    if (requestId === loadCommunityPreview.requestId && loadCommunityPreview.timeoutId) {
+      clearTimeout(loadCommunityPreview.timeoutId);
+      loadCommunityPreview.timeoutId = null;
+    }
     return;
   }
 
@@ -1237,6 +1314,7 @@ async function loadCommunityPreview(routeToken) {
       rows = Array.isArray(postsData) ? postsData : [];
     }
 
+    if (requestId !== loadCommunityPreview.requestId) return;
     if (!rows.length) {
       host.innerHTML = `<div class="muted small">No community posts yet.</div>`;
       return;
@@ -1260,9 +1338,19 @@ async function loadCommunityPreview(routeToken) {
       .join("");
   } catch (err) {
     console.warn("[home] Community preview failed.", err);
-    host.innerHTML = `<div class="muted small">Failed to load community posts.</div>`;
+    if (requestId === loadCommunityPreview.requestId) {
+      host.innerHTML = `<div class="muted small">Failed to load community posts.</div>`;
+    }
+  } finally {
+    if (requestId === loadCommunityPreview.requestId && loadCommunityPreview.timeoutId) {
+      clearTimeout(loadCommunityPreview.timeoutId);
+      loadCommunityPreview.timeoutId = null;
+    }
   }
 }
+
+loadCommunityPreview.requestId = 0;
+loadCommunityPreview.timeoutId = null;
 
 function setupHome(routeToken) {
   const homeRoot = document.querySelector("#page-home");
@@ -1464,6 +1552,21 @@ function initHeroAutoplay() {
   track.addEventListener("touchstart", handleInteract, { passive: true });
   track.addEventListener("wheel", handleInteract, { passive: true });
   track.addEventListener("scroll", handleInteract, { passive: true });
+}
+
+function getActiveRoute() {
+  const raw = String(location.hash || "#home").replace("#", "");
+  const route = raw.split("?")[0].trim().toLowerCase();
+  return route || "home";
+}
+
+if (!setupHome.resumeBound) {
+  setupHome.resumeBound = true;
+  window.addEventListener("app:resume", () => {
+    if (getActiveRoute() !== "home") return;
+    const token = Number(window.App?.routeToken) || 0;
+    setupHome(token);
+  });
 }
 
 // Expose entrypoint for main.js

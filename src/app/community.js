@@ -91,6 +91,8 @@ function closeCommentReportModal(reason) {
 
 let COMMUNITY_FILTER = "all";
 let COMMUNITY_LOADING = false;
+let COMMUNITY_LOAD_TOKEN = 0;
+let COMMUNITY_LOAD_TIMEOUT = null;
 const ADMIN_USER_IDS = [];
 const TRIPPAL_TEMPLATE = `TRIPPAL REQUEST
 DATE: 
@@ -333,17 +335,44 @@ function renderCommunityFeed(posts, currentUserId, likeCounts = {}, myLikes = ne
 }
 
 async function loadCommunityPosts(forceReload) {
-  if (COMMUNITY_LOADING) return;
+  const requestId = ++COMMUNITY_LOAD_TOKEN;
   COMMUNITY_LOADING = true;
 
   const status = $("#communityStatus");
+  const page = document.getElementById("page-community");
+  const isVisible = () => page && !page.hidden;
+  if (COMMUNITY_LOAD_TIMEOUT) {
+    clearTimeout(COMMUNITY_LOAD_TIMEOUT);
+    COMMUNITY_LOAD_TIMEOUT = null;
+  }
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    if (status && isVisible()) status.textContent = "You are offline. Connect to the internet to load posts.";
+    renderCommunityFeed([], null);
+    COMMUNITY_LOADING = false;
+    return;
+  }
   if (status) status.textContent = "Loading...";
+  if (status) {
+    COMMUNITY_LOAD_TIMEOUT = setTimeout(() => {
+      if (requestId !== COMMUNITY_LOAD_TOKEN) return;
+      if (!isVisible()) return;
+      status.innerHTML = `Still loading. <button class="btn btn--ghost btn--small" type="button" data-retry="community">Retry</button>`;
+      const btn = status.querySelector('button[data-retry="community"]');
+      if (btn && !btn.dataset.bound) {
+        btn.dataset.bound = "1";
+        btn.addEventListener("click", () => {
+          status.textContent = "Loading...";
+          COMMUNITY_LOADING = false;
+          loadCommunityPosts(true);
+        });
+      }
+    }, 8000);
+  }
 
   try {
     if (!supabase) {
       if (status) status.textContent = "Supabase is not set (demo mode).";
       renderCommunityFeed([], null);
-      COMMUNITY_LOADING = false;
       return;
     }
 
@@ -361,18 +390,26 @@ async function loadCommunityPosts(forceReload) {
 
     const { data, error } = await q;
     if (error) throw error;
+    if (requestId !== COMMUNITY_LOAD_TOKEN) return;
 
     const posts = data || [];
     const likeInfo = await loadCommunityLikes(posts.map((p) => p.id), currentUserId);
     const commentsMap = await loadCommunityComments(posts.map((p) => p.id));
 
+    if (requestId !== COMMUNITY_LOAD_TOKEN) return;
     if (status) status.textContent = "";
     renderCommunityFeed(posts, currentUserId, likeInfo.counts, likeInfo.myLikes, commentsMap);
   } catch (err) {
-    if (status) status.textContent = `Error: ${err?.message || err}`;
-    renderCommunityFeed([], null);
+    if (requestId === COMMUNITY_LOAD_TOKEN) {
+      if (status) status.textContent = `Error: ${err?.message || err}`;
+      renderCommunityFeed([], null);
+    }
   } finally {
-    COMMUNITY_LOADING = false;
+    if (requestId === COMMUNITY_LOAD_TOKEN) {
+      if (COMMUNITY_LOAD_TIMEOUT) clearTimeout(COMMUNITY_LOAD_TIMEOUT);
+      COMMUNITY_LOAD_TIMEOUT = null;
+      COMMUNITY_LOADING = false;
+    }
   }
 }
 
@@ -1132,6 +1169,20 @@ function setupCommunity() {
     } catch (err) {
       status.textContent = `Error: ${err?.message || err}`;
     }
+  });
+}
+
+function getActiveRoute() {
+  const raw = String(location.hash || "#home").replace("#", "");
+  const route = raw.split("?")[0].trim().toLowerCase();
+  return route || "home";
+}
+
+if (!setupCommunity.resumeBound) {
+  setupCommunity.resumeBound = true;
+  window.addEventListener("app:resume", () => {
+    if (getActiveRoute() !== "community") return;
+    loadCommunityPosts(true);
   });
 }
 

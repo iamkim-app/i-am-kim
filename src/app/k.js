@@ -20,6 +20,8 @@ const IDOL_STATE = {
   idol: "all",
   selected: new Set(),
 };
+let K_LOAD_TOKEN = 0;
+let K_LOAD_TIMEOUT = null;
 
 function ensureIdolSpotModal() {
   if (document.querySelector("#idolSpotModal")) return;
@@ -575,22 +577,58 @@ export async function initKPage({ tab = "kpop" } = {}) {
 
   const kpopSection = page.querySelector("#nowKpop");
   const host = ensureContentHost(page);
-  const refreshTab = async () => {
-    const items = await fetchKPosts(tab);
-    renderPosts(items, host, { isAdmin: ADMIN_STATE.isAdmin, tab });
+  const isVisible = () => page && !page.hidden;
+  const clearLoadTimeout = () => {
+    if (K_LOAD_TIMEOUT) clearTimeout(K_LOAD_TIMEOUT);
+    K_LOAD_TIMEOUT = null;
   };
-  const posts = await fetchKPosts(tab);
+  const showRetry = (loadFn) => {
+    if (!isVisible()) return;
+    host.innerHTML = `Still loading. <button class="btn btn--ghost btn--small" type="button" data-retry="k-tab">Retry</button>`;
+    const btn = host.querySelector('button[data-retry="k-tab"]');
+    if (btn && !btn.dataset.bound) {
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", () => {
+        host.innerHTML = `<div class="muted small">Loading...</div>`;
+        loadFn();
+      });
+    }
+  };
+  const loadTab = async () => {
+    const requestId = ++K_LOAD_TOKEN;
+    clearLoadTimeout();
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      if (isVisible()) {
+        host.innerHTML = `<div class="muted small">You are offline. Connect to the internet to load updates.</div>`;
+      }
+      return;
+    }
+    host.innerHTML = `<div class="muted small">Loading...</div>`;
+    K_LOAD_TIMEOUT = setTimeout(() => {
+      if (requestId !== K_LOAD_TOKEN) return;
+      showRetry(loadTab);
+    }, 8000);
+    try {
+      const items = await fetchKPosts(tab);
+      if (requestId !== K_LOAD_TOKEN) return;
+      renderPosts(items, host, { isAdmin: ADMIN_STATE.isAdmin, tab });
+    } finally {
+      if (requestId === K_LOAD_TOKEN) clearLoadTimeout();
+    }
+  };
+  const refreshTab = async () => loadTab();
 
   if (tab === "kpop") {
     if (kpopSection) kpopSection.hidden = false;
     host.hidden = true;
     host.innerHTML = "";
+    clearLoadTimeout();
     return;
   }
 
   if (kpopSection) kpopSection.hidden = true;
   host.hidden = false;
-  renderPosts(posts, host, { isAdmin: ADMIN_STATE.isAdmin, tab });
+  await loadTab();
 
   if (ADMIN_STATE.isAdmin) {
     bindKAdminHandlers(refreshTab);
@@ -606,4 +644,22 @@ export async function initKPage({ tab = "kpop" } = {}) {
       });
     }
   }
+}
+
+function getActiveRouteAndTab() {
+  const raw = String(location.hash || "#home").replace("#", "");
+  const [routePart, queryPart] = raw.split("?");
+  const route = (routePart || "").trim().toLowerCase() || "home";
+  const params = new URLSearchParams(queryPart || "");
+  const tab = String(params.get("tab") || "").trim().toLowerCase();
+  return { route, tab };
+}
+
+if (!initKPage.resumeBound) {
+  initKPage.resumeBound = true;
+  window.addEventListener("app:resume", () => {
+    const { route, tab } = getActiveRouteAndTab();
+    if (route !== "k" && route !== "kpop") return;
+    initKPage({ tab: tab || "kpop" });
+  });
 }

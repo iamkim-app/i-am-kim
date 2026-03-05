@@ -80,6 +80,19 @@ html,body { overflow-x: hidden; }
   --heading-weight: 850;
   --heading-spacing: -0.02em;
   --heading-line: 1.08;
+
+  --fs-title: clamp(24px, 4.4vw, 34px);
+  --fs-body: clamp(14px, 2.4vw, 16px);
+  --fs-caption: clamp(11px, 2vw, 13px);
+  --type-title: clamp(24px, 4.4vw, 34px);
+  --type-body: clamp(14px, 2.4vw, 16px);
+  --type-caption: clamp(11px, 2vw, 13px);
+  --card-pad: clamp(14px, 2.6vw, 18px);
+
+  --space-1: clamp(6px, 1.4vw, 8px);
+  --space-2: clamp(10px, 2vw, 12px);
+  --space-3: clamp(14px, 2.6vw, 18px);
+  --space-4: clamp(18px, 3.4vw, 24px);
 }
 
 *{ box-sizing: border-box; }
@@ -91,6 +104,51 @@ body{
   line-height: 1.5;
   font-size: var(--text-base);
   background: var(--bg);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  touch-action: manipulation;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.offlineBanner{
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 76px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(420px, calc(100vw - 32px));
+  z-index: 1000;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid rgba(17,17,17,0.10);
+  box-shadow: 0 8px 24px rgba(17,17,17,0.08);
+  font-size: var(--fs-caption);
+  pointer-events: auto;
+}
+.offlineBanner__text{
+  white-space: nowrap;
+}
+.offlineBanner__btn{
+  border: 1px solid rgba(17,17,17,0.12);
+  background: rgba(17,17,17,0.04);
+  color: inherit;
+  font-size: var(--fs-caption);
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+input,
+textarea,
+select,
+[contenteditable]{
+  user-select: text;
 }
 
 .nickBanner{
@@ -616,6 +674,24 @@ code{
 
 .stack{ display: grid; gap: 16px; }
 
+@media (min-width: 900px){
+  .pageHeader,
+  .page > .card,
+  .page > .stack,
+  .page > .grid,
+  .homeSection,
+  .feed,
+  .nowList,
+  #homeNowPreview,
+  #homeNowTrack,
+  .homeNowList,
+  #page-community .feed,
+  #page-kpop .nowList{
+    width: min(100%, 760px);
+    margin-inline: auto;
+  }
+}
+
 @media (max-width: 980px) {
   .grid--2{ grid-template-columns: 1fr; }
   .brand{ min-width: auto; }
@@ -634,13 +710,13 @@ code{
 }
 .pageHeader__title{
   margin: 0;
-  font-size: var(--h2-size);
+  font-size: var(--type-title);
   font-weight: var(--heading-weight);
 }
 .pageHeader__desc{
   margin: 8px 0 0;
   color: var(--muted);
-  font-size: 14px;
+  font-size: var(--type-body);
 }
 
 /* -------------------------------- HERO --------------------------------- */
@@ -755,13 +831,13 @@ code{
 .chip{
   display: inline-flex;
   align-items: center;
-  padding: 7px 10px;
+  padding: var(--space-1) var(--space-2);
   border-radius: 999px;
   border: 1px solid var(--border2);
   background: rgba(255,255,255,0.78);
   color: rgba(11,18,32,0.80);
   font-weight: 800;
-  font-size: 12px;
+  font-size: var(--fs-caption);
 }
 .chip--rgb{
   border: 1px solid transparent;
@@ -805,7 +881,7 @@ code{
   background: #ffffff;
   border-radius: var(--radius-lg);
   box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-  padding: var(--pad);
+  padding: var(--card-pad);
 }
 
 .card--inner{
@@ -1630,8 +1706,9 @@ body.is-native-shell .main{
   height: 22px;
 }
 .tabbar__label{
-  font-size: 11px;
+  font-size: clamp(10px, 2.2vw, 12px);
   margin-top: 2px;
+  white-space: nowrap;
 }
 .tabbar__link.is-active{
   background: rgba(2,6,23,0.05);
@@ -3422,7 +3499,7 @@ input[type="file"]:disabled{
   padding: 10px;
 }
 .collectionListItem__title{
-  font-size: 13px;
+  font-size: var(--fs-body);
   font-weight: 800;
 }
 .collectionListItem__meta{
@@ -4919,6 +4996,56 @@ font-weight:500;
   box-shadow: none !important;
 }
 
+/* Home Note preview: remove gray board */
+#homeNowPreview,
+#homeNowTrack,
+.previewViewport{
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Post-like cards: white with subtle shadow */
+.nowItemCard,
+.postCard,
+.faqQ,
+.communityPreviewCard,
+.previewCard,
+.kSubtabPanel .nowItemCard{
+  background: #fff !important;
+  border: 0 !important;
+  box-shadow: 0 8px 24px rgba(17,17,17,.06) !important;
+  border-radius: 16px !important;
+}
+
+/* Remove inner strip/box backgrounds inside post-like cards */
+.nowItemCard__tag,
+.nowItemCard__title,
+.nowItemCard__summary,
+.postCard .postTitle,
+.postCard .postBody,
+.faqQ__q,
+.faqQ__meta,
+.communityPreviewTitle,
+.communityPreviewMeta,
+.previewTag,
+.previewTitle,
+.previewDesc{
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.nowItemCard :not(button):not(.btn),
+.postCard :not(button):not(.btn),
+.faqQ :not(button):not(.btn),
+.communityPreviewCard :not(button):not(.btn),
+.previewCard :not(button):not(.btn){
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
 #btnDeleteAccount:active{
   transform:scale(.98);
 }
@@ -5158,4 +5285,47 @@ font-weight:500;
   border:1px solid rgba(0,0,0,.08);
   padding:18px;
   min-height:110px;
+}
+/* Travel Mode cards */
+
+.travelCard{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  padding:16px;
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 6px 18px rgba(0,0,0,.06);
+}
+
+.travelCard__title{
+  font-size:18px;
+  font-weight:700;
+  line-height:1.35;
+}
+
+.travelCard__sub{
+  font-size:14px;
+  color:rgba(0,0,0,.6);
+}
+
+/* Show big button fix */
+.travelCard .btn{
+  align-self:flex-start;
+  margin-top:6px;
+  font-size:13px;
+  padding:6px 12px;
+  border-radius:999px;
+}
+
+/* category buttons wrap */
+.travelCategories{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+.travelCategories button{
+  flex:1 1 calc(33% - 10px);
+  min-width:100px;
 }
