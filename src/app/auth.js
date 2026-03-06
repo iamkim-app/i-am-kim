@@ -351,14 +351,68 @@ async function signInWith(provider) {
     toast?.("Supabase is not set. Add VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY.");
     return;
   }
-  const redirectTo = isNativeShell?.()
-    ? "capacitor://localhost"
-    : window.location.origin + window.location.pathname;
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider,
-    options: { redirectTo },
-  });
-  if (error) toast?.(error.message);
+
+  if (isNativeShell?.()) {
+    // Native (Capacitor): get OAuth URL without auto-redirect, open in SFSafariViewController
+    try {
+      const { Browser } = await import("@capacitor/browser");
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: "capacitor://localhost",
+          skipBrowserRedirect: true,
+        },
+      });
+      if (error) { toast?.(error.message); return; }
+      if (data?.url) await Browser.open({ url: data.url });
+    } catch (err) {
+      toast?.(`Sign-in failed: ${err?.message || err}`);
+    }
+  } else {
+    // Web: existing Supabase OAuth redirect flow
+    const redirectTo = window.location.origin + window.location.pathname;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo },
+    });
+    if (error) toast?.(error.message);
+  }
+}
+
+async function setupNativeOAuthListener() {
+  const supabase = getSupabase();
+  if (!supabase) return;
+  try {
+    const { App: CapApp } = await import("@capacitor/app");
+    CapApp.addListener("appUrlOpen", async ({ url }) => {
+      if (!url || (!url.includes("access_token") && !url.includes("code="))) return;
+
+      // Close in-app browser
+      try {
+        const { Browser } = await import("@capacitor/browser");
+        await Browser.close();
+      } catch {}
+
+      // Exchange token
+      try {
+        const urlObj = new URL(url);
+        const code = new URLSearchParams(urlObj.search).get("code");
+        const hp = new URLSearchParams((urlObj.hash || "").replace(/^#/, ""));
+        const access_token = hp.get("access_token");
+        const refresh_token = hp.get("refresh_token");
+
+        if (code && typeof supabase.auth.exchangeCodeForSession === "function") {
+          await supabase.auth.exchangeCodeForSession(code);
+        } else if (access_token && refresh_token && typeof supabase.auth.setSession === "function") {
+          await supabase.auth.setSession({ access_token, refresh_token });
+        }
+      } catch (err) {
+        console.warn("[auth] Native OAuth callback failed:", err);
+      }
+    });
+  } catch (err) {
+    console.warn("[auth] Could not set up native OAuth listener:", err);
+  }
 }
 
 async function signOut() {
@@ -506,6 +560,11 @@ function setupAuthButtons() {
   if (!supabase) {
     updateAuthUI(null);
     return;
+  }
+
+  const { isNativeShell } = getApp();
+  if (isNativeShell?.()) {
+    setupNativeOAuthListener();
   }
 
   supabase.auth.getSession().then(({ data }) =>

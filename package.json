@@ -12,6 +12,9 @@
     "make:icons": "node scripts/make-icons.mjs"
   },
   "dependencies": {
+    "@capacitor/app": "^8.0.1",
+    "@capacitor/browser": "^8.0.1",
+    "@capacitor/core": "^7.6.0",
     "@google/genai": "^1.41.0",
     "@supabase/supabase-js": "^2.49.1",
     "cors": "^2.8.5",
