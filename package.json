@@ -12,6 +12,7 @@
     "make:icons": "node scripts/make-icons.mjs"
   },
   "dependencies": {
+    "@capacitor/android": "^7.6.0",
     "@capacitor/app": "^7.1.2",
     "@capacitor/browser": "^7.0.4",
     "@capacitor/core": "^7.6.0",
@@ -24,6 +25,7 @@
     "youtube-transcript": "^1.2.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.6.0",
     "concurrently": "^9.1.0",
     "sharp": "^0.34.5",
     "vite": "^5.4.0"

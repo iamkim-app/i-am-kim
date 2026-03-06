@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">I AM KIM</string>
+    <string name="title_activity_main">I AM KIM</string>
+    <string name="package_name">com.iamkim.app</string>
+    <string name="custom_url_scheme">com.iamkim.app</string>
+</resources>

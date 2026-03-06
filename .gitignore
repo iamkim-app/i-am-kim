@@ -17,3 +17,9 @@ node_modules/
 
 # build
 dist/
+
+# Android build artifacts
+android/.gradle/
+android/app/build/
+android/local.properties
+android/.idea/
