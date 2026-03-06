@@ -346,12 +346,14 @@ function updateCommunityAuthControls(session) {
 
 async function signInWith(provider) {
   const supabase = getSupabase();
-  const { toast } = getApp();
+  const { toast, isNativeShell } = getApp();
   if (!supabase) {
     toast?.("Supabase is not set. Add VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY.");
     return;
   }
-  const redirectTo = window.location.origin + window.location.pathname;
+  const redirectTo = isNativeShell?.()
+    ? "capacitor://localhost"
+    : window.location.origin + window.location.pathname;
   const { error } = await supabase.auth.signInWithOAuth({
     provider,
     options: { redirectTo },
