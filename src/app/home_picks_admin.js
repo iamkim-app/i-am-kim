@@ -338,18 +338,23 @@ export async function saveHomePicksAdmin() {
 
     for (const row of rows) {
       if (existingSlots.has(row.slot)) {
+        // Only include source_id in update if it has a value
+        const updatePayload = {
+          source: row.source,
+          title_override: row.title_override,
+          subtitle_override: row.subtitle_override,
+          link_hash: row.link_hash,
+        };
+        if (row.source_id !== null) updatePayload.source_id = row.source_id;
+
         const { error } = await supabase
           .from("home_featured")
-          .update({
-            source: row.source,
-            source_id: row.source_id,
-            title_override: row.title_override,
-            subtitle_override: row.subtitle_override,
-            link_hash: row.link_hash,
-          })
+          .update(updatePayload)
           .eq("slot", row.slot);
         if (error) throw error;
       } else {
+        // INSERT requires source_id — skip if still null (shouldn't reach here due to filter)
+        if (row.source_id === null) continue;
         const { error } = await supabase
           .from("home_featured")
           .insert(row);
