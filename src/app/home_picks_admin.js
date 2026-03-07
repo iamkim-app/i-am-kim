@@ -29,13 +29,16 @@ async function fetchPostsForSource(source) {
   return data;
 }
 
-async function populateSourceIdSelect(slot, source) {
+// valueToSelect: if provided, select this value after populating; otherwise keep current
+async function populateSourceIdSelect(slot, source, valueToSelect) {
   const root = document.querySelector("#page-home-picks-admin");
   if (!root) return;
   const select = root.querySelector(`select[data-slot="${slot}"][data-field="source_id"]`);
   if (!select) return;
 
-  const currentVal = select.value;
+  // Use provided value; fall back to current selection if already has a valid value
+  const targetVal = valueToSelect !== undefined ? String(valueToSelect ?? "") : select.value;
+
   select.innerHTML = `<option value="">-- Select post --</option>`;
   select.disabled = true;
 
@@ -48,7 +51,7 @@ async function populateSourceIdSelect(slot, source) {
   });
 
   select.disabled = false;
-  if (currentVal) select.value = currentVal;
+  if (targetVal) select.value = targetVal;
 }
 
 async function populateAllSourceIdSelects() {
@@ -99,28 +102,17 @@ function applyNonSourceIdValues(valuesBySlot) {
   });
 }
 
-// Apply source_id AFTER options are populated
-function applySourceIdValues(valuesBySlot) {
-  const root = document.querySelector("#page-home-picks-admin");
-  if (!root) return;
-  for (const slot of SLOT_IDS) {
-    const sourceId = valuesBySlot?.[slot]?.source_id;
-    if (!sourceId) continue;
-    const el = root.querySelector(`select[data-slot="${slot}"][data-field="source_id"]`);
-    if (el) el.value = String(sourceId);
-  }
-}
-
-// Full apply: source → populate dropdowns → source_id
+// Full apply: source → populate dropdowns (with source_id pre-selected) → done
 async function applyValuesWithSourceIds(valuesBySlot) {
   applyNonSourceIdValues(valuesBySlot);
   for (const slot of SLOT_IDS) {
     const root = document.querySelector("#page-home-picks-admin");
     const sourceEl = root?.querySelector(`select[data-slot="${slot}"][data-field="source"]`);
     const source = sourceEl?.value || valuesBySlot?.[slot]?.source || "k_posts";
-    await populateSourceIdSelect(slot, source);
+    // Pass the target source_id directly so it gets selected after options load
+    const sourceId = valuesBySlot?.[slot]?.source_id ?? "";
+    await populateSourceIdSelect(slot, source, sourceId);
   }
-  applySourceIdValues(valuesBySlot);
 }
 
 function setSlotValues(slot, values) {
@@ -178,43 +170,13 @@ function setDirty(value) {
 // ── Slot cards ────────────────────────────────────────────────────────────────
 
 function ensureSlotCards() {
+  // All 5 slots are now in index.html — just update the description
   const root = document.querySelector("#page-home-picks-admin");
-  if (!root || root.dataset.slotsReady === "1") return;
-  const form = root.querySelector("#homePicksAdminForm");
-  if (!form) return;
-
+  if (!root) return;
   const desc = root.querySelector(".pageHeader__desc");
   if (desc && desc.textContent.includes("1-3")) {
     desc.textContent = desc.textContent.replace("1-3", "1-5");
   }
-
-  const cards = Array.from(form.querySelectorAll(".card"));
-  const template = cards[0] || null;
-  if (!template) return;
-
-  SLOT_IDS.forEach((slot) => {
-    const exists = form.querySelector(`[data-slot="${slot}"][data-field]`);
-    if (exists) return;
-    const clone = template.cloneNode(true);
-    clone.querySelectorAll("[data-slot][data-field]").forEach((el) => {
-      el.dataset.slot = slot;
-      if (el.tagName === "SELECT") {
-        if (el.dataset.field === "source_id") {
-          // Reset cloned post options — will be populated later
-          el.innerHTML = `<option value="">-- Select post --</option>`;
-        } else {
-          el.value = "k_posts";
-        }
-      } else {
-        el.value = "";
-      }
-    });
-    const label = clone.querySelector(".muted.small");
-    if (label) label.textContent = `Slot ${slot}`;
-    form.appendChild(clone);
-  });
-
-  root.dataset.slotsReady = "1";
 }
 
 // ── Listeners ─────────────────────────────────────────────────────────────────
@@ -346,22 +308,25 @@ export async function saveHomePicksAdmin() {
 
   try {
     const values = readInputs();
-    const rows = SLOT_IDS.map((slot) => {
-      const row = values?.[slot] || {};
-      const source = String(row.source || "k_posts").trim() || "k_posts";
-      const sourceId = String(row.source_id || "").trim();
-      const titleOverride = String(row.title_override || "").trim();
-      const subtitleOverride = String(row.subtitle_override || "").trim();
-      const linkHash = String(row.link_hash || "").trim();
-      return {
-        slot: Number(slot),
-        source,
-        source_id: sourceId || null,
-        title_override: titleOverride || null,
-        subtitle_override: subtitleOverride || null,
-        link_hash: linkHash || null,
-      };
-    });
+    const rows = SLOT_IDS
+      .map((slot) => {
+        const row = values?.[slot] || {};
+        const source = String(row.source || "k_posts").trim() || "k_posts";
+        const sourceId = String(row.source_id || "").trim();
+        const titleOverride = String(row.title_override || "").trim();
+        const subtitleOverride = String(row.subtitle_override || "").trim();
+        const linkHash = String(row.link_hash || "").trim();
+        return {
+          slot: Number(slot),
+          source,
+          source_id: sourceId || null,
+          title_override: titleOverride || null,
+          subtitle_override: subtitleOverride || null,
+          link_hash: linkHash || null,
+        };
+      })
+      // Skip slots where neither a post nor a title is set (avoids NOT NULL error)
+      .filter((row) => row.source_id !== null || row.title_override !== null);
 
     // Fetch existing slots to decide update vs insert
     const { data: existing, error: fetchError } = await supabase
