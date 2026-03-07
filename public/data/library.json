@@ -154,6 +154,35 @@
           "why": "Realistic cultural/life tips (pace, expectations, friction points) that guides often miss."
         }
       ]
+    },
+    {
+      "_note": "Collection object #7 (Korean Drinking Games)",
+      "key": "drinking_games",
+      "title": "Learn Korean Drinking Games",
+      "desc": "Run Korea — Drunken Games",
+      "items": [
+        {
+          "_note": "Video object",
+          "title": "Korean Drinking Games You Need to Know",
+          "url": "https://www.youtube.com/watch?v=qm5b0JT9g0A",
+          "channel": "Run Korea",
+          "why": "Classic Korean drinking game rules explained in English."
+        },
+        {
+          "_note": "Video object",
+          "title": "Korean Drinking Games — How to Play",
+          "url": "https://www.youtube.com/watch?v=RmeqJNNeo2M",
+          "channel": "Run Korea",
+          "why": "Step-by-step guide to popular Korean bar games."
+        },
+        {
+          "_note": "Video object",
+          "title": "More Korean Drinking Games with Locals",
+          "url": "https://www.youtube.com/watch?v=5WjAHoOz7P8",
+          "channel": "Run Korea",
+          "why": "Covers additional games and shows how Koreans actually play them."
+        }
+      ]
     }
   ]
 }
