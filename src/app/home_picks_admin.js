@@ -266,17 +266,22 @@ export async function saveHomePicksAdmin() {
       };
     });
 
+    console.log("[HomePicksAdmin] 저장할 rows:", JSON.stringify(rows, null, 2));
+
     // Fetch existing slots to decide update vs insert
     const { data: existing, error: fetchError } = await supabase
       .from("home_featured")
       .select("slot");
     if (fetchError) throw fetchError;
 
+    console.log("[HomePicksAdmin] 기존 DB rows (slot만):", existing);
+
     const existingSlots = new Set((existing || []).map((r) => Number(r.slot)));
 
     for (const row of rows) {
       if (existingSlots.has(row.slot)) {
-        const { error } = await supabase
+        console.log(`[HomePicksAdmin] UPDATE slot=${row.slot}`, row);
+        const { data: updated, error } = await supabase
           .from("home_featured")
           .update({
             source: row.source,
@@ -285,15 +290,24 @@ export async function saveHomePicksAdmin() {
             subtitle_override: row.subtitle_override,
             link_hash: row.link_hash,
           })
-          .eq("slot", row.slot);
+          .eq("slot", row.slot)
+          .select();
+        console.log(`[HomePicksAdmin] UPDATE slot=${row.slot} 결과:`, { updated, error });
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        console.log(`[HomePicksAdmin] INSERT slot=${row.slot}`, row);
+        const { data: inserted, error } = await supabase
           .from("home_featured")
-          .insert(row);
+          .insert(row)
+          .select();
+        console.log(`[HomePicksAdmin] INSERT slot=${row.slot} 결과:`, { inserted, error });
         if (error) throw error;
       }
     }
+
+    // 저장 후 DB 실제 상태 확인
+    const { data: afterSave } = await supabase.from("home_featured").select("*").order("slot");
+    console.log("[HomePicksAdmin] 저장 후 DB 전체:", afterSave);
 
     setDirty(false);
     clearDraft();

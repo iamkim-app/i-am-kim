@@ -1001,10 +1001,17 @@ function stopHomeCarousel() {
 }
 
 async function loadNowPreview(routeToken) {
-  if (routeToken && routeToken !== window.App?.routeToken) return;
+  console.log("[loadNowPreview] 호출됨. routeToken:", routeToken, "| window.App.routeToken:", window.App?.routeToken);
+  if (routeToken && routeToken !== window.App?.routeToken) {
+    console.log("[loadNowPreview] routeToken 불일치 → 조기 리턴");
+    return;
+  }
   const host = document.getElementById("homeNowPreview");
   const track = document.getElementById("homeNowTrack");
-  if (!host || !track) return;
+  if (!host || !track) {
+    console.log("[loadNowPreview] host/track 엘리먼트 없음 → 리턴");
+    return;
+  }
 
   const requestId = ++loadNowPreview.requestId;
   const isVisible = () => isHomeActive() && !host.closest(".page")?.hidden;
@@ -1053,8 +1060,10 @@ async function loadNowPreview(routeToken) {
         .order("slot", { ascending: true });
       if (error) throw error;
 
+      console.log("[loadNowPreview] home_featured에서 읽은 raw data:", slots);
       const slotMap = new Map((slots || []).map((s) => [Number(s.slot), s]));
       const slotsNormalized = [1, 2, 3, 4, 5].map((n) => slotMap.get(n) || null);
+      console.log("[loadNowPreview] slotsNormalized:", slotsNormalized);
 
       const resolveSlot = async (slot) => {
         if (!slot) return { placeholder: true };
@@ -1122,9 +1131,19 @@ async function loadNowPreview(routeToken) {
     if (requestId === loadNowPreview.requestId) clearLoadingTimeout();
   }
 
-  if (requestId !== loadNowPreview.requestId) return;
-  if (routeToken && routeToken !== window.App?.routeToken) return;
-  if (!isVisible()) return;
+  if (requestId !== loadNowPreview.requestId) {
+    console.log("[loadNowPreview] requestId 불일치 → 렌더 스킵 (stale request)");
+    return;
+  }
+  if (routeToken && routeToken !== window.App?.routeToken) {
+    console.log("[loadNowPreview] 2차 routeToken 불일치 → 렌더 스킵");
+    return;
+  }
+  if (!isVisible()) {
+    console.log("[loadNowPreview] 홈 페이지 비가시 → 렌더 스킵. isHomeActive:", isHomeActive());
+    return;
+  }
+  console.log("[loadNowPreview] 렌더 시작. items:", items);
 
     const mapHomeNowTag = (raw) => {
       const t = String(raw || "").toUpperCase();
