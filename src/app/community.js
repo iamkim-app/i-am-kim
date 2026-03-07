@@ -170,7 +170,6 @@ function applyCommunityFocusJump(feedEl) {
     el.classList.add("is-jumpTarget");
     setTimeout(() => el.classList.remove("is-jumpTarget"), 2000);
     sessionStorage.removeItem("communityFocusPostId");
-    console.log("[community]", id);
   });
 }
 

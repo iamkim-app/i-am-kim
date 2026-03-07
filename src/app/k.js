@@ -232,7 +232,6 @@ function renderNearbyResults(results) {
   }
   host.innerHTML = results
     .map((p) => {
-      console.log("nearby item", p);
       const photo = p.photoRef
         ? `/api/places-photo?ref=${encodeURIComponent(p.photoRef)}&maxwidth=800`
         : "";

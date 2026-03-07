@@ -1362,7 +1362,6 @@ function setupHome(routeToken) {
   clearHome();
 
   infoRoot.querySelector("#btnHomeAnalyze")?.addEventListener("click", () => {
-    console.log("PLAY_EXTRACT_CLICKED");
     analyzeHomeUrl();
   });
   infoRoot.querySelector("#btnHomeClear")?.addEventListener("click", clearHome);
