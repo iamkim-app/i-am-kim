@@ -555,28 +555,26 @@ async function loadProfileExtras() {
   if (grid) {
     grid.innerHTML = `<span class="muted small">Loading…</span>`;
     try {
-      const [resK, resN] = await Promise.all([
-        supabase.from("k_posts").select("id,image_url").eq("user_id", uid).not("image_url", "is", null).order("id", { ascending: false }).limit(30),
-        supabase.from("korea_now_posts").select("id,image_url").eq("user_id", uid).not("image_url", "is", null).order("id", { ascending: false }).limit(30),
-      ]);
-      const photos = [
-        ...(resK.data || []).map((r) => ({ ...r, source: "k" })),
-        ...(resN.data || []).map((r) => ({ ...r, source: "news" })),
-      ].filter((r) => r.image_url);
-      if (!photos.length) {
+      const { data: photos, error: photoErr } = await supabase
+        .from("posts")
+        .select("id,image_url")
+        .eq("user_id", uid)
+        .not("image_url", "is", null)
+        .order("id", { ascending: false })
+        .limit(30);
+      if (photoErr) throw photoErr;
+      const filtered = (photos || []).filter((r) => r.image_url);
+      if (!filtered.length) {
         grid.innerHTML = `<span class="muted small">No photos yet.</span>`;
       } else {
-        grid.innerHTML = photos.map((p) => `
-          <button class="profilePhotoGrid__item" type="button" data-source="${escapeHtml(p.source)}" data-id="${escapeHtml(String(p.id))}">
+        grid.innerHTML = filtered.map((p) => `
+          <button class="profilePhotoGrid__item" type="button" data-id="${escapeHtml(String(p.id))}">
             <img src="${escapeHtml(p.image_url)}" alt="" loading="lazy" />
           </button>
         `).join("");
         grid.querySelectorAll(".profilePhotoGrid__item").forEach((btn) => {
           btn.addEventListener("click", () => {
-            const src = btn.dataset.source;
-            const id = btn.dataset.id;
-            if (src === "k") location.hash = `#k?post=${id}`;
-            else location.hash = `#news?post=${id}`;
+            location.hash = `#community?post=${btn.dataset.id}`;
           });
         });
       }
