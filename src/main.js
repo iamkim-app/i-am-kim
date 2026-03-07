@@ -2791,7 +2791,7 @@ function renderTravelPanel() {
               <button class="travelBigBtn" type="button" data-id="${p.id}">Show big</button>
               ${
                 isFavorites
-                  ? `<button class="travelFavRemove" type="button" data-id="${p.id}" aria-label="Remove favorite">??/button>`
+                  ? `<button class="travelFavRemove" type="button" data-id="${p.id}" aria-label="Remove favorite">&#9733;</button>`
                   : ""
               }
             </div>
