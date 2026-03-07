@@ -574,7 +574,8 @@ async function loadProfileExtras() {
         `).join("");
         grid.querySelectorAll(".profilePhotoGrid__item").forEach((btn) => {
           btn.addEventListener("click", () => {
-            location.hash = `#community?post=${btn.dataset.id}`;
+            sessionStorage.setItem("communityFocusPostId", btn.dataset.id);
+            location.hash = "#community";
           });
         });
       }
