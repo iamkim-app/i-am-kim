@@ -1716,14 +1716,27 @@ async function togglePhraseFavorite(id) {
   }
 }
 
-function speakKorean(text) {
-  const status = $("#phraseSpeechStatus");
-  if (status) status.textContent = "";
+let _currentAudio = null;
 
-  if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
-    if (status) status.textContent = "??브라?��????�성 ?�생??지?�하지 ?�습?�다.";
+function speakKorean(text, id) {
+  if (_currentAudio) {
+    _currentAudio.pause();
+    _currentAudio.currentTime = 0;
+    _currentAudio = null;
+  }
+
+  if (id != null) {
+    const audio = new Audio(`/audio/phrase_${id}.mp3`);
+    _currentAudio = audio;
+    audio.play().catch(() => _speakWebSpeech(text));
     return;
   }
+
+  _speakWebSpeech(text);
+}
+
+function _speakWebSpeech(text) {
+  if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") return;
 
   const utter = new SpeechSynthesisUtterance(text);
   utter.lang = "ko-KR";
@@ -1732,15 +1745,11 @@ function speakKorean(text) {
   const koVoice = voices.find((v) => String(v.lang || "").toLowerCase().startsWith("ko"));
   if (koVoice) utter.voice = koVoice;
 
-  utter.onerror = () => {
-    if (status) status.textContent = "?�성 ?�생???�패?�습?�다.";
-  };
-
   try {
     speechSynthesis.cancel();
     speechSynthesis.speak(utter);
   } catch {
-    if (status) status.textContent = "?�성 ?�생???�패?�습?�다.";
+    // silent fail
   }
 }
 
@@ -1935,7 +1944,7 @@ function setupPhrases() {
   $("#phrasePlay")?.addEventListener("click", () => {
     const p = getPhraseById(PHRASE_STATE.selectedId);
     if (!p) return;
-    speakKorean(p.ko);
+    speakKorean(p.ko, p.id);
   });
 
   $("#phraseToggleFav")?.addEventListener("click", () => {
@@ -2549,7 +2558,7 @@ function renderTravelPanel() {
     btn.addEventListener("click", () => {
       const p = getPhraseById(btn.dataset.id);
       if (!p) return;
-      speakKorean(p.ko);
+      speakKorean(p.ko, p.id);
     });
   });
 
@@ -2669,7 +2678,7 @@ function renderTravelPacks(panel) {
     btn.addEventListener("click", () => {
       const p = getPhraseById(btn.dataset.id);
       if (!p) return;
-      speakKorean(p.ko);
+      speakKorean(p.ko, p.id);
     });
   });
 
