@@ -98,6 +98,7 @@ let COMMUNITY_FILTER = "all";
 let COMMUNITY_LOADING = false;
 let COMMUNITY_LOAD_TOKEN = 0;
 let COMMUNITY_LOAD_TIMEOUT = null;
+let COMMUNITY_LOCK_RETRY = false;
 const ADMIN_USER_IDS = [];
 const TRIPPAL_TEMPLATE = `TRIPPAL REQUEST
 DATE: 
@@ -425,10 +426,28 @@ async function loadCommunityPosts(forceReload) {
 
     if (requestId !== COMMUNITY_LOAD_TOKEN) return;
     if (status) status.textContent = "";
+    COMMUNITY_LOCK_RETRY = false;
     renderCommunityFeed(posts, currentUserId, likeInfo.counts, likeInfo.myLikes, commentsMap, profileCountryMap);
   } catch (err) {
     if (requestId === COMMUNITY_LOAD_TOKEN) {
-      if (status) status.textContent = `Error: ${err?.message || err}`;
+      const msg = String(err?.message || err || "");
+      const isLockError = /navigatorlock|lock timed out/i.test(msg);
+      if (isLockError && !COMMUNITY_LOCK_RETRY) {
+        console.warn("[community] NavigatorLock timeout, retrying in 2s...");
+        COMMUNITY_LOCK_RETRY = true;
+        COMMUNITY_LOADING = false;
+        if (COMMUNITY_LOAD_TIMEOUT) { clearTimeout(COMMUNITY_LOAD_TIMEOUT); COMMUNITY_LOAD_TIMEOUT = null; }
+        if (status) status.textContent = "Loading...";
+        setTimeout(() => {
+          if (requestId === COMMUNITY_LOAD_TOKEN) loadCommunityPosts(true);
+        }, 2000);
+        return;
+      }
+      COMMUNITY_LOCK_RETRY = false;
+      const displayMsg = isLockError
+        ? "게시글을 불러올 수 없습니다. 새로고침 해주세요."
+        : `Error: ${err?.message || err}`;
+      if (status) status.textContent = displayMsg;
       renderCommunityFeed([], null);
     }
   } finally {
