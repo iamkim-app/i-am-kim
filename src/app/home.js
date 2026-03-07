@@ -1372,6 +1372,7 @@ loadCommunityPreview.requestId = 0;
 loadCommunityPreview.timeoutId = null;
 
 function setupHome(routeToken) {
+  console.log("[setupHome] 호출됨. routeToken:", routeToken, "| nowPreviewBound:", setupHome.nowPreviewBound);
   const homeRoot = document.querySelector("#page-home");
   const infoRoot = document.querySelector("#page-info");
   if (!homeRoot || !infoRoot) return;
@@ -1482,7 +1483,10 @@ function setupHome(routeToken) {
   if (!setupHome.nowPreviewBound) {
     setupHome.nowPreviewBound = true;
     window.addEventListener("koreaNow:updated", () => loadNowPreview(localToken));
-    window.addEventListener("homePicks:updated", () => loadNowPreview());
+    window.addEventListener("homePicks:updated", () => {
+      console.log("[homePicks:updated] 이벤트 수신됨. isHomeActive:", isHomeActive(), "| window.App.routeToken:", window.App?.routeToken);
+      loadNowPreview();
+    });
     homeRoot.querySelector("#homeNowPreview")?.addEventListener("click", (e) => {
       const host = homeRoot.querySelector("#homeNowPreview");
       if (host?.dataset?.swiping === "1") return;
