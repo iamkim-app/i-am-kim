@@ -1058,9 +1058,11 @@ async function loadNowPreview(routeToken) {
 
       const resolveSlot = async (slot) => {
         if (!slot) return { placeholder: true };
+        const isKSource = slot.source === "k" || slot.source === "k_posts";
+
         if (slot.title_override) {
           return {
-            tag: slot.source === "k" ? "K" : "News",
+            tag: isKSource ? "K" : "News",
             title: slot.title_override,
             summary: slot.subtitle_override || "",
             link: "",
@@ -1069,7 +1071,7 @@ async function loadNowPreview(routeToken) {
           };
         }
 
-        if (slot.source === "k") {
+        if (isKSource) {
           if (!slot.source_id || !String(slot.source_id).trim()) return { placeholder: true };
           const { data: row } = await supabase
             .from("k_posts")
@@ -1461,6 +1463,7 @@ function setupHome(routeToken) {
   if (!setupHome.nowPreviewBound) {
     setupHome.nowPreviewBound = true;
     window.addEventListener("koreaNow:updated", () => loadNowPreview(localToken));
+    window.addEventListener("homePicks:updated", () => loadNowPreview(localToken));
     homeRoot.querySelector("#homeNowPreview")?.addEventListener("click", (e) => {
       const host = homeRoot.querySelector("#homeNowPreview");
       if (host?.dataset?.swiping === "1") return;

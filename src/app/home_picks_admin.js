@@ -274,6 +274,7 @@ export async function saveHomePicksAdmin() {
     setDirty(false);
     clearDraft();
     setStatus("Saved.");
+    window.dispatchEvent(new CustomEvent("homePicks:updated"));
   } catch (err) {
     setStatus(`Save failed: ${err?.message || err}`, true);
   }
