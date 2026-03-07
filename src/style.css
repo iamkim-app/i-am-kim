@@ -5242,6 +5242,57 @@ font-weight:500;
   width:100%;
 }
 
+.profileSectionTitle{
+  font-weight:700;
+  font-size:14px;
+  margin-bottom:10px;
+}
+
+.profilePhotoGrid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:4px;
+}
+
+.profilePhotoGrid__item{
+  aspect-ratio:1;
+  overflow:hidden;
+  border-radius:6px;
+  cursor:pointer;
+  border:none;
+  padding:0;
+  background:var(--border2);
+}
+
+.profilePhotoGrid__item img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+.profileMyFAQItem{
+  display:block;
+  width:100%;
+  text-align:left;
+  padding:10px 0;
+  border:none;
+  border-bottom:1px solid var(--border2);
+  background:transparent;
+  cursor:pointer;
+  color:var(--text);
+  font-size:14px;
+  line-height:1.4;
+}
+
+.profileMyFAQItem:last-child{
+  border-bottom:none;
+}
+
+.profileMyFAQItem:hover{
+  color:var(--accent);
+}
+
 .btn--danger{
   border:1px solid rgba(220,38,38,.35);
   background:rgba(220,38,38,.08);

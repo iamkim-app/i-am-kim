@@ -97,6 +97,8 @@ let PROFILE_STATE = {
   nickname: "",
   needsNickname: false,
   avatar: null,
+  country: "",
+  bio: "",
 };
 
 function isValidNickname(name) {
@@ -227,10 +229,43 @@ function ensureProfileUI() {
             <div class="avatarControl__label">Presets</div>
             <div class="avatarPresets" id="avatarPresets"></div>
           </div>
+          <div class="avatarControl">
+            <div class="avatarControl__label">Country</div>
+            <select class="input input--sm" id="profileCountry">
+              <option value="">-- Select country --</option>
+              <option value="us">United States</option>
+              <option value="gb">United Kingdom</option>
+              <option value="au">Australia</option>
+              <option value="ca">Canada</option>
+              <option value="jp">Japan</option>
+              <option value="cn">China</option>
+              <option value="tw">Taiwan</option>
+              <option value="hk">Hong Kong</option>
+              <option value="sg">Singapore</option>
+              <option value="th">Thailand</option>
+              <option value="fr">France</option>
+              <option value="de">Germany</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="avatarControl">
+            <div class="avatarControl__label">Bio <span style="font-weight:400;font-size:11px;opacity:0.6">(max 100 chars)</span></div>
+            <textarea class="input" id="profileBio" rows="3" maxlength="100" placeholder="Tell us a little about yourself…"></textarea>
+          </div>
           <div class="avatarActions">
             <button class="btn btn--primary btn--small" id="avatarSave" type="button">Save</button>
           </div>
         </div>
+      </div>
+
+      <div class="profileCard" id="profileMyPhotosCard">
+        <div class="profileSectionTitle">My Photos</div>
+        <div class="profilePhotoGrid" id="profilePhotoGrid"><span class="muted small">Sign in to view your photos.</span></div>
+      </div>
+
+      <div class="profileCard" id="profileMyFAQCard">
+        <div class="profileSectionTitle">My Questions (FAQ)</div>
+        <div id="profileMyFAQList"><span class="muted small">Sign in to view your questions.</span></div>
       </div>
 
       <div class="profileActionsStack">
@@ -420,6 +455,12 @@ function updateProfileUI() {
   const customEl = $("#profileCustomCount");
   if (customEl) customEl.textContent = String(CUSTOM_STATE.phrases.length);
 
+  const countryEl = $("#profileCountry");
+  if (countryEl) countryEl.value = PROFILE_STATE.country || "";
+
+  const bioEl = $("#profileBio");
+  if (bioEl) bioEl.value = PROFILE_STATE.bio || "";
+
   updateAvatarUI();
 }
 
@@ -480,6 +521,12 @@ async function saveAvatar() {
   const avatar = normalizeAvatar(PROFILE_STATE.avatar || defaultAvatar());
   PROFILE_STATE.avatar = avatar;
   saveAvatarToLocalStorage(avatar);
+
+  const country = String($("#profileCountry")?.value || "").trim();
+  const bio = String($("#profileBio")?.value || "").trim().slice(0, 100);
+  PROFILE_STATE.country = country;
+  PROFILE_STATE.bio = bio;
+
   toast("Saved");
 
   if (!supabase) return;
@@ -488,10 +535,86 @@ async function saveAvatar() {
     if (!session) return;
     const { error } = await supabase
       .from("profiles")
-      .upsert({ user_id: session.user.id, avatar });
+      .upsert({ user_id: session.user.id, avatar, country: country || null, bio: bio || null });
     if (error) throw error;
   } catch (err) {
     console.warn("[avatar] Failed to save to Supabase.", err);
+  }
+}
+
+async function loadProfileExtras() {
+  const grid = $("#profilePhotoGrid");
+  const faqList = $("#profileMyFAQList");
+  if (!supabase) return;
+
+  const session = await getSession();
+  if (!session) return;
+  const uid = session.user.id;
+
+  // ── My Photos ────────────────────────────────────────────────────────────
+  if (grid) {
+    grid.innerHTML = `<span class="muted small">Loading…</span>`;
+    try {
+      const [resK, resN] = await Promise.all([
+        supabase.from("k_posts").select("id,image_url").eq("user_id", uid).not("image_url", "is", null).order("id", { ascending: false }).limit(30),
+        supabase.from("korea_now_posts").select("id,image_url").eq("user_id", uid).not("image_url", "is", null).order("id", { ascending: false }).limit(30),
+      ]);
+      const photos = [
+        ...(resK.data || []).map((r) => ({ ...r, source: "k" })),
+        ...(resN.data || []).map((r) => ({ ...r, source: "news" })),
+      ].filter((r) => r.image_url);
+      if (!photos.length) {
+        grid.innerHTML = `<span class="muted small">No photos yet.</span>`;
+      } else {
+        grid.innerHTML = photos.map((p) => `
+          <button class="profilePhotoGrid__item" type="button" data-source="${escapeHtml(p.source)}" data-id="${escapeHtml(String(p.id))}">
+            <img src="${escapeHtml(p.image_url)}" alt="" loading="lazy" />
+          </button>
+        `).join("");
+        grid.querySelectorAll(".profilePhotoGrid__item").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const src = btn.dataset.source;
+            const id = btn.dataset.id;
+            if (src === "k") location.hash = `#k?post=${id}`;
+            else location.hash = `#news?post=${id}`;
+          });
+        });
+      }
+    } catch (err) {
+      console.warn("[profile] photos load failed", err);
+      grid.innerHTML = `<span class="muted small">Failed to load photos.</span>`;
+    }
+  }
+
+  // ── My FAQ Questions ──────────────────────────────────────────────────────
+  if (faqList) {
+    faqList.innerHTML = `<span class="muted small">Loading…</span>`;
+    try {
+      const { data, error } = await supabase
+        .from("faq_questions")
+        .select("id,question,created_at")
+        .eq("user_id", uid)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      if (!data || !data.length) {
+        faqList.innerHTML = `<span class="muted small">No questions yet.</span>`;
+      } else {
+        faqList.innerHTML = data.map((q) => `
+          <button class="profileMyFAQItem" type="button" data-qid="${escapeHtml(String(q.id))}">
+            <span class="qaBadge">Q</span> ${escapeHtml(q.question)}
+          </button>
+        `).join("");
+        faqList.querySelectorAll(".profileMyFAQItem").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            location.hash = `#news?t=faq`;
+          });
+        });
+      }
+    } catch (err) {
+      console.warn("[profile] FAQ load failed", err);
+      faqList.innerHTML = `<span class="muted small">Failed to load questions.</span>`;
+    }
   }
 }
 
@@ -500,6 +623,7 @@ function refreshProfileStateFromStorage() {
   loadCustomPhrases();
   loadPhraseFavorites();
   updateProfileUI();
+  loadProfileExtras();
 }
 
 function ensureNicknameBadge() {
@@ -793,7 +917,7 @@ async function loadNicknameFromSupabase() {
     }
     const { data, error } = await supabase
       .from("profiles")
-      .select("nickname, avatar")
+      .select("nickname, avatar, country, bio")
       .eq("user_id", session.user.id)
       .maybeSingle();
     if (error) throw error;
@@ -802,6 +926,8 @@ async function loadNicknameFromSupabase() {
     PROFILE_STATE.nickname = nick;
     PROFILE_STATE.needsNickname = !nick;
     PROFILE_STATE.avatar = normalizeAvatar(data?.avatar || defaultAvatar());
+    PROFILE_STATE.country = data?.country || "";
+    PROFILE_STATE.bio = data?.bio || "";
     setNicknameBannerVisible(PROFILE_STATE.needsNickname);
     updateNicknameBadge();
     updateProfileUI();
