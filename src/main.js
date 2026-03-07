@@ -400,7 +400,8 @@ async function runDeleteAccountFlow() {
   const out = await res.json().catch(() => ({}));
   if (res.ok && out?.ok) {
     await window.App.supabase.auth.signOut();
-    location.hash = "#home";
+    try { sessionStorage.removeItem("guest_mode"); } catch {}
+    window.location.reload();
   } else {
     alert("Account delete failed");
   }
@@ -988,6 +989,7 @@ const ROUTE_PAGE_MAP = {
   "home-picks-admin": "home-picks-admin",
   privacy: "privacy",
   terms: "terms",
+  landing: "landing",
 };
 
 function normalizeRoute(route) {
@@ -1103,6 +1105,17 @@ function setActiveRoute(route) {
   ROUTE_TOKEN += 1;
   const token = ROUTE_TOKEN;
   if (window.App) window.App.routeToken = token;
+
+  // Landing guard: if authed or guest, skip to home
+  if (route === "landing") {
+    getSession?.().then((session) => {
+      const isGuest = !!sessionStorage.getItem("guest_mode");
+      if (session || isGuest) {
+        location.hash = "#home";
+      }
+    }).catch(() => {});
+  }
+
   const wasHome = document.querySelector("#page-home")?.hidden === false;
   if (wasHome && route !== "home") {
     clearHome?.();
@@ -1118,6 +1131,13 @@ function setActiveRoute(route) {
   $$(".page").forEach((p) => {
     p.hidden = p.dataset.page !== pageRoute;
   });
+
+  // landing일 때 헤더 UI 숨기기
+  const isLanding = pageRoute === "landing";
+  const topbarActions = document.querySelector(".topbar__actions");
+  if (topbarActions) topbarActions.style.visibility = isLanding ? "hidden" : "";
+  const mobileTopbar = document.getElementById("mobileTopbar");
+  if (mobileTopbar) mobileTopbar.hidden = isLanding;
 
   // desktop nav
   $$(".nav__link").forEach((a) => {
@@ -2309,13 +2329,22 @@ function closeCustomPhraseModal() {
 /* ----------------------------- TRAVEL MODE ----------------------------- */
 
 const TRAVEL_CATEGORIES = [
-  { key: "Airport", label: "Airport" },
-  { key: "Transport", label: "Transit" },
-  { key: "Food", label: "Food" },
-  { key: "Emergency", label: "Emergency" },
-  { key: "Favorites", label: "Favorites" },
-  { key: "MyPacks", label: "My Packs" },
+  { key: "Airport",          label: "Airport" },
+  { key: "Subway & Bus",     label: "Subway & Bus" },
+  { key: "Taxi",             label: "Taxi" },
+  { key: "Shopping & Refund",label: "Shopping & Refund" },
+  { key: "Food & Cafe",      label: "Food & Cafe" },
+  { key: "Emergency",        label: "Emergency" },
+  { key: "Favorites",        label: "Favorites" },
+  { key: "MyPacks",          label: "My Packs" },
 ];
+
+// Travel Mode key → phrases.json category mapping
+const TRAVEL_CATEGORY_MAP = {
+  "Subway & Bus":      "Transport",
+  "Shopping & Refund": "Shopping",
+  "Food & Cafe":       "Food",
+};
 
 let TRAVEL_STATE = {
   category: "",
@@ -2429,14 +2458,18 @@ function getTravelPhrases() {
   if (!cat) return { status: "empty", items: [] };
   if (cat === "MyPacks") return { status: "packs", items: [] };
 
-  let items = PHRASE_STATE.phrases.slice();
+  const all = PHRASE_STATE.phrases.slice();
+
   if (cat === "Favorites") {
-    items = items.filter((p) => PHRASE_STATE.favorites.has(p.id));
-  } else {
-    items = items.filter((p) => p.category === cat);
+    return { status: "ok", items: all.filter((p) => PHRASE_STATE.favorites.has(p.id)) };
   }
 
-  return { status: "ok", items };
+  // Map Travel Mode key → phrases.json category name
+  const phrasesCat = TRAVEL_CATEGORY_MAP[cat] || cat;
+  const common = all.filter((p) => p.category === "Common").slice(0, 6);
+  const catItems = all.filter((p) => p.category === phrasesCat);
+
+  return { status: "ok", items: [...common, ...catItems] };
 }
 
 function renderTravelPanel() {
@@ -3123,6 +3156,17 @@ async function init() {
   // routing
   updateBottomTabbarRoutes();
   bindTabbarScrollToTop();
+
+  // Landing gate: session + guest_mode 기반
+  {
+    const session = await getSession?.();
+    const isGuest = !!sessionStorage.getItem("guest_mode");
+    const isOAuthCallback = location.hash.includes("access_token") || location.hash.includes("code=");
+    if (!session && !isGuest && !isOAuthCallback) {
+      location.hash = "#landing";
+    }
+  }
+
   setActiveRoute(currentRoute());
   window.addEventListener("hashchange", () => {
     saveLastRouteHash();

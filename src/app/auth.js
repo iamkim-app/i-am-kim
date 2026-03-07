@@ -447,8 +447,8 @@ async function signOut() {
               }
             });
           } catch {}
-          updateAuthUI(null);
-          app.navigateToHome?.();
+          try { sessionStorage.removeItem("guest_mode"); } catch {}
+          window.location.reload();
           return;
         }
         console.warn("[auth] Logout failed.", err);
@@ -466,8 +466,8 @@ async function signOut() {
     app.loadAvatarFromLocalStorage?.();
     app.updateNicknameBadge?.();
     app.updateProfileUI?.();
-    app.toast?.("Logged out");
-    app.navigateToHome?.();
+    try { sessionStorage.removeItem("guest_mode"); } catch {}
+    window.location.reload();
   } finally {
     try {
       window.dispatchEvent(new Event("auth:changed"));
@@ -535,6 +535,39 @@ function setupAuthButtons() {
     btnA.setAttribute("data-auth-visible", "signed-out");
     btnA.addEventListener("click", () => signInWith("apple"));
   }
+  document.getElementById("btnLandingGoogle")?.addEventListener("click", () => signInWith("google"));
+  document.getElementById("btnLandingApple")?.addEventListener("click", () => signInWith("apple"));
+
+  // Guest mode
+  document.getElementById("btnLandingGuest")?.addEventListener("click", () => {
+    sessionStorage.setItem("guest_mode", "1");
+    location.hash = "#home";
+  });
+
+  // Email toggle
+  document.getElementById("btnLandingEmailToggle")?.addEventListener("click", () => {
+    const form = document.getElementById("landingEmailForm");
+    const btn = document.getElementById("btnLandingEmailToggle");
+    if (!form) return;
+    form.hidden = !form.hidden;
+    btn.textContent = form.hidden ? "Sign in with email" : "Hide email sign in";
+  });
+
+  // Landing email login
+  document.getElementById("btnLandingEmailLogin")?.addEventListener("click", async () => {
+    const supabase = getSupabase();
+    const status = document.getElementById("landingEmailStatus");
+    const email = String(document.getElementById("landingAuthEmail")?.value || "").trim();
+    const password = String(document.getElementById("landingAuthPassword")?.value || "");
+    if (status) status.textContent = "";
+    if (!supabase) { if (status) status.textContent = "Supabase is not set."; return; }
+    if (!email || !password) { if (status) status.textContent = "Enter email and password."; return; }
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) { if (status) status.textContent = error.message || "Sign-in failed."; return; }
+    sessionStorage.setItem("guest_mode", "1");
+    location.hash = "#home";
+    try { window.dispatchEvent(new Event("auth:changed")); } catch {}
+  });
   const btnLogout = $("#btnLogout");
   if (btnLogout) {
     btnLogout.setAttribute("data-auth-action", "logout");
