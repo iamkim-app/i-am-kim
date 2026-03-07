@@ -92,6 +92,7 @@ const NOW_STATE = {
 };
 let NOW_LOAD_TOKEN = 0;
 let NOW_LOAD_TIMEOUT = null;
+let FAQ_USER_FILTER = "";
 
 let NEWS_READY_BOUND = false;
 if (!NEWS_READY_BOUND) {
@@ -183,14 +184,41 @@ function renderCards(active, items) {
   const host = $("#nowCards");
   if (!host) return;
   if (active === "FAQ") {
+    const ssFilter = sessionStorage.getItem("faqUserFilter");
+    if (ssFilter) {
+      FAQ_USER_FILTER = ssFilter;
+      sessionStorage.removeItem("faqUserFilter");
+    }
     const input = $("#faqSearch");
     const tokens = tokenize(input?.value || "");
-    const list = tokens.length
+    let list = tokens.length
       ? NOW_STATE.faqQuestions.filter((q) => {
           const hay = tokenize(q.question || "").join(" ");
           return tokens.every((t) => hay.includes(t));
         })
       : NOW_STATE.faqQuestions;
+    if (FAQ_USER_FILTER) {
+      list = list.filter((q) => q.user_id === FAQ_USER_FILTER);
+      let banner = document.querySelector("#faqMyQsBanner");
+      if (!banner) {
+        banner = document.createElement("div");
+        banner.id = "faqMyQsBanner";
+        banner.className = "callout";
+        banner.style.cssText = "margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px";
+        banner.innerHTML = `<span>Showing my questions only</span><button class="btn btn--ghost btn--small" id="faqMyQsBannerClear" type="button">Show all</button>`;
+        const nowCards = document.querySelector("#nowCards");
+        if (nowCards?.parentNode) nowCards.parentNode.insertBefore(banner, nowCards);
+        document.querySelector("#faqMyQsBannerClear")?.addEventListener("click", () => {
+          FAQ_USER_FILTER = "";
+          banner.hidden = true;
+          renderCards("FAQ", NOW_STATE.items);
+        });
+      }
+      banner.hidden = false;
+    } else {
+      const banner = document.querySelector("#faqMyQsBanner");
+      if (banner) banner.hidden = true;
+    }
     renderFaqList(list);
     return;
   }
@@ -436,7 +464,7 @@ async function loadFaqQuestions() {
   try {
     const { data, error } = await supabase
       .from("faq_questions")
-      .select("id,question,created_at,faq_answers(id,answer,created_at,status,is_best)")
+      .select("id,question,created_at,user_id,faq_answers(id,answer,created_at,status,is_best)")
       .order("created_at", { ascending: false });
     if (error) throw error;
     return Array.isArray(data) ? data : [];

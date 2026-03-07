@@ -14,6 +14,11 @@ const {
   setNicknameBannerVisible,
 } = window.App;
 
+function countryFlag(code) {
+  const map = { us:"🇺🇸",gb:"🇬🇧",au:"🇦🇺",ca:"🇨🇦",jp:"🇯🇵",cn:"🇨🇳",tw:"🇹🇼",hk:"🇭🇰",sg:"🇸🇬",th:"🇹🇭",fr:"🇫🇷",de:"🇩🇪",kr:"🇰🇷",other:"🌍" };
+  return map[String(code || "").toLowerCase()] || "";
+}
+
 /* ----------------------------- COMMENT REPORT MODAL --------------------- */
 
 let COMMENT_REPORT_RESOLVE = null;
@@ -168,7 +173,7 @@ function applyCommunityFocusJump(feedEl) {
   });
 }
 
-function renderCommunityFeed(posts, currentUserId, likeCounts = {}, myLikes = new Set(), commentsMap = {}) {
+function renderCommunityFeed(posts, currentUserId, likeCounts = {}, myLikes = new Set(), commentsMap = {}, profileCountryMap = {}) {
   const feed = $("#communityFeed");
   if (!feed) return;
   feed.classList.add("community-feed-bleed", "community-posts-bleed");
@@ -183,6 +188,7 @@ function renderCommunityFeed(posts, currentUserId, likeCounts = {}, myLikes = ne
   feed.innerHTML = list
     .map((p) => {
       const name = escapeHtml(p.nickname || "Traveler");
+      const flag = countryFlag(profileCountryMap[p.user_id] || "");
       const rawContent = String(p.content || "");
       const firstLine = rawContent.split("\n")[0] || "";
       const title = escapeHtml(firstLine);
@@ -236,10 +242,10 @@ function renderCommunityFeed(posts, currentUserId, likeCounts = {}, myLikes = ne
       <article class="postCard community-post-card ${isTrippal ? "is-trippal" : ""}" data-id="${p.id}" data-post-id="${p.id}">
         <div class="community-post-inner">
           <div class="postHead">
-            <div class="postUser">
+            <div class="postUser" data-uid="${escapeHtml(p.user_id || '')}">
             <div class="avatar">${avatar}</div>
             <div class="postUser__text">
-              <div class="postUser__name">${name}</div>
+              <div class="postUser__name">${name}${flag ? ` <span class="postFlag">${flag}</span>` : ""}</div>
               <div class="postUser__meta">
                 ${categoryPill(cat)}
                 ${when ? `<span>${escapeHtml(when)}</span>` : ""}
@@ -332,6 +338,26 @@ function renderCommunityFeed(posts, currentUserId, likeCounts = {}, myLikes = ne
   });
 
   applyCommunityFocusJump(feed);
+
+  feed.querySelectorAll(".postUser[data-uid]").forEach((el) => {
+    el.addEventListener("click", (e) => {
+      if (e.target?.closest?.("[data-action]")) return;
+      const uid = el.dataset.uid;
+      if (uid) location.hash = `#user-profile?uid=${encodeURIComponent(uid)}`;
+    });
+  });
+}
+
+async function loadProfileCountries(userIds) {
+  if (!supabase || !userIds.length) return {};
+  const unique = [...new Set(userIds.filter(Boolean))];
+  if (!unique.length) return {};
+  const result = {};
+  try {
+    const { data } = await supabase.from("profiles").select("user_id,country").in("user_id", unique);
+    (data || []).forEach((r) => { if (r.country) result[r.user_id] = r.country; });
+  } catch {}
+  return result;
 }
 
 async function loadCommunityPosts(forceReload) {
@@ -395,10 +421,11 @@ async function loadCommunityPosts(forceReload) {
     const posts = data || [];
     const likeInfo = await loadCommunityLikes(posts.map((p) => p.id), currentUserId);
     const commentsMap = await loadCommunityComments(posts.map((p) => p.id));
+    const profileCountryMap = await loadProfileCountries(posts.map((p) => p.user_id));
 
     if (requestId !== COMMUNITY_LOAD_TOKEN) return;
     if (status) status.textContent = "";
-    renderCommunityFeed(posts, currentUserId, likeInfo.counts, likeInfo.myLikes, commentsMap);
+    renderCommunityFeed(posts, currentUserId, likeInfo.counts, likeInfo.myLikes, commentsMap, profileCountryMap);
   } catch (err) {
     if (requestId === COMMUNITY_LOAD_TOKEN) {
       if (status) status.textContent = `Error: ${err?.message || err}`;

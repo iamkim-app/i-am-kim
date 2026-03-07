@@ -101,6 +101,11 @@ let PROFILE_STATE = {
   bio: "",
 };
 
+function countryFlag(code) {
+  const map = { us:"🇺🇸",gb:"🇬🇧",au:"🇦🇺",ca:"🇨🇦",jp:"🇯🇵",cn:"🇨🇳",tw:"🇹🇼",hk:"🇭🇰",sg:"🇸🇬",th:"🇹🇭",fr:"🇫🇷",de:"🇩🇪",kr:"🇰🇷",other:"🌍" };
+  return map[String(code || "").toLowerCase()] || "";
+}
+
 function isValidNickname(name) {
   return /^[a-z0-9_\uac00-\ud7a3]{2,16}$/.test(name);
 }
@@ -370,6 +375,126 @@ function ensurePages() {
   );
 }
 
+function ensureUserProfilePage() {
+  const main = $(".main");
+  if (!main || $("#page-user-profile")) return;
+  const footer = main.querySelector(".footer");
+  const section = document.createElement("section");
+  section.className = "page";
+  section.id = "page-user-profile";
+  section.dataset.page = "user-profile";
+  section.hidden = true;
+  section.innerHTML = `
+    <div class="pageHeader">
+      <button class="btn btn--ghost btn--small" id="userProfileBackBtn" type="button">← Back</button>
+      <h2 class="pageHeader__title" id="userProfileTitle">Profile</h2>
+    </div>
+    <div class="profileWrap" id="userProfileContent">
+      <div class="muted small">Loading…</div>
+    </div>
+  `;
+  if (footer) main.insertBefore(section, footer);
+  else main.appendChild(section);
+  $("#userProfileBackBtn")?.addEventListener("click", () => history.back());
+}
+
+async function loadUserProfilePage() {
+  const { query } = getHashParts();
+  const params = new URLSearchParams(query || "");
+  const uid = params.get("uid") || "";
+  const content = $("#userProfileContent");
+
+  if (!uid) {
+    if (content) content.innerHTML = `<div class="muted small">User not found.</div>`;
+    return;
+  }
+
+  const session = await getSession();
+  if (session?.user?.id === uid) {
+    location.hash = "#profile";
+    return;
+  }
+
+  if (!supabase) {
+    if (content) content.innerHTML = `<div class="muted small">Not available.</div>`;
+    return;
+  }
+
+  if (content) content.innerHTML = `<div class="muted small">Loading…</div>`;
+
+  try {
+    const [profileRes, postsRes] = await Promise.all([
+      supabase.from("profiles").select("nickname,avatar,country,bio").eq("user_id", uid).maybeSingle(),
+      supabase.from("posts").select("id,image_url,content,created_at,category")
+        .eq("user_id", uid).eq("moderation_status", "active")
+        .order("created_at", { ascending: false }).limit(20),
+    ]);
+
+    const profile = profileRes.data;
+    const posts = postsRes.data || [];
+
+    const nick = escapeHtml(profile?.nickname || "Traveler");
+    const preset = normalizeAvatar(profile?.avatar || defaultAvatar()).preset;
+    const flag = countryFlag(profile?.country || "");
+    const bio = escapeHtml(profile?.bio || "");
+
+    const photos = posts.filter((p) => p.image_url);
+    const photosHtml = photos.length
+      ? photos.map((p) => `
+          <button class="profilePhotoGrid__item" type="button" data-post-id="${escapeHtml(String(p.id))}">
+            <img src="${escapeHtml(p.image_url)}" alt="" loading="lazy" />
+          </button>`).join("")
+      : `<span class="muted small">No photos.</span>`;
+
+    const postsHtml = posts.length
+      ? posts.map((p) => {
+          const firstLine = String(p.content || "").split("\n")[0] || "(empty)";
+          return `<div class="userProfilePostItem" data-post-id="${escapeHtml(String(p.id))}">${escapeHtml(firstLine)}</div>`;
+        }).join("")
+      : `<span class="muted small">No posts.</span>`;
+
+    if (content) {
+      content.innerHTML = `
+        <div class="profileCard">
+          <div class="userProfileHero">
+            <div class="avatarPreview"><img src="${escapeHtml(avatarSrc(preset))}" alt="" /></div>
+            <div class="userProfileHeroInfo">
+              <div class="userProfileNick">${nick}${flag ? ` ${flag}` : ""}</div>
+              ${bio ? `<div class="userProfileBio">${bio}</div>` : ""}
+            </div>
+          </div>
+        </div>
+        <div class="profileCard">
+          <div class="profileSectionTitle">Photos</div>
+          <div class="profilePhotoGrid">${photosHtml}</div>
+        </div>
+        <div class="profileCard">
+          <div class="profileSectionTitle">Posts</div>
+          <div class="userProfilePostList">${postsHtml}</div>
+        </div>
+      `;
+      content.querySelectorAll(".profilePhotoGrid__item").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          sessionStorage.setItem("communityFocusPostId", btn.dataset.postId);
+          location.hash = "#community";
+        });
+      });
+      content.querySelectorAll(".userProfilePostItem").forEach((el) => {
+        el.addEventListener("click", () => {
+          sessionStorage.setItem("communityFocusPostId", el.dataset.postId);
+          location.hash = "#community";
+        });
+      });
+    }
+
+    const titleEl = $("#userProfileTitle");
+    if (titleEl) titleEl.textContent = profile?.nickname || "Profile";
+  } catch (err) {
+    console.warn("[user-profile] load failed", err);
+    if (content) content.innerHTML = `<div class="muted small">Failed to load profile.</div>`;
+  }
+}
+
 function ensureDeleteAccountModal() {
   if ($("#deleteAccountModal")) return;
   const modal = document.createElement("div");
@@ -606,7 +731,9 @@ async function loadProfileExtras() {
         `).join("");
         faqList.querySelectorAll(".profileMyFAQItem").forEach((btn) => {
           btn.addEventListener("click", () => {
-            location.hash = `#news?t=faq`;
+            sessionStorage.setItem("faqUserFilter", uid);
+            sessionStorage.setItem("newsDefaultTab", "FAQ");
+            location.hash = "#news?t=faq";
           });
         });
       }
@@ -1305,6 +1432,7 @@ function setActiveRoute(route) {
     loadHomePicksAdmin?.();
   }
   if (pageRoute === "profile") refreshProfileStateFromStorage();
+  if (route === "user-profile") loadUserProfilePage();
 }
 
 /* ----------------------------- ENV / BACKEND --------------------------- */
@@ -3247,6 +3375,7 @@ async function init() {
   ensureNicknameBadge();
   ensureProfileUI();
   ensurePages();
+  ensureUserProfilePage();
   loadAvatarFromLocalStorage();
   loadNicknameFromSupabase();
   loadBanStatus();
