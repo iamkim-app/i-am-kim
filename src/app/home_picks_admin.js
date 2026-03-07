@@ -6,40 +6,62 @@ const getApp = () => window.App || {};
 let HOME_PICKS_ADMIN_DIRTY = false;
 let HOME_PICKS_ADMIN_BOUND = false;
 
-function ensureSlotCards() {
+// Cache fetched posts per table to avoid redundant queries
+const POST_CACHE = {};
+
+// ── Post fetching ─────────────────────────────────────────────────────────────
+
+async function fetchPostsForSource(source) {
+  const table = source === "k" || source === "k_posts" ? "k_posts" : "korea_now_posts";
+  if (POST_CACHE[table]) return POST_CACHE[table];
+
+  const { supabase } = getApp();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from(table)
+    .select("id,title")
+    .order("id", { ascending: false })
+    .limit(100);
+
+  if (error || !data) return [];
+  POST_CACHE[table] = data;
+  return data;
+}
+
+async function populateSourceIdSelect(slot, source) {
   const root = document.querySelector("#page-home-picks-admin");
-  if (!root || root.dataset.slotsReady === "1") return;
-  const form = root.querySelector("#homePicksAdminForm");
-  if (!form) return;
+  if (!root) return;
+  const select = root.querySelector(`select[data-slot="${slot}"][data-field="source_id"]`);
+  if (!select) return;
 
-  const desc = root.querySelector(".pageHeader__desc");
-  if (desc && desc.textContent.includes("1-3")) {
-    desc.textContent = desc.textContent.replace("1-3", "1-5");
-  }
+  const currentVal = select.value;
+  select.innerHTML = `<option value="">-- Select post --</option>`;
+  select.disabled = true;
 
-  const cards = Array.from(form.querySelectorAll(".card"));
-  const template = cards[0] || null;
-  if (!template) return;
-
-  SLOT_IDS.forEach((slot, idx) => {
-    const exists = form.querySelector(`[data-slot="${slot}"][data-field]`);
-    if (exists) return;
-    const clone = template.cloneNode(true);
-    clone.querySelectorAll("[data-slot][data-field]").forEach((el) => {
-      el.dataset.slot = slot;
-      if (el.tagName === "SELECT") {
-        el.value = "k_posts";
-      } else {
-        el.value = "";
-      }
-    });
-    const label = clone.querySelector(".muted.small");
-    if (label) label.textContent = `Slot ${slot}`;
-    form.appendChild(clone);
+  const posts = await fetchPostsForSource(source);
+  posts.forEach((p) => {
+    const opt = document.createElement("option");
+    opt.value = String(p.id);
+    opt.textContent = `[${p.id}] ${p.title || "(no title)"}`;
+    select.appendChild(opt);
   });
 
-  root.dataset.slotsReady = "1";
+  select.disabled = false;
+  if (currentVal) select.value = currentVal;
 }
+
+async function populateAllSourceIdSelects() {
+  const root = document.querySelector("#page-home-picks-admin");
+  if (!root) return;
+  for (const slot of SLOT_IDS) {
+    const sourceEl = root.querySelector(`select[data-slot="${slot}"][data-field="source"]`);
+    const source = sourceEl?.value || "k_posts";
+    await populateSourceIdSelect(slot, source);
+  }
+}
+
+// ── Values ────────────────────────────────────────────────────────────────────
 
 function setStatus(message, isError = false) {
   const el = document.querySelector("#homePicksAdminStatus");
@@ -63,24 +85,48 @@ function readInputs() {
   return bySlot;
 }
 
-function applyValues(valuesBySlot) {
+// Apply all fields EXCEPT source_id (select needs options pre-loaded first)
+function applyNonSourceIdValues(valuesBySlot) {
   const root = document.querySelector("#page-home-picks-admin");
   if (!root) return;
-  const inputs = Array.from(root.querySelectorAll("[data-slot][data-field]"));
-  inputs.forEach((el) => {
+  root.querySelectorAll("[data-slot][data-field]").forEach((el) => {
     const slot = String(el.dataset.slot || "");
     const field = String(el.dataset.field || "");
+    if (!slot || !field || field === "source_id") return;
     const slotValues = valuesBySlot?.[slot];
     if (!slotValues || !(field in slotValues)) return;
     el.value = String(slotValues[field] ?? "");
   });
 }
 
+// Apply source_id AFTER options are populated
+function applySourceIdValues(valuesBySlot) {
+  const root = document.querySelector("#page-home-picks-admin");
+  if (!root) return;
+  for (const slot of SLOT_IDS) {
+    const sourceId = valuesBySlot?.[slot]?.source_id;
+    if (!sourceId) continue;
+    const el = root.querySelector(`select[data-slot="${slot}"][data-field="source_id"]`);
+    if (el) el.value = String(sourceId);
+  }
+}
+
+// Full apply: source → populate dropdowns → source_id
+async function applyValuesWithSourceIds(valuesBySlot) {
+  applyNonSourceIdValues(valuesBySlot);
+  for (const slot of SLOT_IDS) {
+    const root = document.querySelector("#page-home-picks-admin");
+    const sourceEl = root?.querySelector(`select[data-slot="${slot}"][data-field="source"]`);
+    const source = sourceEl?.value || valuesBySlot?.[slot]?.source || "k_posts";
+    await populateSourceIdSelect(slot, source);
+  }
+  applySourceIdValues(valuesBySlot);
+}
+
 function setSlotValues(slot, values) {
   const root = document.querySelector("#page-home-picks-admin");
   if (!root) return;
-  const inputs = Array.from(root.querySelectorAll(`[data-slot="${slot}"][data-field]`));
-  inputs.forEach((el) => {
+  root.querySelectorAll(`[data-slot="${slot}"][data-field]`).forEach((el) => {
     const field = String(el.dataset.field || "");
     if (!field || !(field in values)) return;
     el.value = String(values[field] ?? "");
@@ -100,13 +146,14 @@ function clearSlot(slot) {
   setStatus(`Slot ${slot} cleared.`);
 }
 
+// ── Draft ─────────────────────────────────────────────────────────────────────
+
 function saveDraft() {
-  const payload = {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
     dirty: true,
     values: readInputs(),
     savedAt: Date.now(),
-  };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  }));
 }
 
 function loadDraft() {
@@ -114,8 +161,7 @@ function loadDraft() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== "object") return null;
-    return parsed;
+    return parsed && typeof parsed === "object" ? parsed : null;
   } catch {
     return null;
   }
@@ -129,20 +175,71 @@ function setDirty(value) {
   HOME_PICKS_ADMIN_DIRTY = !!value;
 }
 
+// ── Slot cards ────────────────────────────────────────────────────────────────
+
+function ensureSlotCards() {
+  const root = document.querySelector("#page-home-picks-admin");
+  if (!root || root.dataset.slotsReady === "1") return;
+  const form = root.querySelector("#homePicksAdminForm");
+  if (!form) return;
+
+  const desc = root.querySelector(".pageHeader__desc");
+  if (desc && desc.textContent.includes("1-3")) {
+    desc.textContent = desc.textContent.replace("1-3", "1-5");
+  }
+
+  const cards = Array.from(form.querySelectorAll(".card"));
+  const template = cards[0] || null;
+  if (!template) return;
+
+  SLOT_IDS.forEach((slot) => {
+    const exists = form.querySelector(`[data-slot="${slot}"][data-field]`);
+    if (exists) return;
+    const clone = template.cloneNode(true);
+    clone.querySelectorAll("[data-slot][data-field]").forEach((el) => {
+      el.dataset.slot = slot;
+      if (el.tagName === "SELECT") {
+        if (el.dataset.field === "source_id") {
+          // Reset cloned post options — will be populated later
+          el.innerHTML = `<option value="">-- Select post --</option>`;
+        } else {
+          el.value = "k_posts";
+        }
+      } else {
+        el.value = "";
+      }
+    });
+    const label = clone.querySelector(".muted.small");
+    if (label) label.textContent = `Slot ${slot}`;
+    form.appendChild(clone);
+  });
+
+  root.dataset.slotsReady = "1";
+}
+
+// ── Listeners ─────────────────────────────────────────────────────────────────
+
 function bindInputListeners() {
   const root = document.querySelector("#page-home-picks-admin");
   if (!root || HOME_PICKS_ADMIN_BOUND) return;
   HOME_PICKS_ADMIN_BOUND = true;
 
-  const onChange = (e) => {
+  // When source table changes → reload post dropdown for that slot
+  root.addEventListener("change", async (e) => {
     const target = e.target;
     if (!target?.closest?.("[data-slot][data-field]")) return;
+    if (target.dataset.field === "source") {
+      await populateSourceIdSelect(target.dataset.slot, target.value);
+    }
     setDirty(true);
     saveDraft();
-  };
+  });
 
-  root.addEventListener("input", onChange);
-  root.addEventListener("change", onChange);
+  root.addEventListener("input", (e) => {
+    if (!e.target?.closest?.("[data-slot][data-field]")) return;
+    setDirty(true);
+    saveDraft();
+  });
 
   const saveBtn = document.querySelector("#homePicksAdminSave");
   const refreshBtn = document.querySelector("#homePicksAdminRefresh");
@@ -156,15 +253,11 @@ function bindInputListeners() {
     clearAllBtn.id = "homePicksAdminClearAll";
     clearAllBtn.type = "button";
     clearAllBtn.textContent = "Clear All";
-    clearAllBtn.addEventListener("click", () => {
-      SLOT_IDS.forEach((slot) => clearSlot(slot));
-    });
+    clearAllBtn.addEventListener("click", () => SLOT_IDS.forEach((slot) => clearSlot(slot)));
     actionsRow.insertBefore(clearAllBtn, refreshBtn);
   }
 
-  const slots = new Set(SLOT_IDS);
-  slots.forEach((slot) => {
-    if (!slot) return;
+  SLOT_IDS.forEach((slot) => {
     const slotCard = root.querySelector(`[data-slot="${slot}"][data-field]`)?.closest(".card");
     if (!slotCard || slotCard.querySelector(`[data-clear-slot="${slot}"]`)) return;
     const row = document.createElement("div");
@@ -182,19 +275,12 @@ function bindInputListeners() {
   });
 }
 
-function applyDraftIfPresent() {
-  const draft = loadDraft();
-  if (!draft?.values) return false;
-  applyValues(draft.values);
-  setDirty(true);
-  setStatus("Draft restored.");
-  return true;
-}
+// ── Public API ────────────────────────────────────────────────────────────────
 
 export function setupHomePicksAdmin() {
   ensureSlotCards();
   bindInputListeners();
-  applyDraftIfPresent();
+  // Data loading is handled by loadHomePicksAdmin (called from main.js)
 }
 
 export async function loadHomePicksAdmin() {
@@ -203,6 +289,8 @@ export async function loadHomePicksAdmin() {
     setStatus("Supabase not configured.", true);
     return;
   }
+
+  // Refresh button clicked while unsaved draft is in progress
   if (HOME_PICKS_ADMIN_DIRTY) {
     setStatus("Draft in progress. Save to refresh.", true);
     return;
@@ -211,27 +299,36 @@ export async function loadHomePicksAdmin() {
   setStatus("Loading...");
 
   try {
+    // Check for saved draft first
+    const draft = loadDraft();
+    if (draft?.values) {
+      await applyValuesWithSourceIds(draft.values);
+      setDirty(true);
+      setStatus("Draft restored.");
+      return;
+    }
+
+    // Fetch current DB state
     const { data, error } = await supabase
       .from("home_featured")
       .select("*")
       .order("slot");
     if (error) throw error;
 
-    const rows = Array.isArray(data) ? data : [];
     const valuesBySlot = {};
-    rows.forEach((row) => {
+    (Array.isArray(data) ? data : []).forEach((row) => {
       const slot = String(row?.slot || "");
       if (!slot) return;
       valuesBySlot[slot] = {
         source: row?.source || "",
-        source_id: row?.source_id || "",
+        source_id: row?.source_id ? String(row.source_id) : "",
         title_override: row?.title_override || "",
         subtitle_override: row?.subtitle_override || "",
         link_hash: row?.link_hash || "",
       };
     });
 
-    applyValues(valuesBySlot);
+    await applyValuesWithSourceIds(valuesBySlot);
     setStatus("Loaded.");
   } catch (err) {
     setStatus(`Load failed: ${err?.message || err}`, true);
@@ -259,14 +356,12 @@ export async function saveHomePicksAdmin() {
       return {
         slot: Number(slot),
         source,
-        source_id: sourceId,
-        title_override: titleOverride ? titleOverride : null,
-        subtitle_override: subtitleOverride ? subtitleOverride : null,
-        link_hash: linkHash ? linkHash : null,
+        source_id: sourceId || null,
+        title_override: titleOverride || null,
+        subtitle_override: subtitleOverride || null,
+        link_hash: linkHash || null,
       };
     });
-
-    console.log("[HomePicksAdmin] 저장할 rows:", JSON.stringify(rows, null, 2));
 
     // Fetch existing slots to decide update vs insert
     const { data: existing, error: fetchError } = await supabase
@@ -274,14 +369,11 @@ export async function saveHomePicksAdmin() {
       .select("slot");
     if (fetchError) throw fetchError;
 
-    console.log("[HomePicksAdmin] 기존 DB rows (slot만):", existing);
-
     const existingSlots = new Set((existing || []).map((r) => Number(r.slot)));
 
     for (const row of rows) {
       if (existingSlots.has(row.slot)) {
-        console.log(`[HomePicksAdmin] UPDATE slot=${row.slot}`, row);
-        const { data: updated, error } = await supabase
+        const { error } = await supabase
           .from("home_featured")
           .update({
             source: row.source,
@@ -290,24 +382,15 @@ export async function saveHomePicksAdmin() {
             subtitle_override: row.subtitle_override,
             link_hash: row.link_hash,
           })
-          .eq("slot", row.slot)
-          .select();
-        console.log(`[HomePicksAdmin] UPDATE slot=${row.slot} 결과:`, { updated, error });
+          .eq("slot", row.slot);
         if (error) throw error;
       } else {
-        console.log(`[HomePicksAdmin] INSERT slot=${row.slot}`, row);
-        const { data: inserted, error } = await supabase
+        const { error } = await supabase
           .from("home_featured")
-          .insert(row)
-          .select();
-        console.log(`[HomePicksAdmin] INSERT slot=${row.slot} 결과:`, { inserted, error });
+          .insert(row);
         if (error) throw error;
       }
     }
-
-    // 저장 후 DB 실제 상태 확인
-    const { data: afterSave } = await supabase.from("home_featured").select("*").order("slot");
-    console.log("[HomePicksAdmin] 저장 후 DB 전체:", afterSave);
 
     setDirty(false);
     clearDraft();
