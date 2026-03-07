@@ -1463,7 +1463,7 @@ function setupHome(routeToken) {
   if (!setupHome.nowPreviewBound) {
     setupHome.nowPreviewBound = true;
     window.addEventListener("koreaNow:updated", () => loadNowPreview(localToken));
-    window.addEventListener("homePicks:updated", () => loadNowPreview(localToken));
+    window.addEventListener("homePicks:updated", () => loadNowPreview());
     homeRoot.querySelector("#homeNowPreview")?.addEventListener("click", (e) => {
       const host = homeRoot.querySelector("#homeNowPreview");
       if (host?.dataset?.swiping === "1") return;

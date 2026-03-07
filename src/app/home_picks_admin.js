@@ -266,10 +266,34 @@ export async function saveHomePicksAdmin() {
       };
     });
 
-    const { error } = await supabase
+    // Fetch existing slots to decide update vs insert
+    const { data: existing, error: fetchError } = await supabase
       .from("home_featured")
-      .upsert(rows, { onConflict: "slot" });
-    if (error) throw error;
+      .select("slot");
+    if (fetchError) throw fetchError;
+
+    const existingSlots = new Set((existing || []).map((r) => Number(r.slot)));
+
+    for (const row of rows) {
+      if (existingSlots.has(row.slot)) {
+        const { error } = await supabase
+          .from("home_featured")
+          .update({
+            source: row.source,
+            source_id: row.source_id,
+            title_override: row.title_override,
+            subtitle_override: row.subtitle_override,
+            link_hash: row.link_hash,
+          })
+          .eq("slot", row.slot);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("home_featured")
+          .insert(row);
+        if (error) throw error;
+      }
+    }
 
     setDirty(false);
     clearDraft();
