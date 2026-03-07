@@ -9,6 +9,9 @@ AuthKey_*.p8
 # Apple JWT test script (if local only)
 apple_jwt.js
 
+# Local scripts (may contain API keys)
+scripts/
+
 # Node
 node_modules/
 
