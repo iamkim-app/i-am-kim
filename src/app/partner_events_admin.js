@@ -15,14 +15,29 @@ function esc(str) {
 // ── Page Shell ────────────────────────────────────────────────────────────────
 
 export function ensurePartnerAdminUI() {
-  const main = document.querySelector(".main");
-  if (!main || document.getElementById("page-partner-admin")) return;
-  const footer = main.querySelector(".footer");
-  const section = document.createElement("section");
-  section.className = "page";
-  section.id = "page-partner-admin";
-  section.dataset.page = "partner-admin";
-  section.hidden = true;
+  // The page shell may already exist as an empty element in index.html.
+  // Find or create it, then inject content if not already present.
+  let section = document.getElementById("page-partner-admin");
+
+  if (!section) {
+    const main = document.querySelector(".main");
+    if (!main) return;
+    const footer = main.querySelector(".footer");
+    section = document.createElement("section");
+    section.className = "page";
+    section.id = "page-partner-admin";
+    section.dataset.page = "partner-admin";
+    section.hidden = true;
+    if (footer) {
+      main.insertBefore(section, footer);
+    } else {
+      main.appendChild(section);
+    }
+  }
+
+  // Skip if content already injected
+  if (document.getElementById("partnerAdminBody")) return;
+
   section.innerHTML = `
     <div class="pageHeader">
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
@@ -36,11 +51,6 @@ export function ensurePartnerAdminUI() {
     <div id="partnerAdminStatus"></div>
     <div id="partnerAdminBody"></div>
   `;
-  if (footer) {
-    main.insertBefore(section, footer);
-  } else {
-    main.appendChild(section);
-  }
 }
 
 // ── Auth guard + init ─────────────────────────────────────────────────────────
