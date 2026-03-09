@@ -57,8 +57,9 @@ export async function initPartnerEvents() {
 
   if (!events.length) return;
 
-  // Inject partner cards at the beginning of the strip
-  // Reverse so first event ends up first in DOM
+  // Inject partner cards after the first existing card (second position)
+  // Reverse so first event ends up closest to position 2
+  const afterNode = track.children[1] || null; // insert before 2nd card (= after 1st)
   [...events].reverse().forEach((ev) => {
     const imgSrc = Array.isArray(ev.images) && ev.images[0] ? ev.images[0] : "";
     const btn = document.createElement("button");
@@ -80,7 +81,7 @@ export async function initPartnerEvents() {
       <span class="heroCard__title">${esc(ev.title || "")}</span>
     `;
     btn.addEventListener("click", () => openPartnerEventSheet(ev));
-    track.insertBefore(btn, track.firstChild);
+    track.insertBefore(btn, afterNode);
   });
 }
 
