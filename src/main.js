@@ -88,6 +88,10 @@ let initKoreaNow;
 let initKPage;
 let startHomeCarousel;
 let stopHomeCarousel;
+let renderHeroStripCards;
+let HERO_CARDS_STATIC;
+let startHeroStripAutoSlide;
+let stopHeroStripAutoSlide;
 let setupHomePicksAdmin;
 let loadHomePicksAdmin;
 let ensurePartnerAdminUI;
@@ -1431,6 +1435,7 @@ function setActiveRoute(route) {
     startHomeCarousel?.();
   } else {
     stopHomeCarousel?.();
+    stopHeroStripAutoSlide?.();
   }
   if (pageRoute === "community") loadCommunityPosts?.(false);
   if (pageRoute === "admin") loadAdminPanel?.(token);
@@ -3285,6 +3290,10 @@ async function loadAppModules() {
     setupHome,
     startHomeCarousel,
     stopHomeCarousel,
+    renderHeroStripCards,
+    HERO_CARDS_STATIC,
+    startHeroStripAutoSlide,
+    stopHeroStripAutoSlide,
   } = home);
 
   Object.assign(app, {
@@ -3303,6 +3312,10 @@ async function loadAppModules() {
     setupHome,
     startHomeCarousel,
     stopHomeCarousel,
+    renderHeroStripCards,
+    HERO_CARDS_STATIC,
+    startHeroStripAutoSlide,
+    stopHeroStripAutoSlide,
   });
 
   // 3) COMMUNITY

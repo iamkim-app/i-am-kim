@@ -47,42 +47,41 @@ export function clearPartnerEventsCache() {
 export async function initPartnerEvents() {
   ensurePartnerEventSheet();
 
+  const { renderHeroStripCards, HERO_CARDS_STATIC, startHeroStripAutoSlide } = getApp();
+
+  // If home.js hasn't exported these yet, bail — setupHome hasn't run.
+  if (!renderHeroStripCards || !HERO_CARDS_STATIC) return;
+
   const events = await fetchActivePartnerEvents();
 
-  const track = document.querySelector("#page-home .heroStrip__track");
-  if (!track) return;
+  if (!events.length) {
+    // No partner events — static strip is already rendered; just ensure auto-slide is running.
+    startHeroStripAutoSlide?.();
+    return;
+  }
 
-  // Remove any previously injected partner cards
-  track.querySelectorAll(".heroCard--partner").forEach((el) => el.remove());
+  // Convert partner events to card descriptors
+  const partnerCards = events.map((ev) => ({
+    partner: true,
+    badge: "PARTNER",
+    title: ev.title || "",
+    img: Array.isArray(ev.images) && ev.images[0] ? ev.images[0] : "",
+    gradient: "linear-gradient(135deg, #F59E0B 0%, #EF4444 100%)",
+    onClick: () => openPartnerEventSheet(ev),
+  }));
 
-  if (!events.length) return;
+  // Merge: static[0] → partner cards → static[1..]
+  const merged = [
+    HERO_CARDS_STATIC[0],
+    ...partnerCards,
+    ...HERO_CARDS_STATIC.slice(1),
+  ];
 
-  // Inject partner cards after the first existing card (second position)
-  // Reverse so first event ends up closest to position 2
-  const afterNode = track.children[1] || null; // insert before 2nd card (= after 1st)
-  [...events].reverse().forEach((ev) => {
-    const imgSrc = Array.isArray(ev.images) && ev.images[0] ? ev.images[0] : "";
-    const btn = document.createElement("button");
-    btn.className = "heroCard heroCard--partner";
-    btn.type = "button";
+  // Single render pass — replaces the entire track content
+  renderHeroStripCards(merged);
 
-    if (imgSrc) {
-      btn.style.setProperty("--bg", `url('${imgSrc}')`);
-      btn.style.backgroundImage = `var(--bg)`;
-      btn.style.backgroundSize = "cover";
-      btn.style.backgroundPosition = "center";
-    } else {
-      btn.style.background = "linear-gradient(135deg, #F59E0B 0%, #EF4444 100%)";
-    }
-
-    btn.dataset.partnerEventId = ev.id;
-    btn.innerHTML = `
-      <span class="heroCard__badge heroCard__badge--partner">PARTNER</span>
-      <span class="heroCard__title">${esc(ev.title || "")}</span>
-    `;
-    btn.addEventListener("click", () => openPartnerEventSheet(ev));
-    track.insertBefore(btn, afterNode);
-  });
+  // Restart auto-slide with the updated card count
+  startHeroStripAutoSlide?.();
 }
 
 // ── Sheet DOM ─────────────────────────────────────────────────────────────────

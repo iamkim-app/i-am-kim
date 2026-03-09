@@ -472,6 +472,83 @@ function renderCollectionsSection() {
   renderCollectionsOverview();
 }
 
+// ── Hero strip card definitions ───────────────────────────────────────────────
+
+const HERO_CARDS_STATIC = [
+  { badge: "K-POP",    title: "Concert day essentials",       img: "/hero/hero_kpop_concert_v2.webp",  href: "#kpop" },
+  { badge: "EVENT",    title: "Festival sale & deals",        img: "/hero/hero_fandom_line_v2.webp",   href: "#k?tab=deals" },
+  { badge: "SHOPPING", title: "Official merch & album shops", img: "/hero/hero_album_display.webp",    href: "#k?tab=shopping" },
+  { badge: "SEOUL",    title: "Korea travel updates",         img: "/hero/hero_seoul_night.webp",      href: "#news" },
+  { badge: "BEAUTY",   title: "K-beauty stores to try",       img: "/hero/hero_kbeauty_shop.webp",     href: "#k?tab=beauty" },
+  { badge: "FOOD",     title: "Street food favorites",        img: "/hero/hero_kfood_street.webp",     href: "#k?tab=food" },
+];
+
+function buildHeroCardEl(card) {
+  const btn = document.createElement("button");
+  btn.className = "heroCard" + (card.partner ? " heroCard--partner" : "");
+  btn.type = "button";
+  if (card.img) {
+    btn.style.setProperty("--bg", `url('${card.img}')`);
+  } else if (card.gradient) {
+    btn.style.background = card.gradient;
+  }
+  const badgeClass = card.partner
+    ? "heroCard__badge heroCard__badge--partner"
+    : "heroCard__badge";
+  btn.innerHTML = `
+    <span class="${badgeClass}">${escapeHtml(card.badge)}</span>
+    <span class="heroCard__title">${escapeHtml(card.title)}</span>
+  `;
+  if (card.onClick) {
+    btn.addEventListener("click", card.onClick);
+  } else if (card.href) {
+    btn.addEventListener("click", () => { location.hash = card.href; });
+  }
+  return btn;
+}
+
+// Rebuilds heroStrip__track with the given cards array.
+// Stops and resets the auto-slide timer so the caller can restart it.
+function renderHeroStripCards(cards) {
+  const track = document.querySelector("#page-home .heroStrip__track");
+  if (!track) return;
+  stopHeroStripAutoSlide();
+  track.innerHTML = "";
+  (cards || HERO_CARDS_STATIC).forEach((card) => track.appendChild(buildHeroCardEl(card)));
+}
+
+// ── Hero strip auto-slide ─────────────────────────────────────────────────────
+
+let HERO_STRIP_SLIDE_TIMER = null;
+let HERO_STRIP_INDEX = 0;
+
+function startHeroStripAutoSlide() {
+  stopHeroStripAutoSlide();
+  HERO_STRIP_INDEX = 0;
+  HERO_STRIP_SLIDE_TIMER = setInterval(() => {
+    if (!isHomeActive()) return;
+    const track = document.querySelector("#page-home .heroStrip__track");
+    if (!track) return;
+    const cards = track.querySelectorAll(".heroCard");
+    if (cards.length <= 1) return;
+    HERO_STRIP_INDEX = (HERO_STRIP_INDEX + 1) % cards.length;
+    const card = cards[HERO_STRIP_INDEX];
+    // getBoundingClientRect gives position relative to viewport; scrollBy the delta
+    const dx = card.getBoundingClientRect().left - track.getBoundingClientRect().left;
+    track.scrollBy({ left: dx, behavior: "smooth" });
+  }, 3500);
+}
+
+function stopHeroStripAutoSlide() {
+  if (HERO_STRIP_SLIDE_TIMER) {
+    clearInterval(HERO_STRIP_SLIDE_TIMER);
+    HERO_STRIP_SLIDE_TIMER = null;
+  }
+  HERO_STRIP_INDEX = 0;
+}
+
+// ── Home layout ───────────────────────────────────────────────────────────────
+
 function renderHomeLayout() {
   const page = $("#page-home");
   if (!page) return;
@@ -479,32 +556,7 @@ function renderHomeLayout() {
     <section class="homeSection homeSection--hero">
       <div class="homeHero">
         <section class="heroStrip">
-          <div class="heroStrip__track">
-            <button class="heroCard" type="button" style="--bg:url('/hero/hero_kpop_concert_v2.webp')" onclick="location.hash='#kpop'">
-              <span class="heroCard__badge">K-POP</span>
-              <span class="heroCard__title">Concert day essentials</span>
-            </button>
-            <button class="heroCard" type="button" style="--bg:url('/hero/hero_fandom_line_v2.webp')" onclick="location.hash='#k?tab=deals'">
-              <span class="heroCard__badge">EVENT</span>
-              <span class="heroCard__title">Festival sale & deals</span>
-            </button>
-            <button class="heroCard" type="button" style="--bg:url('/hero/hero_album_display.webp')" onclick="location.hash='#k?tab=shopping'">
-              <span class="heroCard__badge">SHOPPING</span>
-              <span class="heroCard__title">Official merch & album shops</span>
-            </button>
-            <button class="heroCard" type="button" style="--bg:url('/hero/hero_seoul_night.webp')" onclick="location.hash='#news'">
-              <span class="heroCard__badge">SEOUL</span>
-              <span class="heroCard__title">Korea travel updates</span>
-            </button>
-            <button class="heroCard" type="button" style="--bg:url('/hero/hero_kbeauty_shop.webp')" onclick="location.hash='#k?tab=beauty'">
-              <span class="heroCard__badge">BEAUTY</span>
-              <span class="heroCard__title">K-beauty stores to try</span>
-            </button>
-            <button class="heroCard" type="button" style="--bg:url('/hero/hero_kfood_street.webp')" onclick="location.hash='#k?tab=food'">
-              <span class="heroCard__badge">FOOD</span>
-              <span class="heroCard__title">Street food favorites</span>
-            </button>
-          </div>
+          <div class="heroStrip__track"></div>
         </section>
         <div class="homeHero__cta">
           <button class="askSearch" id="btnAskKim" type="button">
@@ -1357,6 +1409,10 @@ function setupHome(routeToken) {
   const infoRoot = document.querySelector("#page-info");
   if (!homeRoot || !infoRoot) return;
   renderHomeLayout();
+  // Populate hero strip with static cards and start auto-slide.
+  // initPartnerEvents() (called separately) will rebuild with merged cards.
+  renderHeroStripCards(HERO_CARDS_STATIC);
+  startHeroStripAutoSlide();
   bindCommunityPreviewNavigation();
   renderInfoLayout();
   clearHome();
@@ -1568,7 +1624,11 @@ if (!setupHome.resumeBound) {
 }
 
 // Expose entrypoint for main.js
-export { setupHome, analyzeHomeUrl, startHomeCarousel, stopHomeCarousel };
+export {
+  setupHome, analyzeHomeUrl, startHomeCarousel, stopHomeCarousel,
+  renderHeroStripCards, HERO_CARDS_STATIC,
+  startHeroStripAutoSlide, stopHeroStripAutoSlide,
+};
 
 
 
