@@ -379,118 +379,108 @@ function readFormData(formEl) {
 
 function bindPartnerAdminEvents(bodyEl, events) {
   const { supabase, toast, clearPartnerEventsCache } = getApp();
-  const showToast = (msg, isErr) => {
-    if (toast) toast(msg);
-    else console[isErr ? "error" : "log"]("[partner-admin]", msg);
+  const showToast = (msg) => { if (toast) toast(msg); else console.log("[partner-admin]", msg); };
+
+  // ── Header buttons (direct) ───────────────────────────────────────────────
+
+  const refreshBtn = bodyEl.querySelector("#btnPartnerAdminRefresh");
+  if (refreshBtn) refreshBtn.onclick = () => loadPartnerAdmin();
+
+  const addToggleBtn = bodyEl.querySelector("#btnPartnerAdminAdd");
+  if (addToggleBtn) addToggleBtn.onclick = () => {
+    const wrap = bodyEl.querySelector("#partnerAddFormWrap");
+    if (wrap) wrap.hidden = !wrap.hidden;
   };
 
-  // Refresh
-  bodyEl.querySelector("#btnPartnerAdminRefresh")
-    ?.addEventListener("click", () => loadPartnerAdmin());
+  const cancelAddBtn = bodyEl.querySelector('[data-action="cancel-add"]');
+  if (cancelAddBtn) cancelAddBtn.onclick = () => {
+    const wrap = bodyEl.querySelector("#partnerAddFormWrap");
+    if (wrap) wrap.hidden = true;
+  };
 
-  // Toggle add form
-  bodyEl.querySelector("#btnPartnerAdminAdd")
-    ?.addEventListener("click", () => {
-      const wrap = bodyEl.querySelector("#partnerAddFormWrap");
-      if (wrap) wrap.hidden = !wrap.hidden;
-    });
+  const addEventBtn = bodyEl.querySelector('[data-action="add-event"]');
+  if (addEventBtn) addEventBtn.onclick = async () => {
+    const formEl = bodyEl.querySelector('[data-form="new"]');
+    if (!formEl) return;
+    const data = readFormData(formEl);
+    if (!data.title) { showToast("Title is required."); return; }
+    const { error } = await supabase.from("partner_events").insert([data]);
+    if (error) { showToast("Failed to add: " + error.message); return; }
+    showToast("Event added!");
+    clearPartnerEventsCache?.();
+    await loadPartnerAdmin();
+  };
 
-  // Cancel add
-  bodyEl
-    .querySelector('[data-action="cancel-add"]')
-    ?.addEventListener("click", () => {
-      const wrap = bodyEl.querySelector("#partnerAddFormWrap");
-      if (wrap) wrap.hidden = true;
-    });
+  // ── Per-item buttons (direct, no delegation) ──────────────────────────────
 
-  // Add event
-  bodyEl
-    .querySelector('[data-action="add-event"]')
-    ?.addEventListener("click", async () => {
-      const formEl = bodyEl.querySelector('[data-form="new"]');
-      if (!formEl) return;
-      const data = readFormData(formEl);
-      if (!data.title) { showToast("Title is required."); return; }
+  events.forEach((ev) => {
+    const id = ev.id;
 
-      const { error } = await supabase.from("partner_events").insert([data]);
-      if (error) { showToast("Failed to add: " + error.message); return; }
-
-      showToast("Event added!");
+    // Toggle active
+    const toggleBtn = bodyEl.querySelector(`[data-action="toggle-active"][data-id="${id}"]`);
+    if (toggleBtn) toggleBtn.onclick = async () => {
+      const { error } = await supabase
+        .from("partner_events")
+        .update({ is_active: !ev.is_active })
+        .eq("id", id);
+      if (error) { showToast("Failed: " + error.message); return; }
+      showToast(ev.is_active ? "Deactivated." : "Activated!");
       clearPartnerEventsCache?.();
       await loadPartnerAdmin();
-    });
+    };
 
-  // Edit / Delete / Toggle (delegated on list)
-  bodyEl
-    .querySelector("#partnerEventsList")
-    ?.addEventListener("click", async (e) => {
-      const btn = e.target.closest("[data-action]");
-      if (!btn) return;
-      const { action, id } = btn.dataset;
-
-      // ── Toggle active ──
-      if (action === "toggle-active") {
-        const isActive = btn.dataset.active === "1";
-        const { error } = await supabase
-          .from("partner_events")
-          .update({ is_active: !isActive })
-          .eq("id", id);
-        if (error) { showToast("Failed: " + error.message); return; }
-        showToast(isActive ? "Deactivated." : "Activated!");
-        clearPartnerEventsCache?.();
-        await loadPartnerAdmin();
-      }
-
-      // ── Edit ──
-      if (action === "edit-event") {
-        const container = document.getElementById(`editForm-${id}`);
-        if (!container) return;
-        if (!container.hidden) {
-          container.hidden = true;
-          container.innerHTML = "";
+    // Edit — toggle inline form, populate with ev data
+    const editBtn = bodyEl.querySelector(`[data-action="edit-event"][data-id="${id}"]`);
+    const editContainer = document.getElementById(`editForm-${id}`);
+    if (editBtn && editContainer) {
+      editBtn.onclick = () => {
+        if (!editContainer.hidden) {
+          editContainer.hidden = true;
+          editContainer.innerHTML = "";
           return;
         }
-        const ev = events.find((ev) => ev.id === id);
-        if (!ev) return;
-        container.innerHTML = renderEventForm("edit-" + id, ev);
-        container.hidden = false;
+        // Inject form HTML with current ev data
+        editContainer.innerHTML = renderEventForm("edit-" + id, ev);
+        editContainer.hidden = false;
 
-        container
-          .querySelector('[data-action="save-edit"]')
-          ?.addEventListener("click", async () => {
-            const formEl = container.querySelector("[data-form]");
-            if (!formEl) return;
-            const data = readFormData(formEl);
-            if (!data.title) { showToast("Title is required."); return; }
-            const { error } = await supabase
-              .from("partner_events")
-              .update(data)
-              .eq("id", id);
-            if (error) { showToast("Failed to update: " + error.message); return; }
-            showToast("Saved!");
-            clearPartnerEventsCache?.();
-            await loadPartnerAdmin();
-          });
+        // Save
+        const saveBtn = editContainer.querySelector('[data-action="save-edit"]');
+        if (saveBtn) saveBtn.onclick = async () => {
+          const formEl = editContainer.querySelector("[data-form]");
+          if (!formEl) return;
+          const data = readFormData(formEl);
+          if (!data.title) { showToast("Title is required."); return; }
+          const { error } = await supabase
+            .from("partner_events")
+            .update(data)
+            .eq("id", id);
+          if (error) { showToast("Failed to save: " + error.message); return; }
+          showToast("Saved!");
+          clearPartnerEventsCache?.();
+          await loadPartnerAdmin();
+        };
 
-        container
-          .querySelector('[data-action="cancel-edit"]')
-          ?.addEventListener("click", () => {
-            container.hidden = true;
-            container.innerHTML = "";
-          });
-      }
+        // Cancel
+        const cancelBtn = editContainer.querySelector('[data-action="cancel-edit"]');
+        if (cancelBtn) cancelBtn.onclick = () => {
+          editContainer.hidden = true;
+          editContainer.innerHTML = "";
+        };
+      };
+    }
 
-      // ── Delete ──
-      if (action === "delete-event") {
-        if (!confirm("Delete this event?")) return;
-        const { error } = await supabase
-          .from("partner_events")
-          .delete()
-          .eq("id", id);
-        if (error) { showToast("Failed to delete: " + error.message); return; }
-        showToast("Deleted.");
-        clearPartnerEventsCache?.();
-        await loadPartnerAdmin();
-      }
-    });
+    // Delete
+    const deleteBtn = bodyEl.querySelector(`[data-action="delete-event"][data-id="${id}"]`);
+    if (deleteBtn) deleteBtn.onclick = async () => {
+      if (!confirm("Delete this event?")) return;
+      const { error } = await supabase
+        .from("partner_events")
+        .delete()
+        .eq("id", id);
+      if (error) { showToast("Failed to delete: " + error.message); return; }
+      showToast("Deleted.");
+      clearPartnerEventsCache?.();
+      await loadPartnerAdmin();
+    };
+  });
 }
