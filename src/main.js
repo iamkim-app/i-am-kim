@@ -90,6 +90,11 @@ let startHomeCarousel;
 let stopHomeCarousel;
 let setupHomePicksAdmin;
 let loadHomePicksAdmin;
+let ensurePartnerAdminUI;
+let setupPartnerAdmin;
+let loadPartnerAdmin;
+let initPartnerEvents;
+let clearPartnerEventsCache;
 
 /* ----------------------------- PROFILE / NICKNAME ---------------------- */
 
@@ -1239,6 +1244,7 @@ const ROUTE_PAGE_MAP = {
   k: "kpop",
   news: "korea-now",
   "home-picks-admin": "home-picks-admin",
+  "partner-admin": "partner-admin",
   privacy: "privacy",
   terms: "terms",
   landing: "landing",
@@ -1374,6 +1380,8 @@ function setActiveRoute(route) {
   }
   if (route === "home") {
     setupHome?.(token);
+    // Inject partner event hero cards after layout renders
+    initPartnerEvents?.();
   }
   if (route === "k" && !String(location.hash || "").includes("tab=")) {
     history.replaceState(null, "", "#k?tab=kpop");
@@ -1430,6 +1438,9 @@ function setActiveRoute(route) {
   if (pageRoute === "home-picks-admin") {
     setupHomePicksAdmin?.();
     loadHomePicksAdmin?.();
+  }
+  if (pageRoute === "partner-admin") {
+    setupPartnerAdmin?.();
   }
   if (pageRoute === "profile") refreshProfileStateFromStorage();
   if (route === "user-profile") loadUserProfilePage();
@@ -3330,6 +3341,15 @@ async function loadAppModules() {
     setupHomePicksAdmin,
     loadHomePicksAdmin,
   });
+
+  // 6) PARTNER EVENTS
+  const partnerEvents = await import("./app/partner_events.js");
+  ({ initPartnerEvents, clearPartnerEventsCache } = partnerEvents);
+  Object.assign(app, { initPartnerEvents, clearPartnerEventsCache });
+
+  const partnerEventsAdmin = await import("./app/partner_events_admin.js");
+  ({ ensurePartnerAdminUI, setupPartnerAdmin, loadPartnerAdmin } = partnerEventsAdmin);
+  Object.assign(app, { ensurePartnerAdminUI, setupPartnerAdmin, loadPartnerAdmin });
 }
 
 async function boot() {

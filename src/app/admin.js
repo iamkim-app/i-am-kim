@@ -26,6 +26,7 @@ function ensureAdminUI() {
         <button class="btn btn--ghost btn--small is-active" data-tab="post">Post Reports</button>
         <button class="btn btn--ghost btn--small" data-tab="comment">Comment Reports</button>
         <button class="btn btn--ghost btn--small" data-tab="users">User Management</button>
+        <a href="#partner-admin" class="btn btn--ghost btn--small" style="text-decoration:none;">Partner Events</a>
         </div>
         <button class="btn btn--ghost btn--small" id="adminRefresh" type="button">Refresh</button>
       </div>
