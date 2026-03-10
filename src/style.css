@@ -498,7 +498,7 @@ code{
   font-size: 0.95em;
 }
 
-.app{ min-height: 100%; }
+.app{ min-height: 100%; width: 100%; overflow-x: hidden; }
 
 /* ------------------------------- TOPBAR --------------------------------- */
 
