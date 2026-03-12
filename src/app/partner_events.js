@@ -1,6 +1,7 @@
 // partner_events.js — Partner event hero cards + detail sheet
 
 const getApp = () => window.App || {};
+const t = (k, vars) => (getApp().t || ((k) => k))(k, vars);
 
 let PARTNER_EVENTS_CACHE = null;
 let PARTNER_SLIDER_INDEX = 0;

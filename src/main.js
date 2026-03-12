@@ -1,5 +1,6 @@
 import "./style.css";
 import { createClient } from "@supabase/supabase-js";
+import { initI18n, t, getLang, setLang } from './i18n.js';
 
 /* -------------------------------------------------------------------------
    I AM KIM ??frontend (Vite)
@@ -165,13 +166,13 @@ function ensureNicknameUI() {
   banner.innerHTML = `
     <div class="nickBanner__inner">
       <div>
-        <div class="nickBanner__title">Set your nickname</div>
-        <div class="nickBanner__desc">Use 2??6 chars: Korean/letters/numbers/underscore.</div>
+        <div class="nickBanner__title">${t('nickname_banner_title')}</div>
+        <div class="nickBanner__desc">${t('nickname_banner_desc')}</div>
       </div>
       <div class="nickBanner__actions">
-        <input id="nicknameInput" class="input" placeholder="nickname" autocomplete="off" />
-        <button class="btn btn--ghost btn--small" id="btnCheckNick" type="button">Check</button>
-        <button class="btn btn--primary btn--small" id="btnSaveNick" type="button">Save</button>
+        <input id="nicknameInput" class="input" placeholder="${t('nickname_placeholder')}" autocomplete="off" />
+        <button class="btn btn--ghost btn--small" id="btnCheckNick" type="button">${t('btn_check')}</button>
+        <button class="btn btn--primary btn--small" id="btnSaveNick" type="button">${t('btn_save')}</button>
       </div>
       <div id="nicknameStatus" class="status" aria-live="polite"></div>
     </div>
@@ -198,8 +199,8 @@ function ensureProfileUI() {
   section.hidden = true;
   section.innerHTML = `
     <div class="pageHeader">
-      <h2 class="pageHeader__title">Profile</h2>
-      <p class="pageHeader__desc">Manage your identity and quick stats.</p>
+      <h2 class="pageHeader__title">${t('page_profile_title')}</h2>
+      <p class="pageHeader__desc">${t('page_profile_desc')}</p>
     </div>
 
     <div class="profileWrap">
@@ -207,94 +208,91 @@ function ensureProfileUI() {
       <div class="profileCard profileCard--main">
         <div class="profileRow">
           <div>
-            <div class="profileLabel">Nickname</div>
+            <div class="profileLabel">${t('profile_label_nickname')}</div>
             <div class="profileValue" id="profileNickname">-</div>
-            <div class="profileHint">This is shown publicly on community posts.</div>
+            <div class="profileHint">${t('profile_nickname_hint')}</div>
           </div>
-          <button class="btn btn--ghost btn--small" id="profileEditNick" type="button">Edit nickname</button>
+          <button class="btn btn--ghost btn--small" id="profileEditNick" type="button">${t('btn_edit_nickname')}</button>
         </div>
       </div>
 
       <div class="profileStatsGrid">
         <div class="profileStat">
-          <div class="profileStat__label">Packs</div>
+          <div class="profileStat__label">${t('profile_stat_packs')}</div>
           <div class="profileStat__value" id="profilePackCount">0</div>
-          <button class="profileStat__btn" id="profileManagePacks" type="button">Manage</button>
+          <button class="profileStat__btn" id="profileManagePacks" type="button">${t('btn_manage')}</button>
         </div>
         <div class="profileStat">
-          <div class="profileStat__label">Favorites</div>
+          <div class="profileStat__label">${t('profile_stat_favorites')}</div>
           <div class="profileStat__value" id="profileFavCount">0</div>
-          <button class="profileStat__btn" id="profileViewFavorites" type="button">View favorites</button>
+          <button class="profileStat__btn" id="profileViewFavorites" type="button">${t('btn_view_favorites')}</button>
         </div>
         <div class="profileStat">
-          <div class="profileStat__label">Custom phrases</div>
+          <div class="profileStat__label">${t('profile_stat_custom')}</div>
           <div class="profileStat__value" id="profileCustomCount">0</div>
-          <button class="profileStat__btn" id="profileManageCustom" type="button">Manage</button>
+          <button class="profileStat__btn" id="profileManageCustom" type="button">${t('btn_manage')}</button>
         </div>
       </div>
 
       <div class="profileCard profileCard--avatar">
         <div class="profileAvatar">
           <div class="avatarPreview" id="avatarPreview"></div>
-          <div class="avatarLabel">My KIM buddy</div>
+          <div class="avatarLabel">${t('profile_avatar_label')}</div>
         </div>
         <div class="avatarControls">
           <div class="avatarControl">
-            <div class="avatarControl__label">Presets</div>
+            <div class="avatarControl__label">${t('profile_avatar_presets')}</div>
             <div class="avatarPresets" id="avatarPresets"></div>
           </div>
           <div class="avatarControl">
-            <div class="avatarControl__label">Country</div>
+            <div class="avatarControl__label">${t('profile_label_country')}</div>
             <select class="input input--sm" id="profileCountry">
-              <option value="">-- Select country --</option>
-              <option value="us">United States</option>
-              <option value="gb">United Kingdom</option>
-              <option value="au">Australia</option>
-              <option value="ca">Canada</option>
-              <option value="jp">Japan</option>
-              <option value="cn">China</option>
-              <option value="tw">Taiwan</option>
-              <option value="hk">Hong Kong</option>
-              <option value="sg">Singapore</option>
-              <option value="th">Thailand</option>
-              <option value="fr">France</option>
-              <option value="de">Germany</option>
-              <option value="other">Other</option>
+              <option value="">${t('country_select')}</option>
+              <option value="us">${t('country_us')}</option>
+              <option value="gb">${t('country_gb')}</option>
+              <option value="au">${t('country_au')}</option>
+              <option value="ca">${t('country_ca')}</option>
+              <option value="jp">${t('country_jp')}</option>
+              <option value="cn">${t('country_cn')}</option>
+              <option value="tw">${t('country_tw')}</option>
+              <option value="hk">${t('country_hk')}</option>
+              <option value="sg">${t('country_sg')}</option>
+              <option value="th">${t('country_th')}</option>
+              <option value="fr">${t('country_fr')}</option>
+              <option value="de">${t('country_de')}</option>
+              <option value="other">${t('country_other')}</option>
             </select>
           </div>
           <div class="avatarControl">
-            <div class="avatarControl__label">Bio <span style="font-weight:400;font-size:11px;opacity:0.6">(max 100 chars)</span></div>
-            <textarea class="input" id="profileBio" rows="3" maxlength="100" placeholder="Tell us a little about yourself…"></textarea>
+            <div class="avatarControl__label">${t('profile_label_bio')} <span style="font-weight:400;font-size:11px;opacity:0.6">(max 100 chars)</span></div>
+            <textarea class="input" id="profileBio" rows="3" maxlength="100" placeholder="${t('profile_bio_placeholder')}"></textarea>
           </div>
           <div class="avatarActions">
-            <button class="btn btn--primary btn--small" id="avatarSave" type="button">Save</button>
+            <button class="btn btn--primary btn--small" id="avatarSave" type="button">${t('btn_save')}</button>
           </div>
         </div>
       </div>
 
       <div class="profileCard" id="profileMyPhotosCard">
-        <div class="profileSectionTitle">My Photos</div>
-        <div class="profilePhotoGrid" id="profilePhotoGrid"><span class="muted small">Sign in to view your photos.</span></div>
+        <div class="profileSectionTitle">${t('profile_section_photos')}</div>
+        <div class="profilePhotoGrid" id="profilePhotoGrid"><span class="muted small">${t('profile_photos_signed_out')}</span></div>
       </div>
 
       <div class="profileCard" id="profileMyFAQCard">
-        <div class="profileSectionTitle">My Questions (FAQ)</div>
-        <div id="profileMyFAQList"><span class="muted small">Sign in to view your questions.</span></div>
+        <div class="profileSectionTitle">${t('profile_section_faq')}</div>
+        <div id="profileMyFAQList"><span class="muted small">${t('profile_faq_signed_out')}</span></div>
       </div>
 
       <div class="profileActionsStack">
-        <button class="btn btn--ghost btn--small" id="privacyPolicyBtn" type="button">Privacy policy</button>
-        <button class="btn btn--ghost" id="openTerms" type="button">Terms of service</button>
-        <button class="btn btn--ghost btn--small" id="profileContact" type="button">Contact us</button>
-        <button class="btn btn--primary btn--small" type="button" data-auth-action="open-auth" data-auth-visible="signed-out">Sign in</button>
-        <button class="btn btn--ghost btn--small" id="profileLogout" type="button" data-auth-action="logout" data-auth-visible="signed-in">Sign out</button>
+        <button class="btn btn--ghost btn--small" id="privacyPolicyBtn" type="button">${t('btn_privacy_policy')}</button>
+        <button class="btn btn--ghost" id="openTerms" type="button">${t('btn_terms')}</button>
+        <button class="btn btn--ghost btn--small" id="profileContact" type="button">${t('btn_contact')}</button>
+        <button class="btn btn--primary btn--small" type="button" data-auth-action="open-auth" data-auth-visible="signed-out">${t('btn_sign_in')}</button>
+        <button class="btn btn--ghost btn--small" id="profileLogout" type="button" data-auth-action="logout" data-auth-visible="signed-in">${t('btn_sign_out')}</button>
         <div class="deleteAccountNotice">
-          Deleting your account will permanently remove your profile,
-          posts, comments and related data.
-          <br />
-          This action cannot be undone.
+          ${t('profile_delete_notice')}
         </div>
-        <button class="btn btn--danger" id="btnDeleteAccount" type="button" data-auth-visible="signed-in">Delete account</button>
+        <button class="btn btn--danger" id="btnDeleteAccount" type="button" data-auth-visible="signed-in">${t('btn_delete_account')}</button>
       </div>
     </div>
   `;
@@ -372,14 +370,14 @@ function ensurePages() {
 
   addPage(
     "page-privacy",
-    "Privacy Policy",
-    "How we handle your account and data.",
+    t('page_privacy_title'),
+    t('page_privacy_desc'),
     `<div class="card"><p>Contact: kstudyaiworld@gmail.com</p></div>`
   );
   addPage(
     "page-terms",
-    "Terms of Service",
-    "Basic rules for using the app.",
+    t('page_terms_title'),
+    t('page_terms_desc'),
     `<div class="card"><p>Contact: kstudyaiworld@gmail.com</p></div>`
   );
 }
@@ -395,11 +393,11 @@ function ensureUserProfilePage() {
   section.hidden = true;
   section.innerHTML = `
     <div class="pageHeader">
-      <button class="btn btn--ghost btn--small" id="userProfileBackBtn" type="button">← Back</button>
-      <h2 class="pageHeader__title" id="userProfileTitle">Profile</h2>
+      <button class="btn btn--ghost btn--small" id="userProfileBackBtn" type="button">${t('btn_back')}</button>
+      <h2 class="pageHeader__title" id="userProfileTitle">${t('page_user_profile_title')}</h2>
     </div>
     <div class="profileWrap" id="userProfileContent">
-      <div class="muted small">Loading…</div>
+      <div class="muted small">${t('loading_dots')}</div>
     </div>
   `;
   if (footer) main.insertBefore(section, footer);
@@ -414,7 +412,7 @@ async function loadUserProfilePage() {
   const content = $("#userProfileContent");
 
   if (!uid) {
-    if (content) content.innerHTML = `<div class="muted small">User not found.</div>`;
+    if (content) content.innerHTML = `<div class="muted small">${t('err_user_not_found')}</div>`;
     return;
   }
 
@@ -425,11 +423,11 @@ async function loadUserProfilePage() {
   }
 
   if (!supabase) {
-    if (content) content.innerHTML = `<div class="muted small">Not available.</div>`;
+    if (content) content.innerHTML = `<div class="muted small">${t('err_not_available')}</div>`;
     return;
   }
 
-  if (content) content.innerHTML = `<div class="muted small">Loading…</div>`;
+  if (content) content.innerHTML = `<div class="muted small">${t('loading_dots')}</div>`;
 
   try {
     const [profileRes, postsRes] = await Promise.all([
@@ -500,7 +498,7 @@ async function loadUserProfilePage() {
     if (titleEl) titleEl.textContent = profile?.nickname || "Profile";
   } catch (err) {
     console.warn("[user-profile] load failed", err);
-    if (content) content.innerHTML = `<div class="muted small">Failed to load profile.</div>`;
+    if (content) content.innerHTML = `<div class="muted small">${t('err_failed_load_profile')}</div>`;
   }
 }
 
@@ -514,21 +512,21 @@ function ensureDeleteAccountModal() {
     <div class="modal__backdrop" data-close="1"></div>
     <div class="modal__card">
       <div class="modal__head">
-        <div class="modal__title">Delete your account?</div>
-        <button class="btn btn--ghost btn--small" data-close="1" type="button">Close</button>
+        <div class="modal__title">${t('modal_delete_account_title')}</div>
+        <button class="btn btn--ghost btn--small" data-close="1" type="button">${t('btn_close')}</button>
       </div>
       <div class="modal__body">
-        <div class="muted small">This permanently removes:</div>
+        <div class="muted small">${t('modal_delete_account_desc')}</div>
         <ul class="list">
-          <li>profile</li>
-          <li>posts</li>
-          <li>comments</li>
-          <li>favorites</li>
+          <li>${t('modal_delete_list_profile')}</li>
+          <li>${t('modal_delete_list_posts')}</li>
+          <li>${t('modal_delete_list_comments')}</li>
+          <li>${t('modal_delete_list_favorites')}</li>
         </ul>
       </div>
       <div class="modal__actions">
-        <button class="btn btn--ghost btn--small" data-close="1" type="button">Cancel</button>
-        <button class="btn btn--danger btn--small" id="btnDeleteAccountConfirm" type="button">Delete permanently</button>
+        <button class="btn btn--ghost btn--small" data-close="1" type="button">${t('btn_cancel')}</button>
+        <button class="btn btn--danger btn--small" id="btnDeleteAccountConfirm" type="button">${t('btn_delete_permanently')}</button>
       </div>
     </div>
   `;
@@ -661,7 +659,7 @@ async function saveAvatar() {
   PROFILE_STATE.country = country;
   PROFILE_STATE.bio = bio;
 
-  toast("Saved");
+  toast(t('toast_saved'));
 
   if (!supabase) return;
   try {
@@ -822,15 +820,15 @@ function ensureMobileMenuSheet() {
   sheet.hidden = true;
   sheet.innerHTML = `
     <div class="menuSheet__backdrop" data-close="1"></div>
-    <div class="menuSheet__card" role="dialog" aria-modal="true" aria-label="Menu">
+    <div class="menuSheet__card" role="dialog" aria-modal="true" aria-label="${t('menu_title')}">
       <div class="menuSheet__head">
-        <div class="menuSheet__title">Menu</div>
-        <button class="btn btn--ghost btn--small" data-close="1" type="button">Close</button>
+        <div class="menuSheet__title">${t('menu_title')}</div>
+        <button class="btn btn--ghost btn--small" data-close="1" type="button">${t('btn_close')}</button>
       </div>
       <div class="menuSheet__links">
-        <button class="menuSheet__link" type="button" data-route="home">Home</button>
-        <button class="menuSheet__link" type="button" data-route="community">Community</button>
-        <button class="menuSheet__link" type="button" data-route="profile">Profile</button>
+        <button class="menuSheet__link" type="button" data-route="home">${t('nav_home')}</button>
+        <button class="menuSheet__link" type="button" data-route="community">${t('menu_community')}</button>
+        <button class="menuSheet__link" type="button" data-route="profile">${t('menu_profile')}</button>
       </div>
     </div>
   `;
@@ -857,15 +855,15 @@ function ensureEmergencySheet() {
   sheet.hidden = true;
   sheet.innerHTML = `
     <div class="menuSheet__backdrop" data-close="1"></div>
-    <div class="menuSheet__card" role="dialog" aria-modal="true" aria-label="Emergency">
+    <div class="menuSheet__card" role="dialog" aria-modal="true" aria-label="${t('emergency_title')}">
       <div class="menuSheet__head">
-        <div class="menuSheet__title">Emergency</div>
-        <button class="btn btn--ghost btn--small" data-close="1" type="button">Close</button>
+        <div class="menuSheet__title">${t('emergency_title')}</div>
+        <button class="btn btn--ghost btn--small" data-close="1" type="button">${t('btn_close')}</button>
       </div>
       <div class="menuSheet__links">
-        <a class="menuSheet__link" href="tel:112">112 Police</a>
-        <a class="menuSheet__link" href="tel:119">119 Fire / Ambulance</a>
-        <a class="menuSheet__link" href="tel:1330">1330 Korea Travel Hotline</a>
+        <a class="menuSheet__link" href="tel:112">${t('emergency_112')}</a>
+        <a class="menuSheet__link" href="tel:119">${t('emergency_119')}</a>
+        <a class="menuSheet__link" href="tel:1330">${t('emergency_1330')}</a>
       </div>
     </div>
   `;
@@ -1080,11 +1078,11 @@ async function checkNicknameAvailability() {
   const input = $("#nicknameInput");
   const raw = String(input?.value || "").trim().toLowerCase();
   if (!isValidNickname(raw)) {
-    if (status) status.textContent = "Use 2-16 chars: letters, numbers, underscore, or Korean.";
+    if (status) status.textContent = t('err_nickname_format');
     return;
   }
   try {
-    if (status) status.textContent = "Checking...";
+    if (status) status.textContent = t('status_checking');
     const { data, error } = await supabase
       .from("profiles")
       .select("user_id")
@@ -1092,10 +1090,10 @@ async function checkNicknameAvailability() {
       .limit(1);
     if (error) throw error;
     const taken = Array.isArray(data) && data.length > 0;
-    if (status) status.textContent = taken ? "Taken." : "Available.";
+    if (status) status.textContent = taken ? t('err_nickname_taken') : "Available.";
   } catch (err) {
     console.warn("[nickname] Check failed.", err);
-    if (status) status.textContent = "Check failed. Try again.";
+    if (status) status.textContent = t('err_nickname_check_failed');
   }
 }
 
@@ -1108,16 +1106,16 @@ async function saveNickname() {
   const input = $("#nicknameInput");
   const raw = String(input?.value || "").trim().toLowerCase();
   if (!isValidNickname(raw)) {
-    if (status) status.textContent = "Use 2-16 chars: letters, numbers, underscore, or Korean.";
+    if (status) status.textContent = t('err_nickname_format');
     return;
   }
   try {
     const session = await getSession();
     if (!session) {
-      if (status) status.textContent = "Please sign in first.";
+      if (status) status.textContent = t('err_sign_in_required');
       return;
     }
-    if (status) status.textContent = "Saving...";
+    if (status) status.textContent = t('status_saving');
     const { data, error } = await supabase
       .from("profiles")
       .select("user_id")
@@ -1126,7 +1124,7 @@ async function saveNickname() {
     if (error) throw error;
     const taken = Array.isArray(data) && data.length > 0 && data[0].user_id !== session.user.id;
     if (taken) {
-      if (status) status.textContent = "Taken.";
+      if (status) status.textContent = t('err_nickname_taken');
       return;
     }
     const payload = { user_id: session.user.id, nickname: raw };
@@ -1137,10 +1135,10 @@ async function saveNickname() {
     setNicknameBannerVisible(false);
     updateNicknameBadge();
     updateProfileUI();
-    if (status) status.textContent = "Saved.";
+    if (status) status.textContent = t('status_saved');
   } catch (err) {
     console.warn("[nickname] Save failed.", err);
-    if (status) status.textContent = "Save failed. Try again.";
+    if (status) status.textContent = t('err_nickname_save_failed');
   }
 }
 
@@ -1279,11 +1277,11 @@ function getKTabFromHash() {
 
 function updateBottomTabbarRoutes() {
   const mappings = [
-    { from: "home", to: { route: "home", href: "#home", label: "Home" } },
-    { from: "kpop", to: { route: "k", href: "#k", label: "Special K" } },
-    { from: "mykorea", to: { route: "news", href: "#news", label: "News" } },
-    { from: "community", to: { route: "community", href: "#community", label: "Board" } },
-    { from: "info", to: { route: "info", href: "#info", label: "Information" } },
+    { from: "home", to: { route: "home", href: "#home", label: t('nav_home') } },
+    { from: "kpop", to: { route: "k", href: "#k", label: t('nav_special_k') } },
+    { from: "mykorea", to: { route: "news", href: "#news", label: t('nav_news') } },
+    { from: "community", to: { route: "community", href: "#community", label: t('nav_board') } },
+    { from: "info", to: { route: "info", href: "#info", label: t('nav_information') } },
   ];
 
   mappings.forEach(({ from, to }) => {
@@ -1852,7 +1850,7 @@ function renderPhraseList() {
   if (PHRASE_STATE.loading) {
     listEl.innerHTML = "";
     if (emptyEl) {
-      emptyEl.textContent = "Loading phrases...";
+      emptyEl.textContent = t('loading_phrases');
       emptyEl.style.display = "block";
     }
     return;
@@ -1861,7 +1859,7 @@ function renderPhraseList() {
   if (PHRASE_STATE.loadError) {
     listEl.innerHTML = "";
     if (emptyEl) {
-      emptyEl.textContent = "Failed to load phrases. Please refresh.";
+      emptyEl.textContent = t('loading_fail_phrases');
       emptyEl.style.display = "block";
     }
     return;
@@ -1881,9 +1879,9 @@ function renderPhraseList() {
     listEl.innerHTML = "";
     if (emptyEl) {
       if (favOnly && PHRASE_STATE.favorites.size === 0) {
-        emptyEl.textContent = "No favorites yet. Tap the star to save phrases.";
+        emptyEl.textContent = t('loading_no_favorites');
       } else {
-        emptyEl.textContent = "No phrases found.";
+        emptyEl.textContent = t('phrase_empty');
       }
       emptyEl.style.display = "block";
     }
@@ -2087,9 +2085,9 @@ function setupPhrases() {
             <div class="muted small">Create a pack and add phrases to it.</div>
           </div>
           <div class="packsCreate">
-            <input id="packNameInput" class="input" placeholder="Pack name" autocomplete="off" />
+            <input id="packNameInput" class="input" placeholder="${t('packs_pack_name_placeholder')}" autocomplete="off" />
             <button class="btn btn--primary" id="btnCreatePack" type="button">Create Pack</button>
-            <button class="btn btn--ghost btn--small" id="btnPacksTravelMode" type="button">Travel Mode</button>
+            <button class="btn btn--ghost btn--small" id="btnPacksTravelMode" type="button">${t('btn_travel_mode')}</button>
           </div>
         </div>
         <div class="packsBody">
@@ -2291,7 +2289,7 @@ function renderPacksList() {
   if (!list) return;
 
   if (!PACK_STATE.packs.length) {
-    list.innerHTML = `<div class="muted small">No packs yet.</div>`;
+    list.innerHTML = `<div class="muted small">${t('packs_empty')}</div>`;
     return;
   }
 
@@ -2303,7 +2301,7 @@ function renderPacksList() {
           <div class="packItem__name">${escapeHtml(p.name)}</div>
           <div class="packItem__meta">${p.phraseIds.length} phrases</div>
         </button>
-        <button class="btn btn--ghost btn--small" data-action="delete" type="button">Delete</button>
+        <button class="btn btn--ghost btn--small" data-action="delete" type="button">${t('btn_delete')}</button>
       </div>
     `
     )
@@ -2316,7 +2314,7 @@ function renderPackDetail() {
 
   const pack = getPackById(PACK_STATE.selectedPackId);
   if (!pack) {
-    detail.innerHTML = `<div class="muted small">Select a pack to manage phrases.</div>`;
+    detail.innerHTML = `<div class="muted small">${t('packs_select_hint')}</div>`;
     return;
   }
 
@@ -2335,7 +2333,7 @@ function renderPackDetail() {
         <div class="packDetail__title">${escapeHtml(pack.name)}</div>
         <div class="packDetail__count">${pack.phraseIds.length} phrases</div>
       </div>
-      <button class="btn btn--ghost btn--small" id="btnClosePack" type="button">Close</button>
+      <button class="btn btn--ghost btn--small" id="btnClosePack" type="button">${t('btn_close')}</button>
     </div>
 
     <div class="packSection">
@@ -2346,11 +2344,11 @@ function renderPackDetail() {
     <div class="packSection">
       <div class="packSection__head">
         <div class="packSection__title">Add phrases</div>
-        <button class="btn btn--ghost btn--small" id="btnAddCustomPhrase" type="button">Add custom phrase</button>
+        <button class="btn btn--ghost btn--small" id="btnAddCustomPhrase" type="button">${t('modal_custom_phrase_title')}</button>
       </div>
       <div class="packCustomEmpty" id="packCustomEmpty" style="display:none"></div>
       <div class="packFilters">
-        <input id="packSearch" class="input" placeholder="Search phrases" value="${escapeHtml(q)}" />
+        <input id="packSearch" class="input" placeholder="${t('packs_search_placeholder')}" value="${escapeHtml(q)}" />
         <div class="filters" id="packFilters"></div>
       </div>
       <div class="packPhraseList" id="packPhraseList"></div>
@@ -2383,12 +2381,12 @@ function renderPackDetail() {
             <div class="packPhraseItem__actions">
               ${
                 added
-                  ? `<button class="packToggleBtn is-added" type="button" disabled aria-label="Added">Added</button>`
-                  : `<button class="packToggleBtn is-add" data-action="toggle" type="button" aria-label="Add to pack">+ Pack</button>`
+                  ? `<button class="packToggleBtn is-added" type="button" disabled aria-label="Added">${t('btn_added')}</button>`
+                  : `<button class="packToggleBtn is-add" data-action="toggle" type="button" aria-label="Add to pack">${t('btn_add_to_pack')}</button>`
               }
               ${
                 isCustom
-                  ? `<button class="packDeleteBtn" data-action="delete-custom" type="button" aria-label="Delete">Delete</button>`
+                  ? `<button class="packDeleteBtn" data-action="delete-custom" type="button" aria-label="Delete">${t('btn_delete')}</button>`
                   : ""
               }
             </div>
@@ -2401,7 +2399,7 @@ function renderPackDetail() {
   const addedEl = $("#packAddedList");
   if (addedEl) {
     if (!addedList.length) {
-      addedEl.innerHTML = `<div class="muted small">No phrases added yet.</div>`;
+      addedEl.innerHTML = `<div class="muted small">${t('packs_no_phrases')}</div>`;
     } else {
       addedEl.innerHTML = addedList
         .map(
@@ -2411,7 +2409,7 @@ function renderPackDetail() {
               <div class="packAddedItem__en">${escapeHtml(p.en)}</div>
               <div class="packAddedItem__meta">${escapeHtml(p.category)}</div>
             </div>
-            <button class="packRemoveBtn" type="button" data-action="remove" aria-label="Remove from pack">Remove</button>
+            <button class="packRemoveBtn" type="button" data-action="remove" aria-label="Remove from pack">${t('btn_remove')}</button>
           </div>
         `
         )
@@ -2422,7 +2420,7 @@ function renderPackDetail() {
   const customEmpty = $("#packCustomEmpty");
   if (customEmpty) {
     if (CUSTOM_STATE.phrases.length === 0) {
-      customEmpty.textContent = "No custom phrases yet. Add one to get started.";
+      customEmpty.textContent = t('packs_no_custom');
       customEmpty.style.display = "block";
     } else {
       customEmpty.textContent = "";
@@ -2512,24 +2510,24 @@ function ensureCustomPhraseModal() {
   modal.hidden = true;
   modal.innerHTML = `
     <div class="modal__backdrop" data-close="1"></div>
-    <div class="modal__card" role="dialog" aria-modal="true" aria-label="Add custom phrase">
+    <div class="modal__card" role="dialog" aria-modal="true" aria-label="${t('modal_custom_phrase_title')}">
       <div class="modal__head">
-        <div class="modal__title">Add custom phrase</div>
-        <button class="iconBtn" data-close="1" type="button" aria-label="Close">×</button>
+        <div class="modal__title">${t('modal_custom_phrase_title')}</div>
+        <button class="iconBtn" data-close="1" type="button" aria-label="${t('btn_close')}">×</button>
       </div>
       <form id="customPhraseForm" class="form">
-        <label class="label" for="customEn">English</label>
-        <input id="customEn" class="input" placeholder="Required" autocomplete="off" />
+        <label class="label" for="customEn">${t('label_english')}</label>
+        <input id="customEn" class="input" placeholder="${t('placeholder_required')}" autocomplete="off" />
 
-        <label class="label" for="customKo">Korean</label>
-        <input id="customKo" class="input" placeholder="Required" autocomplete="off" />
+        <label class="label" for="customKo">${t('label_korean')}</label>
+        <input id="customKo" class="input" placeholder="${t('placeholder_required')}" autocomplete="off" />
 
-        <label class="label" for="customRoman">Romanization</label>
-        <input id="customRoman" class="input" placeholder="Optional" autocomplete="off" />
+        <label class="label" for="customRoman">${t('label_romanization')}</label>
+        <input id="customRoman" class="input" placeholder="${t('placeholder_optional')}" autocomplete="off" />
 
         <div class="row">
-          <button class="btn btn--primary" type="submit">Save</button>
-          <button class="btn btn--ghost" type="button" data-close="1">Cancel</button>
+          <button class="btn btn--primary" type="submit">${t('btn_save')}</button>
+          <button class="btn btn--ghost" type="button" data-close="1">${t('btn_cancel')}</button>
         </div>
         <div class="status" id="customPhraseStatus" aria-live="polite"></div>
       </form>
@@ -2551,7 +2549,7 @@ function ensureCustomPhraseModal() {
     if (status) status.textContent = "";
 
     if (!String(en).trim() || !String(ko).trim()) {
-      if (status) status.textContent = "English and Korean are required.";
+      if (status) status.textContent = t('err_english_korean_required');
       return;
     }
 
@@ -2560,8 +2558,8 @@ function ensureCustomPhraseModal() {
       if (status) {
         status.textContent =
           validation.reason === "spam"
-            ? "Please avoid profanity or spam."
-            : "Please check the length.";
+            ? t('err_profanity')
+            : t('err_length');
       }
       return;
     }
@@ -2607,14 +2605,14 @@ function closeCustomPhraseModal() {
 /* ----------------------------- TRAVEL MODE ----------------------------- */
 
 const TRAVEL_CATEGORIES = [
-  { key: "Airport",          label: "Airport" },
-  { key: "Subway & Bus",     label: "Subway & Bus" },
-  { key: "Taxi",             label: "Taxi" },
-  { key: "Shopping & Refund",label: "Shopping & Refund" },
-  { key: "Food & Cafe",      label: "Food & Cafe" },
-  { key: "Emergency",        label: "Emergency" },
-  { key: "Favorites",        label: "Favorites" },
-  { key: "MyPacks",          label: "My Packs" },
+  { key: "Airport",          tKey: "travel_cat_airport" },
+  { key: "Subway & Bus",     tKey: "travel_cat_subway" },
+  { key: "Taxi",             tKey: "travel_cat_taxi" },
+  { key: "Shopping & Refund",tKey: "travel_cat_shopping" },
+  { key: "Food & Cafe",      tKey: "travel_cat_food" },
+  { key: "Emergency",        tKey: "travel_cat_emergency" },
+  { key: "Favorites",        tKey: "travel_cat_favorites" },
+  { key: "MyPacks",          tKey: "travel_cat_packs" },
 ];
 
 // Travel Mode key → phrases.json category mapping
@@ -2700,7 +2698,7 @@ function ensureTravelModeButton() {
   btn.className = "btn btn--ghost btn--small";
   btn.id = "btnTravelMode";
   btn.type = "button";
-  btn.textContent = "Travel Mode";
+  btn.textContent = t('btn_travel_mode');
   btn.addEventListener("click", () => {
     location.hash = "#travel";
   });
@@ -2714,7 +2712,7 @@ function renderTravelCategories() {
   cats.innerHTML = TRAVEL_CATEGORIES.map(
     (c) => `
       <button class="travelCat" type="button" data-cat="${c.key}">
-        <span class="travelCat__label">${c.label}</span>
+        <span class="travelCat__label">${t(c.tKey)}</span>
       </button>
     `
   ).join("");
@@ -2764,11 +2762,11 @@ function renderTravelPanel() {
   const { status, items } = getTravelPhrases();
 
   if (status === "loading") {
-    panel.innerHTML = `<div class="travelHint">Loading phrases...</div>`;
+    panel.innerHTML = `<div class="travelHint">${t('loading_phrases')}</div>`;
     return;
   }
   if (status === "error") {
-    panel.innerHTML = `<div class="travelHint">Failed to load phrases. Please refresh.</div>`;
+    panel.innerHTML = `<div class="travelHint">${t('loading_fail_phrases')}</div>`;
     return;
   }
   if (status === "packs") {
@@ -2784,7 +2782,7 @@ function renderTravelPanel() {
       : "No phrases available.";
     panel.innerHTML = `
       <div class="travelPanel__head">
-        <button class="btn btn--ghost btn--small" id="travelBack" type="button">Back</button>
+        <button class="btn btn--ghost btn--small" id="travelBack" type="button">${t('btn_back')}</button>
         <div class="travelPanel__title">${title}</div>
       </div>
       <div class="travelHint">${emptyMsg}</div>
@@ -2792,7 +2790,7 @@ function renderTravelPanel() {
   } else {
     panel.innerHTML = `
       <div class="travelPanel__head">
-        <button class="btn btn--ghost btn--small" id="travelBack" type="button">Back</button>
+        <button class="btn btn--ghost btn--small" id="travelBack" type="button">${t('btn_back')}</button>
         <div class="travelPanel__title">${title}</div>
       </div>
       <div class="travelGrid">
@@ -2854,16 +2852,16 @@ function renderTravelPacks(panel) {
     if (!PACK_STATE.packs.length) {
       panel.innerHTML = `
         <div class="travelPanel__head">
-          <button class="btn btn--ghost btn--small" id="travelBack" type="button">Back</button>
-          <div class="travelPanel__title">My Packs</div>
+          <button class="btn btn--ghost btn--small" id="travelBack" type="button">${t('btn_back')}</button>
+          <div class="travelPanel__title">${t('travel_cat_packs')}</div>
         </div>
         <div class="travelHint">No packs yet. Create one in Phrases.</div>
       `;
     } else {
       panel.innerHTML = `
         <div class="travelPanel__head">
-          <button class="btn btn--ghost btn--small" id="travelBack" type="button">Back</button>
-          <div class="travelPanel__title">My Packs</div>
+          <button class="btn btn--ghost btn--small" id="travelBack" type="button">${t('btn_back')}</button>
+          <div class="travelPanel__title">${t('travel_cat_packs')}</div>
         </div>
         <div class="travelPacksGrid">
           ${PACK_STATE.packs
@@ -2902,7 +2900,7 @@ function renderTravelPacks(panel) {
   if (!items.length) {
     panel.innerHTML = `
       <div class="travelPanel__head">
-        <button class="btn btn--ghost btn--small" id="travelBack" type="button">Back</button>
+        <button class="btn btn--ghost btn--small" id="travelBack" type="button">${t('btn_back')}</button>
         <div class="travelPanel__title">${escapeHtml(pack?.name || "Pack")}</div>
       </div>
       <div class="travelHint">This pack is empty. Add phrases first.</div>
@@ -2910,7 +2908,7 @@ function renderTravelPacks(panel) {
   } else {
     panel.innerHTML = `
       <div class="travelPanel__head">
-        <button class="btn btn--ghost btn--small" id="travelBack" type="button">Back</button>
+        <button class="btn btn--ghost btn--small" id="travelBack" type="button">${t('btn_back')}</button>
         <div class="travelPanel__title">${escapeHtml(pack?.name || "Pack")}</div>
       </div>
       <div class="travelGrid">
@@ -3011,7 +3009,7 @@ function renderNowList(container, items) {
 
 async function loadKoreaNow(forceReload) {
   const status = $("#nowStatus");
-  if (status) status.textContent = "Loading...";
+  if (status) status.textContent = t('status_loading');
 
   if (NOW_CACHE && !forceReload) {
     renderNowList("#nowEssentials", NOW_CACHE.travel_essentials);
@@ -3238,6 +3236,9 @@ function buildAppContext() {
     openEmergencySheet,
     closeEmergencySheet,
     routeToken: ROUTE_TOKEN,
+    t,
+    setLang,
+    getLang,
   });
 }
 
@@ -3366,6 +3367,7 @@ async function loadAppModules() {
 }
 
 async function boot() {
+  await initI18n();
   await loadAppModules();
   await init();
 }
@@ -3549,7 +3551,7 @@ function ensureOfflineBanner() {
   el.className = "offlineBanner";
   el.setAttribute("role", "status");
   el.setAttribute("aria-live", "polite");
-  el.innerHTML = `<span class="offlineBanner__dot"></span><span>You're offline. Some content may not load.</span>`;
+  el.innerHTML = `<span class="offlineBanner__dot"></span><span>${t('err_offline')}</span>`;
   document.body.appendChild(el);
   return el;
 }
@@ -3585,7 +3587,7 @@ function handleGlobalError(msg) {
   if (text === _lastErrMsg && now - _lastErrTime < 3000) return;
   _lastErrMsg = text;
   _lastErrTime = now;
-  toast("Something went wrong. Please try again.");
+  toast(t('err_generic'));
 }
 
 window.onerror = (_msg, _src, _line, _col, err) => {

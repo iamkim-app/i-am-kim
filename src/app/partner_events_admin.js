@@ -1,6 +1,7 @@
 // partner_events_admin.js — Admin CRUD for partner_events table
 
 const getApp = () => window.App || {};
+const t = (k, vars) => (getApp().t || ((k) => k))(k, vars);
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -47,16 +48,16 @@ export function ensurePartnerAdminUI() {
     <div style="padding:20px 16px 8px;max-width:800px;margin:0 auto;">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:4px;">
         <div>
-          <h2 style="font-size:22px;font-weight:850;letter-spacing:-0.02em;margin:0 0 4px;">Partner Events</h2>
-          <p style="font-size:13px;color:rgba(11,18,32,0.55);margin:0;">Manage partner/sponsor cards on the home hero strip.</p>
+          <h2 style="font-size:22px;font-weight:850;letter-spacing:-0.02em;margin:0 0 4px;">${t('page_partner_title')}</h2>
+          <p style="font-size:13px;color:rgba(11,18,32,0.55);margin:0;">${t('page_partner_desc')}</p>
         </div>
-        <a href="#admin" style="font-size:13px;font-weight:700;color:rgba(11,18,32,0.6);text-decoration:none;">← Back to Admin</a>
+        <a href="#admin" style="font-size:13px;font-weight:700;color:rgba(11,18,32,0.6);text-decoration:none;">${t('partner_back')}</a>
       </div>
     </div>
     <div style="max-width:800px;margin:0 auto;padding:0 16px 80px;">
       <div id="partnerAdminStatus" style="margin-bottom:8px;"></div>
       <div id="partnerAdminBody">
-        <div style="padding:20px 0;color:rgba(11,18,32,0.45);font-size:14px;">Loading…</div>
+        <div style="padding:20px 0;color:rgba(11,18,32,0.45);font-size:14px;">${t('partner_loading')}</div>
       </div>
     </div>
   `;
@@ -120,7 +121,7 @@ export async function loadPartnerAdmin() {
   const bodyEl = document.getElementById("partnerAdminBody");
   if (!bodyEl) return;
 
-  bodyEl.innerHTML = `<div style="padding:20px 0;color:rgba(11,18,32,0.45);font-size:14px;">Loading events…</div>`;
+  bodyEl.innerHTML = `<div style="padding:20px 0;color:rgba(11,18,32,0.45);font-size:14px;">${t('partner_loading')}</div>`;
 
   const { supabase } = getApp();
   if (!supabase) return;
@@ -155,15 +156,15 @@ function renderPartnerAdminUI(events) {
     <!-- Add new event (collapsible) -->
     <div style="background:#fff;border:1px solid #efefef;border-radius:16px;margin-bottom:16px;overflow:hidden;">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;">
-        <div style="font-weight:800;font-size:15px;">Events <span style="color:rgba(11,18,32,0.4);font-weight:600;">(${events.length})</span></div>
+        <div style="font-weight:800;font-size:15px;">${t('partner_events_header', { n: events.length })}</div>
         <div style="display:flex;gap:8px;">
           <button id="btnPartnerAdminRefresh"
             style="padding:6px 14px;border-radius:10px;border:1px solid #e5e7eb;background:#fff;font-size:13px;font-weight:700;cursor:pointer;">
-            Refresh
+            ${t('btn_partner_refresh')}
           </button>
           <button id="btnPartnerAdminAdd"
             style="padding:6px 14px;border-radius:10px;border:none;background:#0b1220;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">
-            + New Event
+            ${t('btn_partner_add')}
           </button>
         </div>
       </div>
@@ -171,7 +172,7 @@ function renderPartnerAdminUI(events) {
       <!-- Add form (hidden by default) -->
       <div id="partnerAddFormWrap" hidden
            style="border-top:1px solid #efefef;padding:16px;background:#fafafa;">
-        <div style="font-weight:800;font-size:14px;margin-bottom:12px;">New Event</div>
+        <div style="font-weight:800;font-size:14px;margin-bottom:12px;">${t('partner_form_new_title')}</div>
         ${renderEventForm("new", null)}
       </div>
     </div>
@@ -179,7 +180,7 @@ function renderPartnerAdminUI(events) {
     <!-- Event list -->
     <div id="partnerEventsList">
       ${events.length === 0
-        ? `<div style="padding:24px;text-align:center;color:rgba(11,18,32,0.4);font-size:14px;">No events yet. Click "+ New Event" to add one.</div>`
+        ? `<div style="padding:24px;text-align:center;color:rgba(11,18,32,0.4);font-size:14px;">${t('partner_empty')}</div>`
         : events.map((ev) => renderEventItem(ev)).join("")
       }
     </div>
@@ -207,43 +208,43 @@ function renderEventForm(formId, ev) {
          style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
 
       <div style="${fieldStyle}grid-column:1/-1">
-        <label style="${labelStyle}">Title *</label>
+        <label style="${labelStyle}">${t('partner_label_title')}</label>
         <input name="title" value="${val("title")}" placeholder="Event title"
                style="${inputStyle}" />
       </div>
 
       <div style="${fieldStyle}">
-        <label style="${labelStyle}">Subtitle</label>
+        <label style="${labelStyle}">${t('partner_label_subtitle')}</label>
         <input name="subtitle" value="${val("subtitle")}" placeholder="Short tagline"
                style="${inputStyle}" />
       </div>
 
       <div style="${fieldStyle}">
-        <label style="${labelStyle}">Coupon Code</label>
+        <label style="${labelStyle}">${t('partner_label_coupon')}</label>
         <input name="coupon_code" value="${val("coupon_code")}" placeholder="KIMFAN20"
                style="${inputStyle}" />
       </div>
 
       <div style="${fieldStyle}grid-column:1/-1">
-        <label style="${labelStyle}">Description</label>
+        <label style="${labelStyle}">${t('partner_label_description')}</label>
         <textarea name="description" rows="4" placeholder="Full event description"
                   style="${textareaStyle}">${isEdit ? esc(ev.description || "") : ""}</textarea>
       </div>
 
       <div style="${fieldStyle}grid-column:1/-1">
-        <label style="${labelStyle}">Image URLs (one per line)</label>
+        <label style="${labelStyle}">${t('partner_label_images')}</label>
         <textarea name="images" rows="3" placeholder="https://cdn.example.com/image.jpg"
                   style="${textareaStyle}">${imgVal}</textarea>
       </div>
 
       <div style="${fieldStyle}">
-        <label style="${labelStyle}">Naver Map URL</label>
+        <label style="${labelStyle}">${t('partner_label_naver_map')}</label>
         <input name="naver_map_url" value="${val("naver_map_url")}" placeholder="https://naver.me/…"
                style="${inputStyle}" />
       </div>
 
       <div style="${fieldStyle}">
-        <label style="${labelStyle}">Expires At</label>
+        <label style="${labelStyle}">${t('partner_label_expires')}</label>
         <input name="expires_at" type="datetime-local" value="${expVal}"
                style="${inputStyle}" />
       </div>
@@ -252,26 +253,26 @@ function renderEventForm(formId, ev) {
         <input type="checkbox" name="is_active" id="isActive_${formId}"
                ${isChecked ? "checked" : ""}
                style="width:16px;height:16px;cursor:pointer;" />
-        <label for="isActive_${formId}" style="font-size:14px;font-weight:600;cursor:pointer;">Active (show on home strip)</label>
+        <label for="isActive_${formId}" style="font-size:14px;font-weight:600;cursor:pointer;">${t('partner_label_active')}</label>
       </div>
 
       <div style="grid-column:1/-1;display:flex;gap:8px;padding-top:4px;">
         ${isEdit
           ? `<button data-action="save-edit" data-id="${ev.id}"
                style="padding:10px 20px;border-radius:12px;border:none;background:#0b1220;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">
-               Save changes
+               ${t('btn_save_changes')}
              </button>
              <button data-action="cancel-edit" data-id="${ev.id}"
                style="padding:10px 20px;border-radius:12px;border:1px solid #e5e7eb;background:#fff;font-size:14px;font-weight:600;cursor:pointer;">
-               Cancel
+               ${t('btn_cancel')}
              </button>`
           : `<button data-action="add-event"
                style="padding:10px 20px;border-radius:12px;border:none;background:#0b1220;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">
-               Add Event
+               ${t('btn_add_event')}
              </button>
              <button data-action="cancel-add"
                style="padding:10px 20px;border-radius:12px;border:1px solid #e5e7eb;background:#fff;font-size:14px;font-weight:600;cursor:pointer;">
-               Cancel
+               ${t('btn_cancel')}
              </button>`
         }
       </div>
@@ -284,7 +285,7 @@ function renderEventForm(formId, ev) {
 function renderEventItem(ev) {
   const expiryStr = ev.expires_at
     ? new Date(ev.expires_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
-    : "No expiry";
+    : t('partner_no_expiry');
 
   const activeBadge = ev.is_active
     ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;background:#dcfce7;color:#16a34a;font-size:11px;font-weight:800;">● Active</span>`
@@ -325,15 +326,15 @@ function renderEventItem(ev) {
         <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
           <button data-action="toggle-active" data-id="${esc(ev.id)}" data-active="${ev.is_active ? "1" : "0"}"
             style="padding:5px 12px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
-            ${ev.is_active ? "Deactivate" : "Activate"}
+            ${ev.is_active ? t('btn_deactivate') : t('btn_activate')}
           </button>
           <button data-action="edit-event" data-id="${esc(ev.id)}"
             style="padding:5px 12px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;font-size:12px;font-weight:700;cursor:pointer;">
-            Edit
+            ${t('btn_edit')}
           </button>
           <button data-action="delete-event" data-id="${esc(ev.id)}"
             style="padding:5px 12px;border-radius:8px;border:1px solid #fecaca;background:#fff;color:#ef4444;font-size:12px;font-weight:700;cursor:pointer;">
-            Delete
+            ${t('btn_delete')}
           </button>
         </div>
       </div>
@@ -403,10 +404,10 @@ function bindPartnerAdminEvents(bodyEl, events) {
     const formEl = bodyEl.querySelector('[data-form="new"]');
     if (!formEl) return;
     const data = readFormData(formEl);
-    if (!data.title) { showToast("Title is required."); return; }
+    if (!data.title) { showToast(t('err_title_required')); return; }
     const { error } = await supabase.from("partner_events").insert([data]);
     if (error) { showToast("Failed to add: " + error.message); return; }
-    showToast("Event added!");
+    showToast(t('toast_event_added'));
     clearPartnerEventsCache?.();
     await loadPartnerAdmin();
   };
@@ -424,7 +425,7 @@ function bindPartnerAdminEvents(bodyEl, events) {
         .update({ is_active: !ev.is_active })
         .eq("id", id);
       if (error) { showToast("Failed: " + error.message); return; }
-      showToast(ev.is_active ? "Deactivated." : "Activated!");
+      showToast(ev.is_active ? t('toast_deactivated') : t('toast_activated'));
       clearPartnerEventsCache?.();
       await loadPartnerAdmin();
     };
@@ -454,13 +455,13 @@ function bindPartnerAdminEvents(bodyEl, events) {
           const formEl = editContainer.querySelector("[data-form]");
           if (!formEl) return;
           const data = readFormData(formEl);
-          if (!data.title) { showToast("Title is required."); return; }
+          if (!data.title) { showToast(t('err_title_required')); return; }
           const { error } = await supabase
             .from("partner_events")
             .update(data)
             .eq("id", id);
           if (error) { showToast("Failed to save: " + error.message); return; }
-          showToast("Saved!");
+          showToast(t('toast_event_saved'));
           clearPartnerEventsCache?.();
           await loadPartnerAdmin();
         };
@@ -477,13 +478,13 @@ function bindPartnerAdminEvents(bodyEl, events) {
     // Delete
     const deleteBtn = bodyEl.querySelector(`[data-action="delete-event"][data-id="${id}"]`);
     if (deleteBtn) deleteBtn.onclick = async () => {
-      if (!confirm("Delete this event?")) return;
+      if (!confirm(t('confirm_delete_event'))) return;
       const { error } = await supabase
         .from("partner_events")
         .delete()
         .eq("id", id);
       if (error) { showToast("Failed to delete: " + error.message); return; }
-      showToast("Deleted.");
+      showToast(t('toast_deleted'));
       clearPartnerEventsCache?.();
       await loadPartnerAdmin();
     };

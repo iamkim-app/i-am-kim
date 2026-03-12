@@ -1,5 +1,6 @@
 const getApp = () => window.App || {};
 const getSupabase = () => getApp().supabase;
+const t = (k, vars) => (getApp().t || ((k) => k))(k, vars);
 
 let AUTH_STATE = {
   isBanned: false,
@@ -13,10 +14,10 @@ let AUTH_SHEET_OPEN = false;
 
 function formatBanMessage() {
   if (!AUTH_STATE.isBanned) return "";
-  if (!AUTH_STATE.bannedUntil) return "Account suspended (permanent)";
+  if (!AUTH_STATE.bannedUntil) return t('err_account_suspended_permanent');
   const d = new Date(AUTH_STATE.bannedUntil);
-  if (!Number.isFinite(d.getTime())) return "Account suspended";
-  return `Account suspended until ${d.toLocaleString()}`;
+  if (!Number.isFinite(d.getTime())) return t('err_account_suspended');
+  return t('err_account_suspended_until', { date: d.toLocaleString() });
 }
 
 async function loadBanStatus() {
@@ -115,7 +116,7 @@ function updateBanUI() {
   const hint = $("#communityBanHint");
   if (hint) {
     if (AUTH_STATE.isBanned) {
-      hint.textContent = "Posting is disabled while suspended.";
+      hint.textContent = t('err_posting_disabled');
       hint.style.display = "inline-block";
     } else {
       hint.textContent = "";
@@ -134,19 +135,19 @@ function ensureAuthSheetUI() {
   el.hidden = true;
   el.innerHTML = `
     <div class="authSheet__backdrop" data-close="1"></div>
-    <div class="authSheet__card" role="dialog" aria-modal="true" aria-label="Sign in">
+    <div class="authSheet__card" role="dialog" aria-modal="true" aria-label="${t('auth_sheet_title')}">
       <div class="authSheet__head">
-        <div class="authSheet__title">Sign in to continue</div>
-        <button class="btn btn--ghost btn--small" data-close="1" type="button">Close</button>
+        <div class="authSheet__title">${t('auth_sheet_title')}</div>
+        <button class="btn btn--ghost btn--small" data-close="1" type="button">${t('btn_close')}</button>
       </div>
       <div class="authSheet__actions">
-        <button class="btn btn--primary authSheet__btn" id="btnSheetGoogle" type="button">Continue with Google</button>
-        <button class="btn btn--ghost authSheet__btn" id="btnSheetApple" type="button">Continue with Apple</button>
+        <button class="btn btn--primary authSheet__btn" id="btnSheetGoogle" type="button">${t('btn_continue_google')}</button>
+        <button class="btn btn--ghost authSheet__btn" id="btnSheetApple" type="button">${t('btn_continue_apple')}</button>
       </div>
       <div class="authSheet__actions">
-        <input id="authEmail" class="input" type="email" placeholder="Email" autocomplete="email" />
-        <input id="authPassword" class="input" type="password" placeholder="Password" autocomplete="current-password" />
-        <button class="btn btn--ghost authSheet__btn" id="btnAuthEmailLogin" type="button">Sign in with email</button>
+        <input id="authEmail" class="input" type="email" placeholder="${t('input_email_placeholder')}" autocomplete="email" />
+        <input id="authPassword" class="input" type="password" placeholder="${t('input_password_placeholder')}" autocomplete="current-password" />
+        <button class="btn btn--ghost authSheet__btn" id="btnAuthEmailLogin" type="button">${t('btn_sign_in_email')}</button>
         <div class="status" id="authSheetStatus" aria-live="polite"></div>
       </div>
     </div>
@@ -172,12 +173,12 @@ $("#btnAuthEmailLogin")?.addEventListener("click", async () => {
       return;
     }
     if (!email || !password) {
-      if (status) status.textContent = "Enter email and password.";
+      if (status) status.textContent = t('err_email_password_required');
       return;
     }
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      if (status) status.textContent = error.message || "Sign-in failed.";
+      if (status) status.textContent = error.message || t('err_sign_in_failed');
       return;
     }
     closeAuthSheet();
@@ -561,9 +562,9 @@ function setupAuthButtons() {
     const password = String(document.getElementById("landingAuthPassword")?.value || "");
     if (status) status.textContent = "";
     if (!supabase) { if (status) status.textContent = "Supabase is not set."; return; }
-    if (!email || !password) { if (status) status.textContent = "Enter email and password."; return; }
+    if (!email || !password) { if (status) status.textContent = t('err_email_password_required'); return; }
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) { if (status) status.textContent = error.message || "Sign-in failed."; return; }
+    if (error) { if (status) status.textContent = error.message || t('err_sign_in_failed'); return; }
     sessionStorage.setItem("guest_mode", "1");
     location.hash = "#home";
     try { window.dispatchEvent(new Event("auth:changed")); } catch {}

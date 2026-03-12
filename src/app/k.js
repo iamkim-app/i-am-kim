@@ -9,6 +9,7 @@ import {
 import { safeOpen } from "./deeplinks.js";
 
 const $ = (sel, root = document) => root.querySelector(sel);
+const t = (k, vars) => (window.App?.t || ((k) => k))(k, vars);
 
 const ADMIN_STATE = {
   checked: false,

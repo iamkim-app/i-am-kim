@@ -110,6 +110,8 @@ function getApp() {
   return window.App || {};
 }
 
+const t = (k, vars) => (getApp().t || ((k) => k))(k, vars);
+
 function getSupabase() {
   return getApp().supabase;
 }
@@ -205,7 +207,7 @@ function renderCards(active, items) {
         banner.id = "faqMyQsBanner";
         banner.className = "callout";
         banner.style.cssText = "margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px";
-        banner.innerHTML = `<span>Showing my questions only</span><button class="btn btn--ghost btn--small" id="faqMyQsBannerClear" type="button">Show all</button>`;
+        banner.innerHTML = `<span>${t('news_faq_showing_mine')}</span><button class="btn btn--ghost btn--small" id="faqMyQsBannerClear" type="button">${t('news_faq_show_all')}</button>`;
         const nowCards = document.querySelector("#nowCards");
         if (nowCards?.parentNode) nowCards.parentNode.insertBefore(banner, nowCards);
         document.querySelector("#faqMyQsBannerClear")?.addEventListener("click", () => {
@@ -231,7 +233,7 @@ function renderCards(active, items) {
     ? list
         .map((it) => renderCard(it, NOW_STATE.isAdmin && it.canDelete))
         .join("")
-    : `<div class="muted small">No items yet.</div>`;
+    : `<div class="muted small">${t('news_empty')}</div>`;
 }
 
 function renderFaqList(items) {
@@ -256,14 +258,14 @@ function renderFaqList(items) {
                 )
             : [];
           const metaText = answers.length
-            ? `${answers.length} answer${answers.length === 1 ? "" : "s"}.`
-            : "No answers yet.";
+            ? (answers.length === 1 ? t('news_faq_answers_count', { n: answers.length }) : t('news_faq_answers_count_plural', { n: answers.length }))
+            : t('news_faq_no_answers');
           const answersHtml = answers.length
             ? answers
                 .map((a) => {
                   const text = escapeHtml(a.answer || "");
                   const isBest = !!a.is_best;
-                  const bestBadge = isBest ? `<span class="bestBadge">Best</span>` : "";
+                  const bestBadge = isBest ? `<span class="bestBadge">${t('news_faq_badge_best')}</span>` : "";
                   const adminBadge = NOW_STATE.isAdmin ? `<span class="adminBadge">ADMIN</span>` : "";
                   const aBadge = `<span class="qaBadge">A</span>`;
                   const adminDelete =
@@ -290,7 +292,7 @@ function renderFaqList(items) {
             NOW_STATE.isAdmin && it.id
               ? `<button class="btn btn--ghost btn--small faqAnswerBtn" type="button" data-question-id="${escapeHtml(
                   it.id
-                )}">Answer</button>`
+                )}">${t('btn_faq_answer')}</button>`
               : "";
           const adminDeleteQuestion =
             NOW_STATE.isAdmin && it.id
@@ -308,7 +310,7 @@ function renderFaqList(items) {
           `;
         })
         .join("")
-    : `<div class="muted small">No items yet.</div>`;
+    : `<div class="muted small">${t('news_empty')}</div>`;
 }
 
 function renderChips(active) {
@@ -354,7 +356,7 @@ function renderKpop(items) {
     ? list
         .map((it) => renderCard(it, NOW_STATE.isAdmin && it.canDelete))
         .join("")
-    : `<div class="muted small">No K-POP updates yet.</div>`;
+    : `<div class="muted small">${t('kpop_empty')}</div>`;
 }
 
 async function loadFallbackItems(mode) {
@@ -586,14 +588,14 @@ function ensureAdminModal() {
   modal.hidden = true;
   modal.innerHTML = `
     <div class="nowModal__backdrop" data-close="1"></div>
-    <div class="nowModal__card" role="dialog" aria-modal="true" aria-label="Add Korea Now post">
+    <div class="nowModal__card" role="dialog" aria-modal="true" aria-label="${t('modal_add_post_title')}">
       <div class="nowModal__head">
-        <div class="nowModal__title">Add Korea Now post</div>
-        <button class="btn btn--ghost btn--small" data-close="1" type="button">Close</button>
+        <div class="nowModal__title">${t('modal_add_post_title')}</div>
+        <button class="btn btn--ghost btn--small" data-close="1" type="button">${t('btn_close')}</button>
       </div>
       <div class="nowModal__body">
         <label class="field">
-          <div class="field__label">Section</div>
+          <div class="field__label">${t('label_section')}</div>
           <select id="nowFormSection" class="input">
             ${FILTERS.map((s) => `<option value="${s}">${s}</option>`).join("")}
             <option value="K-POP Now">K-POP Now</option>
@@ -603,26 +605,26 @@ function ensureAdminModal() {
           </select>
         </label>
         <label class="field">
-          <div class="field__label">Tag</div>
-          <input id="nowFormTag" class="input" placeholder="Ex: Alert / Deals / K-POP" />
+          <div class="field__label">${t('label_tag')}</div>
+          <input id="nowFormTag" class="input" placeholder="${t('placeholder_tag')}" />
         </label>
         <label class="field">
-          <div class="field__label">Title</div>
-          <input id="nowFormTitle" class="input" placeholder="Short headline" />
+          <div class="field__label">${t('label_title')}</div>
+          <input id="nowFormTitle" class="input" placeholder="${t('placeholder_title')}" />
         </label>
         <label class="field">
-          <div class="field__label">Summary</div>
-          <textarea id="nowFormSummary" class="input" rows="3" placeholder="1-2 lines of context"></textarea>
+          <div class="field__label">${t('label_summary')}</div>
+          <textarea id="nowFormSummary" class="input" rows="3" placeholder="${t('placeholder_summary')}"></textarea>
         </label>
         <label class="field">
-          <div class="field__label">Link (optional)</div>
-          <input id="nowFormLink" class="input" placeholder="#news, #kpop, or https://" />
+          <div class="field__label">${t('label_link_optional')}</div>
+          <input id="nowFormLink" class="input" placeholder="${t('placeholder_link')}" />
         </label>
         <div class="field__status" id="nowFormStatus"></div>
       </div>
       <div class="nowModal__actions">
-        <button class="btn btn--ghost" data-close="1" type="button">Cancel</button>
-        <button class="btn btn--primary" id="nowFormSave" type="button">Save</button>
+        <button class="btn btn--ghost" data-close="1" type="button">${t('btn_cancel')}</button>
+        <button class="btn btn--primary" id="nowFormSave" type="button">${t('btn_save')}</button>
       </div>
     </div>
   `;
@@ -643,21 +645,21 @@ function ensureFaqModal() {
   modal.hidden = true;
   modal.innerHTML = `
     <div class="nowModal__backdrop" data-close="1"></div>
-    <div class="nowModal__card" role="dialog" aria-modal="true" aria-label="Ask a question">
+    <div class="nowModal__card" role="dialog" aria-modal="true" aria-label="${t('modal_faq_ask_title')}">
       <div class="nowModal__head">
-        <div class="nowModal__title">Ask a question</div>
-        <button class="btn btn--ghost btn--small" data-close="1" type="button">Close</button>
+        <div class="nowModal__title">${t('modal_faq_ask_title')}</div>
+        <button class="btn btn--ghost btn--small" data-close="1" type="button">${t('btn_close')}</button>
       </div>
       <div class="nowModal__body">
         <label class="field">
-          <div class="field__label">Question</div>
-          <textarea id="faqQuestionInput" class="input" rows="4" maxlength="500" placeholder="Type your question"></textarea>
+          <div class="field__label">${t('label_question')}</div>
+          <textarea id="faqQuestionInput" class="input" rows="4" maxlength="500" placeholder="${t('placeholder_question')}"></textarea>
         </label>
         <div class="field__status" id="faqQuestionStatus"></div>
       </div>
       <div class="nowModal__actions">
-        <button class="btn btn--ghost" data-close="1" type="button">Cancel</button>
-        <button class="btn btn--primary" id="btnFaqQuestionSubmit" type="button">Submit</button>
+        <button class="btn btn--ghost" data-close="1" type="button">${t('btn_cancel')}</button>
+        <button class="btn btn--primary" id="btnFaqQuestionSubmit" type="button">${t('btn_submit')}</button>
       </div>
     </div>
   `;
@@ -688,11 +690,11 @@ async function submitFaqQuestion(refresh) {
   const input = $("#faqQuestionInput");
   const q = String(input?.value || "").trim();
   if (!q) {
-    if (status) status.textContent = "Question required";
+    if (status) status.textContent = t('err_question_required');
     return;
   }
   if (q.length > 500) {
-    if (status) status.textContent = "Max 500 characters";
+    if (status) status.textContent = t('err_max_500');
     return;
   }
   const { data: userResp } = await supabase.auth.getUser();
@@ -938,12 +940,12 @@ function ensureMyKoreaUI(page) {
   section.id = "nowMyKoreaPosts";
   section.innerHTML = `
     <div class="nowAdminBar" data-admin-bar="1" style="display:none">
-      <button class="btn btn--primary btn--small nowAdminAddBtn" data-mode="mykorea" type="button">+ Add</button>
+      <button class="btn btn--primary btn--small nowAdminAddBtn" data-mode="mykorea" type="button">${t('news_btn_add')}</button>
     </div>
     <div class="nowFaqBar" id="nowFaqBar" style="display:none">
-      <button class="btn btn--primary btn--small" id="btnFaqAsk" type="button">Ask</button>
+      <button class="btn btn--primary btn--small" id="btnFaqAsk" type="button">${t('news_btn_ask')}</button>
     </div>
-    <input id="faqSearch" class="input faqSearch" type="search" placeholder="Search FAQ (keywords)" />
+    <input id="faqSearch" class="input faqSearch" type="search" placeholder="${t('news_faq_search_placeholder')}" />
     <div class="nowFilters" id="nowChips"></div>
     <div class="nowCards" id="nowCards"></div>
   `;
@@ -960,7 +962,7 @@ function ensureKpopUI(page) {
     bar.className = "nowAdminBar";
     bar.dataset.adminBar = "1";
     bar.style.display = "none";
-    bar.innerHTML = `<button class="btn btn--primary btn--small nowAdminAddBtn" data-mode="kpop" type="button">+ Add</button>`;
+    bar.innerHTML = `<button class="btn btn--primary btn--small nowAdminAddBtn" data-mode="kpop" type="button">${t('news_btn_add')}</button>`;
     head.appendChild(bar);
   }
 
@@ -1112,16 +1114,16 @@ export async function initKoreaNow(options = {}) {
         host.innerHTML = `<div class="muted small">You are offline. Connect to the internet to load updates.</div>`;
         return;
       }
-      host.innerHTML = `<div class="muted small">Loading...</div>`;
+      host.innerHTML = `<div class="muted small">${t('status_loading')}</div>`;
       NOW_LOAD_TIMEOUT = setTimeout(() => {
         if (requestId !== NOW_LOAD_TOKEN) return;
         if (!isVisible()) return;
-        host.innerHTML = `Still loading. <button class="btn btn--ghost btn--small" type="button" data-retry="korea-now">Retry</button>`;
+        host.innerHTML = `${t('status_still_loading')} <button class="btn btn--ghost btn--small" type="button" data-retry="korea-now">${t('btn_retry')}</button>`;
         const btn = host.querySelector('button[data-retry="korea-now"]');
         if (btn && !btn.dataset.bound) {
           btn.dataset.bound = "1";
           btn.addEventListener("click", () => {
-            host.innerHTML = `<div class="muted small">Loading...</div>`;
+            host.innerHTML = `<div class="muted small">${t('status_loading')}</div>`;
             refresh();
           });
         }

@@ -12,6 +12,7 @@ const {
   setQuotaPillText,
   STORAGE_QUOTA_REMAINING,
 } = window.App || {};
+const t = window.App?.t || ((k) => k);
 
 let HOME_LOADING = false;
 let HOME_COLLECTION_ACTIVE = "";
@@ -705,25 +706,40 @@ function bindCommunityPreviewNavigation() {
   });
 }
 
+function updateLangSelector() {
+  const selector = document.getElementById("langSelector");
+  if (!selector) return;
+  const currentLang = window.App?.getLang ? window.App.getLang() : 'en';
+  selector.querySelectorAll(".langBtn").forEach((btn) => {
+    btn.classList.toggle("langBtn--active", btn.dataset.lang === currentLang);
+  });
+}
+
 function renderInfoLayout() {
   const page = $("#page-info");
   if (!page) return;
   page.innerHTML = `
+    <div class="langSelector" id="langSelector">
+      <button class="langBtn" data-lang="en" type="button">EN</button>
+      <button class="langBtn" data-lang="ja" type="button">日本語</button>
+      <button class="langBtn" data-lang="zh" type="button">中文</button>
+    </div>
+
     <section class="homeSection homeSection--hero">
       <div class="homeHero">
-        <div class="homeHero__title">YouTube Summarize</div>
-        <div class="homeHero__subtitle">Paste a link and get travel-only tips with tappable timestamps.</div>
+        <div class="homeHero__title">${t('home_card_title')}</div>
+        <div class="homeHero__subtitle">${t('home_hero_subtitle')}</div>
       </div>
 
       <div class="analyzeBox" id="analyzeBox">
         <div class="analyzeBox__head">
-          <div class="analyzeBox__title">Play and Extract</div>
-          <div class="analyzeBox__desc">Travel-only tips. No fluff.</div>
+          <div class="analyzeBox__title">${t('home_watchbar_kicker')}</div>
+          <div class="analyzeBox__desc">${t('home_watchbar_desc')}</div>
         </div>
         <div class="analyzeRow">
-          <input id="homeYoutubeUrl" class="input input--xl" placeholder="Paste a YouTube link (https://youtu.be/...)" autocomplete="off" />
-          <button class="btn btn--primary btn--xl" id="btnHomeAnalyze" type="button">Play & Extract</button>
-          <button class="btn btn--ghost btn--xl" id="btnHomeClear" type="button">Clear</button>
+          <input id="homeYoutubeUrl" class="input input--xl" placeholder="${t('home_input_youtube')}" autocomplete="off" />
+          <button class="btn btn--primary btn--xl" id="btnHomeAnalyze" type="button">${t('btn_play_extract')}</button>
+          <button class="btn btn--ghost btn--xl" id="btnHomeClear" type="button">${t('btn_clear')}</button>
         </div>
         <div class="analyzeMeta analyzeMeta--link">
           <button class="btn btn--ghost btn--small chipLink" type="button" id="btnGoLibrary">Browse Category Library</button>
@@ -737,21 +753,21 @@ function renderInfoLayout() {
 
       <div class="resultsGrid">
         <div class="resultsCard">
-          <div class="resultsTitle">Quick skim</div>
+          <div class="resultsTitle">${t('home_skim_label_quick')}</div>
           <div class="resultsBody" id="watchTldr"></div>
-          <div class="muted small" id="watchSkimStatus">Paste a link to generate insights.</div>
-          <div class="callout" id="watchAuthHint" style="display:none">Sign in to unlock the free analysis.</div>
+          <div class="muted small" id="watchSkimStatus">${t('home_skim_status_default')}</div>
+          <div class="callout" id="watchAuthHint" style="display:none">${t('home_auth_hint')}</div>
           <details class="details" id="watchMore" style="display:none">
-            <summary>See full summary</summary>
+            <summary>${t('home_skim_full_notes')}</summary>
             <div class="output" id="watchFull"></div>
           </details>
         </div>
         <div class="resultsCard">
-          <div class="resultsTitle">Traveler must-knows</div>
+          <div class="resultsTitle">${t('home_skim_label_mustknows')}</div>
           <ul class="bullets bullets--tight" id="watchMustKnows"></ul>
-          <div class="resultsTitle">Key moments (tap to jump)</div>
+          <div class="resultsTitle">${t('home_skim_label_moments')}</div>
           <div class="moments" id="watchMoments"></div>
-          <div class="resultsTitle">Places and foods</div>
+          <div class="resultsTitle">${t('home_skim_label_places')}</div>
           <ul class="bullets bullets--tight" id="watchPlacesFoods"></ul>
         </div>
       </div>
@@ -759,12 +775,26 @@ function renderInfoLayout() {
 
     <section class="homeSection" id="home-library">
       <div class="sectionHead">
-        <div class="sectionTitle">Curated library</div>
-        <div class="sectionDesc">Explore videos by theme.</div>
+        <div class="sectionTitle">${t('home_gallery_title')}</div>
+        <div class="sectionDesc">${t('home_gallery_hint')}</div>
       </div>
       <div id="homeCollections" class="collectionsWrap"></div>
     </section>
   `;
+
+  // Wire up language selector buttons
+  updateLangSelector();
+  const selector = document.getElementById("langSelector");
+  if (selector) {
+    selector.addEventListener("click", (e) => {
+      const btn = e.target?.closest?.(".langBtn");
+      if (!btn) return;
+      const lang = btn.dataset.lang;
+      if (lang && window.App?.setLang) {
+        window.App.setLang(lang);
+      }
+    });
+  }
 }
 
 function getApp() {

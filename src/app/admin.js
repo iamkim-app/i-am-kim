@@ -2,6 +2,7 @@ import { getSession, loadBanStatus } from "./auth.js";
 import { loadCommunityPosts, timeAgo } from "./community.js";
 
 const { $, $$, supabase, toast, escapeHtml, truncateText, navigateToHome } = window.App;
+const t = window.App?.t || ((k) => k);
 
 /* ----------------------------- ADMIN ----------------------------------- */
 
@@ -16,19 +17,19 @@ function ensureAdminUI() {
   section.hidden = true;
   section.innerHTML = `
     <div class="pageHeader">
-      <h2 class="pageHeader__title">Admin</h2>
-      <p class="pageHeader__desc">Moderation & safety tools.</p>
+      <h2 class="pageHeader__title">${t('page_admin_title')}</h2>
+      <p class="pageHeader__desc">${t('page_admin_desc')}</p>
     </div>
     <div class="card card--inner">
-      <div class="status" id="adminStatus">loading</div>
+      <div class="status" id="adminStatus">${t('admin_status_loading')}</div>
       <div class="row row--space">
         <div class="adminTabs" id="adminTabs">
-        <button class="btn btn--ghost btn--small is-active" data-tab="post">Post Reports</button>
-        <button class="btn btn--ghost btn--small" data-tab="comment">Comment Reports</button>
-        <button class="btn btn--ghost btn--small" data-tab="users">User Management</button>
+        <button class="btn btn--ghost btn--small is-active" data-tab="post">${t('admin_tab_posts')}</button>
+        <button class="btn btn--ghost btn--small" data-tab="comment">${t('admin_tab_comments')}</button>
+        <button class="btn btn--ghost btn--small" data-tab="users">${t('admin_tab_users')}</button>
         <a href="#partner-admin" class="btn btn--ghost btn--small" style="text-decoration:none;">Partner Events</a>
         </div>
-        <button class="btn btn--ghost btn--small" id="adminRefresh" type="button">Refresh</button>
+        <button class="btn btn--ghost btn--small" id="adminRefresh" type="button">${t('btn_refresh')}</button>
       </div>
       <div class="adminPanel" id="adminPanel"></div>
     </div>
@@ -68,7 +69,7 @@ function clearAdminState(message = "Not authorized.") {
   }
   const panel = $("#adminPanel");
   const status = $("#adminStatus");
-  if (status) status.textContent = "not authorized";
+  if (status) status.textContent = t('admin_status_loading');
   if (panel) panel.innerHTML = `<div class="muted small">${message}</div>`;
 }
 
@@ -85,11 +86,11 @@ async function loadAdminPanel() {
   const status = $("#adminStatus");
   if (!panel || !status) return;
   bindHomePicksEditorLink();
-  status.textContent = "loading";
+  status.textContent = t('admin_status_loading');
   panel.innerHTML = "";
 
   if (!supabase) {
-    status.textContent = "not authorized";
+    status.textContent = t('admin_status_loading');
     panel.innerHTML = `<div class="muted small">Supabase is not set.</div>`;
     return;
   }
@@ -139,7 +140,7 @@ async function loadAdminPanel() {
     }
   } catch (err) {
     console.warn("[admin] Load failed.", err);
-    status.textContent = "not authorized";
+    status.textContent = t('admin_status_loading');
     panel.innerHTML = `<div class="muted small">Not authorized.</div>`;
   }
 }

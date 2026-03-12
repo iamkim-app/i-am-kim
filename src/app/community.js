@@ -13,6 +13,7 @@ const {
   PROFILE_STATE,
   setNicknameBannerVisible,
 } = window.App;
+const t = window.App?.t || ((k) => k);
 
 function countryFlag(code) {
   const map = { us:"🇺🇸",gb:"🇬🇧",au:"🇦🇺",ca:"🇨🇦",jp:"🇯🇵",cn:"🇨🇳",tw:"🇹🇼",hk:"🇭🇰",sg:"🇸🇬",th:"🇹🇭",fr:"🇫🇷",de:"🇩🇪",kr:"🇰🇷",other:"🌍" };
@@ -30,29 +31,35 @@ function ensureCommentReportModal() {
   el.className = "modal";
   el.id = "commentReportModal";
   el.hidden = true;
+  const reportReasons = [
+    { key: 'report_reason_spam', value: 'Spam' },
+    { key: 'report_reason_scam', value: 'Scam' },
+    { key: 'report_reason_offensive', value: 'Offensive' },
+    { key: 'report_reason_other', value: 'Other' },
+  ];
   el.innerHTML = `
     <div class="modal__backdrop" data-close="1"></div>
     <div class="modal__card reportModal">
       <div class="modal__head">
-        <div class="modal__title">Report comment</div>
-        <button class="btn btn--ghost btn--small" data-close="1" type="button">Close</button>
+        <div class="modal__title">${t('modal_report_comment_title')}</div>
+        <button class="btn btn--ghost btn--small" data-close="1" type="button">${t('btn_close')}</button>
       </div>
-      <div class="muted small">Select a reason before sending.</div>
+      <div class="muted small">${t('report_select_reason')}</div>
       <div class="reportOptions" role="radiogroup" aria-label="Report reason">
-        ${["Spam", "Scam", "Offensive", "Other"]
+        ${reportReasons
           .map(
             (r, idx) => `
           <label class="reportOption">
-            <input type="radio" name="comment-report-reason" value="${r}" ${idx === 0 ? "checked" : ""} />
-            <span>${r}</span>
+            <input type="radio" name="comment-report-reason" value="${r.value}" ${idx === 0 ? "checked" : ""} />
+            <span>${t(r.key)}</span>
           </label>
         `
           )
           .join("")}
       </div>
       <div class="reportActions">
-        <button class="btn btn--ghost btn--small" data-close="1" type="button">Cancel</button>
-        <button class="btn btn--primary btn--small" id="commentReportSubmit" type="button">Report</button>
+        <button class="btn btn--ghost btn--small" data-close="1" type="button">${t('btn_cancel')}</button>
+        <button class="btn btn--primary btn--small" id="commentReportSubmit" type="button">${t('btn_report')}</button>
       </div>
     </div>
   `;
@@ -180,7 +187,7 @@ function renderCommunityFeed(posts, currentUserId, likeCounts = {}, myLikes = ne
 
   const list = Array.isArray(posts) ? posts : [];
   if (!list.length) {
-    feed.innerHTML = `<div class="muted small">No posts yet. Be the first to share a tip.</div>`;
+    feed.innerHTML = `<div class="muted small">${t('community_empty')}</div>`;
     applyCommunityFocusJump(feed);
     return;
   }
@@ -265,20 +272,20 @@ function renderCommunityFeed(posts, currentUserId, likeCounts = {}, myLikes = ne
 
           <div class="postActions">
             <button class="btn btn--ghost btn--small ${liked ? "is-active" : ""} ${canInteract ? "" : "is-disabled"}" data-action="like" type="button" data-disabled="${canInteract ? "0" : "1"}" style="${canInteract ? "" : "opacity:0.5"}">
-              ${liked ? "Liked" : "Like"} ${likeCount}
+              ${liked ? t('btn_liked') : t('btn_like')} ${likeCount}
             </button>
           </div>
 
           <div class="comments">
-            <div class="commentsHead">Comments</div>
+            <div class="commentsHead">${t('community_comments_heading')}</div>
             <div class="commentsList">
-              ${commentsHtml || `<div class="muted small">No comments yet.</div>`}
+              ${commentsHtml || `<div class="muted small">${t('community_comments_empty')}</div>`}
             </div>
             <div class="commentForm">
-              <textarea class="textarea commentInput" rows="2" placeholder="Write a comment..." ${canInteract ? "" : "disabled"}></textarea>
-              <button class="btn btn--primary btn--small ${canInteract ? "" : "is-disabled"}" data-action="send-comment" type="button" ${canInteract ? "" : ""} data-disabled="${canInteract ? "0" : "1"}">Send</button>
+              <textarea class="textarea commentInput" rows="2" placeholder="${t('community_comment_placeholder')}" ${canInteract ? "" : "disabled"}></textarea>
+              <button class="btn btn--primary btn--small ${canInteract ? "" : "is-disabled"}" data-action="send-comment" type="button" ${canInteract ? "" : ""} data-disabled="${canInteract ? "0" : "1"}">${t('btn_send')}</button>
             </div>
-            ${canInteract ? "" : `<div class="muted small">${AUTH_STATE.isBanned ? "Account suspended." : "Please sign in to comment."}</div>`}
+            ${canInteract ? "" : `<div class="muted small">${AUTH_STATE.isBanned ? t('err_account_suspended') : t('community_sign_in_comment')}</div>`}
           </div>
         </div>
       </article>
@@ -298,19 +305,19 @@ function renderCommunityFeed(posts, currentUserId, likeCounts = {}, myLikes = ne
         await deletePost(id);
       } else if (action === "report") {
         if (btn.dataset.disabled === "1") {
-          toast("Account suspended.");
+          toast(t('err_account_suspended'));
           return;
         }
         await reportPost(id);
       } else if (action === "like") {
         if (btn.dataset.disabled === "1") {
-          toast("Account suspended.");
+          toast(t('err_account_suspended'));
           return;
         }
         await toggleLike(id);
       } else if (action === "send-comment") {
         if (btn.dataset.disabled === "1") {
-          toast("Account suspended.");
+          toast(t('err_account_suspended'));
           return;
         }
         const input = card?.querySelector(".commentInput");
@@ -325,8 +332,8 @@ function renderCommunityFeed(posts, currentUserId, likeCounts = {}, myLikes = ne
         }
       } else if (action === "report-comment") {
         if (btn.dataset.disabled === "1") {
-          if (AUTH_STATE.isBanned) toast("Account suspended.");
-          else toast("Please sign in to report.");
+          if (AUTH_STATE.isBanned) toast(t('err_account_suspended'));
+          else toast(t('toast_sign_in_to_report'));
           return;
         }
         const commentId = Number(btn.dataset.commentId || btn.closest(".commentItem")?.dataset?.id);
@@ -372,22 +379,22 @@ async function loadCommunityPosts(forceReload) {
     COMMUNITY_LOAD_TIMEOUT = null;
   }
   if (typeof navigator !== "undefined" && navigator.onLine === false) {
-    if (status && isVisible()) status.textContent = "You are offline. Connect to the internet to load posts.";
+    if (status && isVisible()) status.textContent = t('community_offline');
     renderCommunityFeed([], null);
     COMMUNITY_LOADING = false;
     return;
   }
-  if (status) status.textContent = "Loading...";
+  if (status) status.textContent = t('status_loading');
   if (status) {
     COMMUNITY_LOAD_TIMEOUT = setTimeout(() => {
       if (requestId !== COMMUNITY_LOAD_TOKEN) return;
       if (!isVisible()) return;
-      status.innerHTML = `Still loading. <button class="btn btn--ghost btn--small" type="button" data-retry="community">Retry</button>`;
+      status.innerHTML = `${t('status_still_loading')} <button class="btn btn--ghost btn--small" type="button" data-retry="community">${t('btn_retry')}</button>`;
       const btn = status.querySelector('button[data-retry="community"]');
       if (btn && !btn.dataset.bound) {
         btn.dataset.bound = "1";
         btn.addEventListener("click", () => {
-          status.textContent = "Loading...";
+          status.textContent = t('status_loading');
           COMMUNITY_LOADING = false;
           loadCommunityPosts(true);
         });
@@ -436,7 +443,7 @@ async function loadCommunityPosts(forceReload) {
         COMMUNITY_LOCK_RETRY = true;
         COMMUNITY_LOADING = false;
         if (COMMUNITY_LOAD_TIMEOUT) { clearTimeout(COMMUNITY_LOAD_TIMEOUT); COMMUNITY_LOAD_TIMEOUT = null; }
-        if (status) status.textContent = "Loading...";
+        if (status) status.textContent = t('status_loading');
         setTimeout(() => {
           if (requestId === COMMUNITY_LOAD_TOKEN) loadCommunityPosts(true);
         }, 2000);
@@ -444,7 +451,7 @@ async function loadCommunityPosts(forceReload) {
       }
       COMMUNITY_LOCK_RETRY = false;
       const displayMsg = isLockError
-        ? "게시글을 불러올 수 없습니다. 새로고침 해주세요."
+        ? t('err_posts_load_failed')
         : `Error: ${err?.message || err}`;
       if (status) status.textContent = displayMsg;
       renderCommunityFeed([], null);
@@ -513,7 +520,7 @@ async function loadCommunityComments(postIds) {
 function openModal() {
   if (PROFILE_STATE.needsNickname) {
     setNicknameBannerVisible(true);
-    toast("Set your nickname to continue.");
+    toast(t('err_set_nickname'));
     return;
   }
   const m = $("#postModal");
@@ -687,11 +694,11 @@ async function deletePost(postId) {
 
   const session = await getSession();
   if (!session) {
-    toast("Sign in to delete.");
+    toast(t('toast_sign_in_to_delete'));
     return;
   }
 
-  const ok = confirm("Delete this post?");
+  const ok = confirm(t('confirm_delete_post'));
   if (!ok) return;
 
   // Try to fetch image_path first for cleanup
@@ -706,7 +713,7 @@ async function deletePost(postId) {
     const { error: storageErr } = await supabase.storage.from("community").remove([path]);
     if (storageErr) {
       console.warn("[community] Failed to delete image.", storageErr);
-      toast("Failed to delete image.");
+      toast(t('toast_failed_delete_image'));
       // Continue to delete post row anyway
     }
   }
@@ -721,7 +728,7 @@ async function deletePost(postId) {
     return;
   }
 
-  toast("Deleted");
+  toast(t('toast_deleted'));
   loadCommunityPosts(true);
 }
 
@@ -730,11 +737,11 @@ async function reportPost(postId) {
 
   const session = await getSession();
   if (!session) {
-    toast("Sign in to report.");
+    toast(t('toast_sign_in_to_report'));
     return;
   }
   if (AUTH_STATE.isBanned) {
-    toast("Account suspended.");
+    toast(t('err_account_suspended'));
     return;
   }
 
@@ -774,7 +781,7 @@ async function reportPost(postId) {
     if (error) {
       // unique constraint -> already reported
       if (String(error?.message || "").toLowerCase().includes("duplicate")) {
-        toast("Already reported");
+        toast(t('toast_already_reported'));
         return;
       }
       throw error;
@@ -797,11 +804,11 @@ async function reportPost(postId) {
     }
   } catch (err) {
     console.warn("[community] Report failed.", err);
-    toast("Failed to report.");
+    toast(t('toast_failed_report'));
     return;
   }
 
-  toast("Reported. Thanks.");
+  toast(t('toast_reported'));
   loadCommunityPosts(true);
 }
 
@@ -809,11 +816,11 @@ async function reportComment(commentId) {
   if (!supabase) return;
   const session = await getSession();
   if (!session) {
-    toast("Please sign in to report.");
+    toast(t('toast_sign_in_to_report'));
     return;
   }
   if (AUTH_STATE.isBanned) {
-    toast("Account suspended.");
+    toast(t('err_account_suspended'));
     return;
   }
 
@@ -854,16 +861,16 @@ async function reportComment(commentId) {
     });
     if (error) {
       if (String(error?.message || "").toLowerCase().includes("duplicate")) {
-        toast("Already reported");
+        toast(t('toast_already_reported'));
         return;
       }
       toast(`${error.code || "ERR"} ${error.message || "Report failed"}`);
       return;
     }
-    toast("Reported. Thanks.");
+    toast(t('toast_reported'));
   } catch (err) {
     console.warn("[community] Comment report failed.", err);
-    toast("Failed to report.");
+    toast(t('toast_failed_report'));
   }
 }
 
@@ -871,17 +878,17 @@ async function toggleLike(postId) {
   if (!supabase) return;
   const session = await getSession();
   if (!session) {
-    toast("Please sign in");
+    toast(t('err_sign_in_short'));
     return;
   }
   if (AUTH_STATE.isBanned) {
-    toast("Account suspended.");
+    toast(t('err_account_suspended'));
     return;
   }
   const pid = Number(postId);
   if (!Number.isFinite(pid)) {
     console.warn("[community] Like failed: invalid post_id", postId);
-    toast("Failed to update like.");
+    toast(t('toast_failed_like'));
     return;
   }
   try {
@@ -909,7 +916,7 @@ async function toggleLike(postId) {
     loadCommunityPosts(true);
   } catch (err) {
     console.warn("[community] Like failed.", { error: err, postId: pid, userId: session.user.id });
-    toast("Failed to update like.");
+    toast(t('toast_failed_like'));
   }
 }
 
@@ -935,11 +942,11 @@ async function createComment(postId, content) {
   if (!supabase) return;
   const session = await getSession();
   if (!session) {
-    toast("Please sign in");
+    toast(t('err_sign_in_short'));
     return;
   }
   if (AUTH_STATE.isBanned) {
-    toast("Account suspended.");
+    toast(t('err_account_suspended'));
     return;
   }
   try {
@@ -955,7 +962,7 @@ async function createComment(postId, content) {
     loadCommunityPosts(true);
   } catch (err) {
     console.warn("[community] Comment failed.", err);
-    toast("Failed to comment.");
+    toast(t('toast_failed_comment'));
   }
 }
 
@@ -973,7 +980,7 @@ async function deleteComment(commentId) {
     loadCommunityPosts(true);
   } catch (err) {
     console.warn("[community] Delete comment failed.", err);
-    toast("Failed to delete comment.");
+    toast(t('toast_failed_delete_comment'));
   }
 }
 
@@ -999,7 +1006,7 @@ function setupCommunity() {
     const hint = document.createElement("div");
     hint.id = "trippalHint";
     hint.className = "muted small";
-    hint.textContent = "Trippal: Find a travel buddy (public place only).";
+    hint.textContent = t('community_trippal_hint');
     const head = page.querySelector(".pageHeader");
     if (head) head.insertAdjacentElement("afterend", hint);
     else page.insertAdjacentElement("afterbegin", hint);
@@ -1009,7 +1016,7 @@ function setupCommunity() {
     const note = document.createElement("div");
     note.id = "communitySafetyNote";
     note.className = "communitySafetyNote";
-    note.innerHTML = `Community posts are user-generated.<br/>Report content that violates guidelines.<br/><br/>For Trippal meetups:<br/>Always meet in public places and use caution when interacting with other users.`;
+    note.innerHTML = t('community_safety_note').replace(/\n/g, '<br/>');
     const head = page.querySelector(".pageHeader");
     if (head) head.insertAdjacentElement("afterend", note);
     else page.insertAdjacentElement("afterbegin", note);
@@ -1042,7 +1049,7 @@ function setupCommunity() {
       btn.id = "btnInsertTrippal";
       btn.type = "button";
       btn.className = "btn btn--ghost btn--small";
-      btn.textContent = "Insert Trippal template";
+      btn.textContent = t('btn_insert_trippal');
       btn.style.display = "none";
       bodyInput.insertAdjacentElement("beforebegin", btn);
     }
@@ -1069,14 +1076,14 @@ function setupCommunity() {
   // open modal
   $("#btnNewPost")?.addEventListener("click", (e) => {
     if (AUTH_STATE.isBanned || AUTH_STATE.banLoading) {
-      toast("Account suspended.");
+      toast(t('err_account_suspended'));
       return;
     }
     openModal();
   });
   $("#fabNewPost")?.addEventListener("click", () => {
     if (AUTH_STATE.isBanned || AUTH_STATE.banLoading) {
-      toast("Account suspended.");
+      toast(t('err_account_suspended'));
       return;
     }
     openModal();
@@ -1091,7 +1098,7 @@ function setupCommunity() {
   // preview image
   $("#postPhoto")?.addEventListener("change", (e) => {
     if (AUTH_STATE.isBanned) {
-      toast("Account suspended.");
+      toast(t('err_account_suspended'));
       e.target.value = "";
       return;
     }
@@ -1118,12 +1125,12 @@ function setupCommunity() {
     status.textContent = "";
 
     if (PROFILE_STATE.needsNickname) {
-      status.textContent = "Set your nickname to continue.";
+      status.textContent = t('err_set_nickname');
       setNicknameBannerVisible(true);
       return;
     }
     if (AUTH_STATE.isBanned) {
-      status.textContent = "Account suspended.";
+      status.textContent = t('err_account_suspended');
       return;
     }
 
@@ -1134,7 +1141,7 @@ function setupCommunity() {
 
     const session = await getSession();
     if (!session) {
-      status.textContent = "Please sign in first.";
+      status.textContent = t('err_sign_in_required');
       return;
     }
 
@@ -1163,7 +1170,7 @@ function setupCommunity() {
         return !re.test(body);
       });
       if (missing.length) {
-        status.textContent = "Trippal post must keep all template headings.";
+        status.textContent = t('err_trippal_headings');
         return;
       }
     }
@@ -1171,18 +1178,18 @@ function setupCommunity() {
     const file = $("#postPhoto")?.files?.[0] || null;
 
     if (!body) {
-      status.textContent = "Please write a message.";
+      status.textContent = t('err_write_message');
       return;
     }
 
-    status.textContent = "Posting...";
+    status.textContent = t('status_posting');
 
     try {
       let imageUrl = "";
       let imagePath = "";
 
       if (file) {
-        status.textContent = "Compressing photo...";
+        status.textContent = t('status_compressing');
         let uploadFile = file;
         try {
           const compressed = await compressImage(file);
@@ -1194,22 +1201,22 @@ function setupCommunity() {
           if (file.size <= maxBytes) {
             uploadFile = file;
           } else {
-            throw new Error("Photo too large. Please choose a smaller image.");
+            throw new Error(t('err_photo_too_large'));
           }
         }
 
-        status.textContent = "Uploading image...";
+        status.textContent = t('status_uploading');
         const uploaded = await uploadOneImage(uploadFile, session.user.id);
         imageUrl = uploaded.publicUrl;
         imagePath = uploaded.path;
       }
 
-      status.textContent = "Posting...";
+      status.textContent = t('status_posting');
       await createPost({ category, body, imageUrl, imagePath });
 
-      status.textContent = "Posted.";
+      status.textContent = t('status_posted');
       closeModal();
-      toast("Posted");
+      toast(t('toast_posted'));
       loadCommunityPosts(true);
     } catch (err) {
       status.textContent = `Error: ${err?.message || err}`;

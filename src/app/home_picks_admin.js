@@ -2,6 +2,7 @@ const STORAGE_KEY = "iamkim_home_picks_admin_draft_v1";
 const SLOT_IDS = ["1", "2", "3", "4", "5"];
 
 const getApp = () => window.App || {};
+const t = (k, vars) => (getApp().t || ((k) => k))(k, vars);
 
 let HOME_PICKS_ADMIN_DIRTY = false;
 let HOME_PICKS_ADMIN_BOUND = false;
@@ -39,7 +40,7 @@ async function populateSourceIdSelect(slot, source, valueToSelect) {
   // Use provided value; fall back to current selection if already has a valid value
   const targetVal = valueToSelect !== undefined ? String(valueToSelect ?? "") : select.value;
 
-  select.innerHTML = `<option value="">-- Select post --</option>`;
+  select.innerHTML = `<option value="">${t('admin_select_post')}</option>`;
   select.disabled = true;
 
   const posts = await fetchPostsForSource(source);
@@ -258,7 +259,7 @@ export async function loadHomePicksAdmin() {
     return;
   }
 
-  setStatus("Loading...");
+  setStatus(t('status_loading'));
 
   try {
     // Check for saved draft first
@@ -304,7 +305,7 @@ export async function saveHomePicksAdmin() {
     return;
   }
 
-  setStatus("Saving...");
+  setStatus(t('status_saving'));
 
   try {
     const values = readInputs();
@@ -364,7 +365,7 @@ export async function saveHomePicksAdmin() {
 
     setDirty(false);
     clearDraft();
-    setStatus("Saved.");
+    setStatus(t('status_saved'));
     window.dispatchEvent(new CustomEvent("homePicks:updated"));
   } catch (err) {
     setStatus(`Save failed: ${err?.message || err}`, true);
