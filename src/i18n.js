@@ -49,10 +49,6 @@ export async function setLang(lang) {
   } catch {
     _strings = {};
   }
-  // Re-render the app
-  if (typeof window.App?.rerenderAll === 'function') {
-    window.App.rerenderAll();
-  } else {
-    window.location.reload();
-  }
+  // Notify app — re-render in-place without a full page reload
+  window.dispatchEvent(new CustomEvent('i18nlangchange', { detail: { lang } }));
 }

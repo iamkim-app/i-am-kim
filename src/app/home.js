@@ -1434,6 +1434,25 @@ async function loadCommunityPreview(routeToken) {
 loadCommunityPreview.requestId = 0;
 loadCommunityPreview.timeoutId = null;
 
+function bindInfoPageEvents(root) {
+  root.querySelector("#btnHomeAnalyze")?.addEventListener("click", () => {
+    analyzeHomeUrl();
+  });
+  root.querySelector("#btnHomeClear")?.addEventListener("click", clearHome);
+  root.querySelector("#btnGoLibrary")?.addEventListener("click", async () => {
+    if (location.hash !== "#info") location.hash = "#info";
+    if (!HOME_LIBRARY_COLLECTIONS.length) {
+      await loadHomeLibrary();
+      renderCollectionsSection();
+    }
+    const target = root.querySelector("#homeCollections");
+    if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  root.querySelector("#homeYoutubeUrl")?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") analyzeHomeUrl();
+  });
+}
+
 function setupHome(routeToken) {
   const homeRoot = document.querySelector("#page-home");
   const infoRoot = document.querySelector("#page-info");
@@ -1447,19 +1466,7 @@ function setupHome(routeToken) {
   renderInfoLayout();
   clearHome();
 
-  infoRoot.querySelector("#btnHomeAnalyze")?.addEventListener("click", () => {
-    analyzeHomeUrl();
-  });
-  infoRoot.querySelector("#btnHomeClear")?.addEventListener("click", clearHome);
-  infoRoot.querySelector("#btnGoLibrary")?.addEventListener("click", async () => {
-    if (location.hash !== "#info") location.hash = "#info";
-    if (!HOME_LIBRARY_COLLECTIONS.length) {
-      await loadHomeLibrary();
-      renderCollectionsSection();
-    }
-    const target = infoRoot.querySelector("#homeCollections");
-    if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
+  bindInfoPageEvents(infoRoot);
   homeRoot.querySelector(".quickActions")?.addEventListener("click", (e) => {
     const btn = e.target?.closest?.(".quickAction");
     if (!btn) return;
@@ -1578,10 +1585,15 @@ function setupHome(routeToken) {
     });
   }
 
-  // Enter key in input triggers analyze
-  infoRoot.querySelector("#homeYoutubeUrl")?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") analyzeHomeUrl();
-  });
+  // Re-render info page in-place when language changes (no full reload)
+  if (!setupHome.i18nBound) {
+    setupHome.i18nBound = true;
+    window.addEventListener("i18nlangchange", () => {
+      renderInfoLayout();
+      const root = document.querySelector("#page-info");
+      if (root) bindInfoPageEvents(root);
+    });
+  }
 
   loadHomeLibrary().then(() => {
     if (localToken !== window.App?.routeToken || !isHomeActive()) return;
