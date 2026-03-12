@@ -273,22 +273,22 @@ function renderNearbyResults(results) {
 }
 
 const TABS = [
-  { id: "kpop", label: "K-POP" },
-  { id: "food", label: "K-FOOD" },
-  { id: "beauty", label: "K-BEAUTY" },
-  { id: "deals", label: "Deals" },
-  { id: "shopping", label: "Shopping" },
+  { id: "kpop",     tKey: "kpop_tab_kpop" },
+  { id: "food",     tKey: "kpop_tab_food" },
+  { id: "beauty",   tKey: "kpop_tab_beauty" },
+  { id: "deals",    tKey: "kpop_tab_deals" },
+  { id: "shopping", tKey: "kpop_tab_shopping" },
 ];
-const TAB_LABELS = TABS.reduce((acc, t) => {
-  acc[t.id] = t.label;
-  return acc;
-}, {});
+function getTabLabel(id) {
+  const tab = TABS.find((tb) => tb.id === id);
+  return tab ? t(tab.tKey) : id;
+}
 const TAB_DESCS = {
-  kpop: "Latest K-POP updates and fan info.",
-  food: "Street eats, markets, and what to try.",
-  beauty: "Shops, skincare staples, and quick tips.",
-  deals: "Promos, passes, and travel savings.",
-  shopping: "What to buy and where to find it.",
+  kpop:     () => t("page_kpop_desc"),
+  food:     () => t("kpop_desc_food"),
+  beauty:   () => t("kpop_desc_beauty"),
+  deals:    () => t("kpop_desc_deals"),
+  shopping: () => t("kpop_desc_shopping"),
 };
 
 function ensureTabsUI(page) {
@@ -305,10 +305,10 @@ function ensureTabsUI(page) {
   bar.setAttribute("role", "tablist");
   bar.innerHTML =
     TABS.map(
-      (t) =>
-        `<button class="btn btn--ghost btn--small kSubtab" type="button" role="tab" data-tab="${t.id}">${t.label}</button>`
+      (tab) =>
+        `<button class="btn btn--ghost btn--small kSubtab" type="button" role="tab" data-tab="${tab.id}">${t(tab.tKey)}</button>`
     ).join("") +
-    `<button class="btn btn--primary btn--small kAdminAddBtn" type="button" style="display:none">+ Add</button>`;
+    `<button class="btn btn--primary btn--small kAdminAddBtn" type="button" style="display:none">${t("news_btn_add")}</button>`;
   if (header && header.nextSibling) {
     header.parentNode.insertBefore(bar, header.nextSibling);
   } else if (header) {
@@ -565,9 +565,9 @@ export async function initKPage({ tab = "kpop" } = {}) {
   }
 
   const tabLabel = page.querySelector("#kTabLabel");
-  if (tabLabel) tabLabel.textContent = TAB_LABELS[tab] || "K-POP";
+  if (tabLabel) tabLabel.textContent = getTabLabel(tab);
   const desc = page.querySelector(".pageHeader__desc");
-  if (desc) desc.textContent = TAB_DESCS[tab] || TAB_DESCS.kpop;
+  if (desc) desc.textContent = (TAB_DESCS[tab] || TAB_DESCS.kpop)();
 
   const buttons = page.querySelectorAll(".kSubtab");
   buttons.forEach((btn) => {

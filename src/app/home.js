@@ -151,7 +151,7 @@ function renderWatchMoments(moments, videoUrl) {
 }
 
 function setWatchInsights({ insights, summaryText, videoUrl, remaining }) {
-  setText("#watchTldr", insights?.summary || "No summary yet. Extract a video to get a quick skim.");
+  setText("#watchTldr", insights?.summary || t("home_tldr_empty"));
   setList("#watchMustKnows", insights?.must_know || []);
   setList("#watchPlacesFoods", insights?.places_foods || []);
   renderWatchMoments(insights?.key_moments || [], videoUrl);
@@ -312,9 +312,9 @@ function clearHome() {
     </div>`;
   }
 
-  setWatchStatus("Paste a link to generate insights.");
+  setWatchStatus(t("home_paste_insights"));
   const watchTldr = $("#watchTldr");
-  if (watchTldr) watchTldr.textContent = "No summary yet. Extract a video to get a quick skim.";
+  if (watchTldr) watchTldr.textContent = t("home_tldr_empty");
   const mustKnows = $("#watchMustKnows");
   if (mustKnows) mustKnows.innerHTML = "";
   const placesFoods = $("#watchPlacesFoods");
@@ -567,7 +567,7 @@ function renderHomeLayout() {
                 <path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
               </svg>
             </span>
-            <span class="askSearch__text">Ask KIM anything</span>
+            <span class="askSearch__text">${t("home_ask_kim")}</span>
           </button>
         </div>
       </div>
@@ -575,7 +575,7 @@ function renderHomeLayout() {
 
     <section class="homeSection">
       <div class="sectionHead">
-        <div class="sectionTitle">Quick actions</div>
+        <div class="sectionTitle">${t("home_section_quick_actions")}</div>
       </div>
       <div class="quickActions">
         <button class="quickAction" type="button" data-action="travel">
@@ -585,7 +585,7 @@ function renderHomeLayout() {
               <path d="M12 7v10M5.5 9.5l6.5 3.5 6.5-3.5" stroke="currentColor" stroke-width="1.82" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </span>
-          <span class="quickAction__label">Travel Mode</span>
+          <span class="quickAction__label">${t("btn_travel_mode")}</span>
         </button>
         <button class="quickAction" type="button" data-action="map">
           <span class="quickAction__icon" aria-hidden="true">
@@ -594,7 +594,7 @@ function renderHomeLayout() {
               <path d="M9 4v14M15 6v14" stroke="currentColor" stroke-width="1.82" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </span>
-          <span class="quickAction__label">Map</span>
+          <span class="quickAction__label">${t("qa_map")}</span>
         </button>
         <button class="quickAction" type="button" data-action="taxi">
           <span class="quickAction__icon" aria-hidden="true">
@@ -605,7 +605,7 @@ function renderHomeLayout() {
               <circle cx="16" cy="18" r="1.5" stroke="currentColor" stroke-width="1.82"/>
             </svg>
           </span>
-          <span class="quickAction__label">Taxi</span>
+          <span class="quickAction__label">${t("qa_taxi")}</span>
         </button>
         <button class="quickAction" type="button" data-action="subway">
           <span class="quickAction__icon" aria-hidden="true">
@@ -617,7 +617,7 @@ function renderHomeLayout() {
               <path d="M8 21l2-2h4l2 2" stroke="currentColor" stroke-width="1.82" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </span>
-          <span class="quickAction__label">Subway</span>
+          <span class="quickAction__label">${t("qa_subway")}</span>
         </button>
         <button class="quickAction" type="button" data-action="safety">
           <span class="quickAction__icon" aria-hidden="true">
@@ -626,7 +626,7 @@ function renderHomeLayout() {
               <path d="M9.5 12.5l2 2 3.5-3.5" stroke="currentColor" stroke-width="1.82" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </span>
-          <span class="quickAction__label">Safety</span>
+          <span class="quickAction__label">${t("qa_safety")}</span>
         </button>
         <button class="quickAction" type="button" data-action="papago">
           <span class="quickAction__icon" aria-hidden="true">
@@ -635,7 +635,7 @@ function renderHomeLayout() {
               <path d="M8.5 10h7M8.5 13h4.5" stroke="currentColor" stroke-width="1.82" stroke-linecap="round"/>
             </svg>
           </span>
-          <span class="quickAction__label">Papago</span>
+          <span class="quickAction__label">${t("qa_papago")}</span>
         </button>
         <button class="quickAction" type="button" data-action="exchange">
           <span class="quickAction__icon" aria-hidden="true">
@@ -644,7 +644,7 @@ function renderHomeLayout() {
               <path d="M7 8v6M17 16V10" stroke="currentColor" stroke-width="1.82" stroke-linecap="round"/>
             </svg>
           </span>
-          <span class="quickAction__label">Exchange</span>
+          <span class="quickAction__label">${t("qa_exchange")}</span>
         </button>
         <button class="quickAction" type="button" data-action="phrases">
           <span class="quickAction__icon" aria-hidden="true">
@@ -653,7 +653,7 @@ function renderHomeLayout() {
               <path d="M6 12v8" stroke="currentColor" stroke-width="1.82" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </span>
-          <span class="quickAction__label">Phrases</span>
+          <span class="quickAction__label">${t("qa_phrases")}</span>
         </button>
       </div>
     </section>
@@ -661,8 +661,8 @@ function renderHomeLayout() {
     <section class="homeSection">
       <div class="sectionHead">
         <div>
-          <div class="sectionTitle">Note</div>
-          <div class="sectionDesc">Travel updates and useful information.</div>
+          <div class="sectionTitle">${t("home_section_note")}</div>
+          <div class="sectionDesc">${t("home_section_note_desc")}</div>
         </div>
         <button class="btn btn--ghost btn--small" id="btnEditHomePicks" type="button" style="display:none">Edit</button>
       </div>
@@ -681,8 +681,8 @@ function renderHomeLayout() {
     <section class="homeSection">
       <div class="sectionHead">
         <div>
-          <div class="sectionTitle">HOT</div>
-          <div class="sectionDesc">Most liked posts this week.</div>
+          <div class="sectionTitle">${t("home_section_hot")}</div>
+          <div class="sectionDesc">${t("home_section_hot_desc")}</div>
         </div>
       </div>
       <div class="communityPreviewWrap community-preview-bleed">
