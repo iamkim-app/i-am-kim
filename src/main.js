@@ -1385,6 +1385,15 @@ function setActiveRoute(route) {
     // Inject partner event hero cards after layout renders
     initPartnerEvents?.();
   }
+  if (route === "info") {
+    // setupHome renders both #page-home and #page-info.
+    // If arriving directly on #info (e.g. refresh), #page-info is empty — initialize it.
+    const infoPage = document.querySelector("#page-info");
+    if (infoPage && !infoPage.querySelector(".langSelector")) {
+      setupHome?.(token);
+      initPartnerEvents?.();
+    }
+  }
   if (route === "k" && !String(location.hash || "").includes("tab=")) {
     history.replaceState(null, "", "#k?tab=kpop");
   }
@@ -3454,6 +3463,7 @@ async function init() {
   // routing
   updateBottomTabbarRoutes();
   bindTabbarScrollToTop();
+  window.addEventListener("i18nlangchange", () => updateBottomTabbarRoutes());
 
   // Landing gate: session + guest_mode 기반
   {
