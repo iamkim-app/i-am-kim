@@ -431,9 +431,14 @@ function bindPartnerAdminEvents(bodyEl, events) {
 
     // Edit — toggle inline form, populate with ev data
     const editBtn = bodyEl.querySelector(`[data-action="edit-event"][data-id="${id}"]`);
-    const editContainer = document.getElementById(`editForm-${id}`);
-    if (editBtn && editContainer) {
+    if (editBtn) {
       editBtn.onclick = () => {
+        const itemEl = editBtn.closest("[data-event-item]");
+        const editContainer = itemEl
+          ? itemEl.querySelector(`[id="editForm-${id}"]`)
+          : bodyEl.querySelector(`[id="editForm-${id}"]`);
+        if (!editContainer) return;
+
         if (!editContainer.hidden) {
           editContainer.hidden = true;
           editContainer.innerHTML = "";
