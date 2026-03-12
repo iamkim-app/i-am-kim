@@ -93,6 +93,7 @@ const NOW_STATE = {
 let NOW_LOAD_TOKEN = 0;
 let NOW_LOAD_TIMEOUT = null;
 let FAQ_USER_FILTER = "";
+let FAQ_SUB_TAB = "guide"; // "guide" | "qa"
 
 let NEWS_READY_BOUND = false;
 if (!NEWS_READY_BOUND) {
@@ -306,63 +307,73 @@ function renderFaqSection(allItems) {
     sessionStorage.removeItem("faqUserFilter");
   }
 
-  const fixedItems = (Array.isArray(allItems) ? allItems : []).filter((q) => q.is_fixed && matchesSearch(q));
-  let communityItems = (Array.isArray(allItems) ? allItems : []).filter((q) => !q.is_fixed && matchesSearch(q));
-  if (FAQ_USER_FILTER) {
-    communityItems = communityItems.filter((q) => q.user_id === FAQ_USER_FILTER);
+  const isGuide = FAQ_SUB_TAB !== "qa";
+
+  // Sub-tab bar
+  const subTabBar = `
+    <div class="faqSubTabs" id="faqSubTabs">
+      <button class="faqSubTab ${isGuide ? "is-active" : ""}" data-sub="guide" type="button">Guide</button>
+      <button class="faqSubTab ${!isGuide ? "is-active" : ""}" data-sub="qa" type="button">Q&A</button>
+    </div>`;
+
+  // Sync Ask button & admin bar visibility with sub-tab
+  const faqBar = document.getElementById("nowFaqBar");
+  if (faqBar) faqBar.style.display = (!isGuide && NOW_STATE.isSignedIn) ? "flex" : "none";
+
+  if (isGuide) {
+    // ── Guide sub-tab ──
+    const fixedItems = (Array.isArray(allItems) ? allItems : []).filter((q) => q.is_fixed && matchesSearch(q));
+    const addGuideBtn = NOW_STATE.isAdmin
+      ? `<button class="btn btn--ghost btn--small" id="btnAddGuideFaq" type="button">+ Add Guide</button>`
+      : "";
+    host.innerHTML = subTabBar + `
+      <div class="faqSubContent">
+        <div class="faqSectionHead" style="padding-top:6px">${addGuideBtn}</div>
+        <div class="faqAccordionList">
+          ${fixedItems.length
+            ? fixedItems.map(renderFixedFaqItem).join("")
+            : `<div class="muted small" style="padding:8px 0">${t("news_empty")}</div>`}
+        </div>
+      </div>`;
+    host.querySelectorAll(".faqAccordion__q").forEach((btn) => {
+      btn.addEventListener("click", () => btn.closest(".faqAccordion")?.classList.toggle("is-open"));
+    });
+    host.querySelector("#btnAddGuideFaq")?.addEventListener("click", () => openGuideFaqModal(NOW_STATE.refresh));
+  } else {
+    // ── Q&A sub-tab ──
+    let communityItems = (Array.isArray(allItems) ? allItems : []).filter((q) => !q.is_fixed && matchesSearch(q));
+    if (FAQ_USER_FILTER) communityItems = communityItems.filter((q) => q.user_id === FAQ_USER_FILTER);
+    const myQsBanner = FAQ_USER_FILTER
+      ? `<div class="callout faqMyQsBanner" style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <span>${t("news_faq_showing_mine")}</span>
+          <button class="btn btn--ghost btn--small" id="faqMyQsBannerClear" type="button">${t("news_faq_show_all")}</button>
+        </div>`
+      : "";
+    host.innerHTML = subTabBar + `
+      <div class="faqSubContent">
+        ${myQsBanner}
+        <div id="faqCommunityList">
+          ${communityItems.length
+            ? communityItems.map(renderCommunityFaqItem).join("")
+            : `<div class="muted small" style="padding:8px 0">${t("news_empty")}</div>`}
+        </div>
+      </div>`;
+    host.querySelector("#faqMyQsBannerClear")?.addEventListener("click", () => {
+      FAQ_USER_FILTER = "";
+      renderFaqSection(NOW_STATE.faqQuestions);
+    });
   }
 
-  const addGuideBtn = NOW_STATE.isAdmin
-    ? `<button class="btn btn--ghost btn--small" id="btnAddGuideFaq" type="button">+ Add Guide</button>`
-    : "";
-  const myQsBanner = FAQ_USER_FILTER
-    ? `<div class="callout faqMyQsBanner" style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <span>${t("news_faq_showing_mine")}</span>
-        <button class="btn btn--ghost btn--small" id="faqMyQsBannerClear" type="button">${t("news_faq_show_all")}</button>
-      </div>`
-    : "";
-
-  host.innerHTML = `
-    <div class="faqSection">
-      <div class="faqSectionHead">
-        <span class="faqSectionTitle">I AM KIM Guide</span>
-        ${addGuideBtn}
-      </div>
-      <div class="faqAccordionList">
-        ${fixedItems.length
-          ? fixedItems.map(renderFixedFaqItem).join("")
-          : `<div class="muted small" style="padding:8px 0">${t("news_empty")}</div>`}
-      </div>
-    </div>
-    <div class="faqSection" style="margin-top:20px">
-      <div class="faqSectionHead">
-        <span class="faqSectionTitle">Community Q&A</span>
-      </div>
-      ${myQsBanner}
-      <div id="faqCommunityList">
-        ${communityItems.length
-          ? communityItems.map(renderCommunityFaqItem).join("")
-          : `<div class="muted small" style="padding:8px 0">${t("news_empty")}</div>`}
-      </div>
-    </div>
-  `;
-
-  // Accordion toggles
-  host.querySelectorAll(".faqAccordion__q").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      btn.closest(".faqAccordion")?.classList.toggle("is-open");
-    });
-  });
-
-  // My Qs clear
-  host.querySelector("#faqMyQsBannerClear")?.addEventListener("click", () => {
-    FAQ_USER_FILTER = "";
-    renderFaqSection(NOW_STATE.faqQuestions);
-  });
-
-  // Admin: Add Guide
-  host.querySelector("#btnAddGuideFaq")?.addEventListener("click", () => {
-    openGuideFaqModal(NOW_STATE.refresh);
+  // Sub-tab click handler
+  host.querySelector("#faqSubTabs")?.addEventListener("click", (e) => {
+    const btn = e.target?.closest?.(".faqSubTab");
+    if (!btn) return;
+    const sub = btn.dataset.sub;
+    if (sub && sub !== FAQ_SUB_TAB) {
+      FAQ_SUB_TAB = sub;
+      if (input) input.value = "";
+      renderFaqSection(NOW_STATE.faqQuestions);
+    }
   });
 }
 
@@ -382,8 +393,12 @@ function renderChips(active) {
     search.style.display = active === "FAQ" ? "block" : "none";
     if (active !== "FAQ") {
       search.value = "";
+      FAQ_SUB_TAB = "guide"; // reset to Guide when leaving FAQ tab
     }
   }
+  // Hide Ask button when not on FAQ/Q&A
+  const faqBar = document.getElementById("nowFaqBar");
+  if (faqBar && active !== "FAQ") faqBar.style.display = "none";
 }
 
 function bindChips(active, items) {
@@ -775,7 +790,8 @@ async function submitFaqQuestion(refresh) {
 function setFaqAskVisibility() {
   const bar = $("#nowFaqBar");
   if (!bar) return;
-  bar.style.display = NOW_STATE.isSignedIn ? "flex" : "none";
+  const faqActive = $("#nowChips .is-active")?.dataset?.filter === "FAQ";
+  bar.style.display = (faqActive && FAQ_SUB_TAB === "qa" && NOW_STATE.isSignedIn) ? "flex" : "none";
 }
 async function handleAdminSaveClick() {
   const modal = $("#nowAdminModal");

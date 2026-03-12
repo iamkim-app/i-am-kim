@@ -6016,3 +6016,9 @@ font-weight:500;
 .faqAccordion.is-open .faqAccordion__body { display:block; }
 .faqAccordion__answers { display:flex; flex-direction:column; gap:8px; }
 .faqAccordion__a { font-size:14px; line-height:1.5; color:rgba(17,17,17,.8); padding:10px 12px; background:rgba(17,17,17,.03); border-radius:10px; white-space:pre-wrap; }
+
+/* ── FAQ Sub-tabs ── */
+.faqSubTabs { display:flex; gap:0; border-radius:12px; background:rgba(17,17,17,.06); padding:3px; margin-bottom:14px; width:fit-content; }
+.faqSubTab { padding:6px 20px; border-radius:9px; border:none; background:transparent; font-size:13px; font-weight:600; cursor:pointer; color:rgba(17,17,17,.5); transition:all .15s; }
+.faqSubTab.is-active { background:#fff; color:rgba(17,17,17,.9); box-shadow:0 1px 4px rgba(17,17,17,.1); }
+.faqSubContent { display:flex; flex-direction:column; gap:0; }
