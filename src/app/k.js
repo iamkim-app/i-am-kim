@@ -690,4 +690,20 @@ if (!initKPage.resumeBound) {
     setKLoading(false);
     initKPage({ tab: tab || "kpop" });
   });
+
+  window.addEventListener("i18nlangchange", () => {
+    // Re-label all rendered sub-tab buttons
+    document.querySelectorAll(".kSubtab[data-tab]").forEach((btn) => {
+      btn.textContent = getTabLabel(btn.dataset.tab);
+    });
+    // Re-label header tab label and description if Special K page is visible
+    const page = document.querySelector("#page-kpop");
+    if (!page || page.hidden) return;
+    const { tab } = getActiveRouteAndTab();
+    const activeTab = tab || "kpop";
+    const tabLabel = page.querySelector("#kTabLabel");
+    if (tabLabel) tabLabel.textContent = getTabLabel(activeTab);
+    const desc = page.querySelector(".pageHeader__desc");
+    if (desc) desc.textContent = (TAB_DESCS[activeTab] || TAB_DESCS.kpop)();
+  });
 }

@@ -1285,7 +1285,10 @@ function updateBottomTabbarRoutes() {
   ];
 
   mappings.forEach(({ from, to }) => {
-    const link = document.querySelector(`.tabbar__link[data-route="${from}"]`);
+    // After first call data-route is already set to to.route, so try both
+    const link =
+      document.querySelector(`.tabbar__link[data-route="${from}"]`) ||
+      document.querySelector(`.tabbar__link[data-route="${to.route}"]`);
     if (!link) return;
     link.dataset.route = to.route;
     link.setAttribute("href", to.href);
