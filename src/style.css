@@ -6000,3 +6000,19 @@ font-weight:500;
 .langSelector { display:flex; gap:8px; padding: 12px 16px 4px; }
 .langBtn { padding: 6px 14px; border-radius: 20px; border: 1.5px solid #ddd; background: transparent; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
 .langBtn--active { border-color: var(--accent, #e53); background: var(--accent, #e53); color: #fff; }
+
+/* ── FAQ Two-Section Layout ── */
+.faqSection { display:flex; flex-direction:column; gap:0; }
+.faqSectionHead { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:4px 0 10px; }
+.faqSectionTitle { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:rgba(17,17,17,.45); }
+.faqAccordionList { display:flex; flex-direction:column; gap:6px; }
+
+.faqAccordion { border:1px solid rgba(17,17,17,.10); border-radius:14px; background:#fff; overflow:hidden; }
+.faqAccordion__q { width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:13px 14px; background:none; border:none; cursor:pointer; text-align:left; font-size:15px; font-weight:600; line-height:1.35; color:inherit; }
+.faqAccordion__text { flex:1; }
+.faqAccordion__arrow { font-size:18px; color:rgba(17,17,17,.4); transition:transform .2s; display:inline-block; }
+.faqAccordion.is-open .faqAccordion__arrow { transform:rotate(90deg); }
+.faqAccordion__body { display:none; padding:0 14px 14px; }
+.faqAccordion.is-open .faqAccordion__body { display:block; }
+.faqAccordion__answers { display:flex; flex-direction:column; gap:8px; }
+.faqAccordion__a { font-size:14px; line-height:1.5; color:rgba(17,17,17,.8); padding:10px 12px; background:rgba(17,17,17,.03); border-radius:10px; white-space:pre-wrap; }

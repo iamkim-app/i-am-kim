@@ -186,42 +186,7 @@ function renderCards(active, items) {
   const host = $("#nowCards");
   if (!host) return;
   if (active === "FAQ") {
-    const ssFilter = sessionStorage.getItem("faqUserFilter");
-    if (ssFilter) {
-      FAQ_USER_FILTER = ssFilter;
-      sessionStorage.removeItem("faqUserFilter");
-    }
-    const input = $("#faqSearch");
-    const tokens = tokenize(input?.value || "");
-    let list = tokens.length
-      ? NOW_STATE.faqQuestions.filter((q) => {
-          const hay = tokenize(q.question || "").join(" ");
-          return tokens.every((t) => hay.includes(t));
-        })
-      : NOW_STATE.faqQuestions;
-    if (FAQ_USER_FILTER) {
-      list = list.filter((q) => q.user_id === FAQ_USER_FILTER);
-      let banner = document.querySelector("#faqMyQsBanner");
-      if (!banner) {
-        banner = document.createElement("div");
-        banner.id = "faqMyQsBanner";
-        banner.className = "callout";
-        banner.style.cssText = "margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px";
-        banner.innerHTML = `<span>${t('news_faq_showing_mine')}</span><button class="btn btn--ghost btn--small" id="faqMyQsBannerClear" type="button">${t('news_faq_show_all')}</button>`;
-        const nowCards = document.querySelector("#nowCards");
-        if (nowCards?.parentNode) nowCards.parentNode.insertBefore(banner, nowCards);
-        document.querySelector("#faqMyQsBannerClear")?.addEventListener("click", () => {
-          FAQ_USER_FILTER = "";
-          banner.hidden = true;
-          renderCards("FAQ", NOW_STATE.items);
-        });
-      }
-      banner.hidden = false;
-    } else {
-      const banner = document.querySelector("#faqMyQsBanner");
-      if (banner) banner.hidden = true;
-    }
-    renderFaqList(list);
+    renderFaqSection(NOW_STATE.faqQuestions);
     return;
   }
   const section = mapFilterToSection(active);
@@ -236,81 +201,169 @@ function renderCards(active, items) {
     : `<div class="muted small">${t('news_empty')}</div>`;
 }
 
-function renderFaqList(items) {
+function renderFixedFaqItem(it) {
+  const question = escapeHtml(it.question || "Untitled");
+  const answers = Array.isArray(it.faq_answers)
+    ? it.faq_answers
+        .filter((a) => !a?.status || a.status === "active")
+        .slice()
+        .sort((a, b) => new Date(b?.created_at || 0) - new Date(a?.created_at || 0))
+    : [];
+  const answersHtml = answers.length
+    ? answers
+        .map((a) => `<div class="faqAccordion__a">${escapeHtml(a.answer || "")}</div>`)
+        .join("")
+    : `<div class="muted small">${t("news_faq_no_answers")}</div>`;
+  const adminActions = NOW_STATE.isAdmin && it.id
+    ? `<div class="faqQ__actions">
+        <button class="btn btn--ghost btn--small faqUnpinBtn" type="button" data-qid="${escapeHtml(it.id)}">Unpin</button>
+        <button class="btn btn--ghost btn--small faqAnswerBtn" type="button" data-question-id="${escapeHtml(it.id)}">${t("btn_faq_answer")}</button>
+        <button class="btn btn--ghost btn--small btn--danger faqQ__del" type="button" data-qid="${escapeHtml(it.id)}">${t("btn_delete")}</button>
+      </div>`
+    : "";
+  return `
+    <div class="faqAccordion" data-qid="${escapeHtml(it.id || "")}">
+      <button class="faqAccordion__q" type="button">
+        <span class="faqAccordion__text">${question}</span>
+        <span class="faqAccordion__arrow" aria-hidden="true">›</span>
+      </button>
+      <div class="faqAccordion__body">
+        <div class="faqAccordion__answers">${answersHtml}</div>
+        ${adminActions}
+      </div>
+    </div>
+  `;
+}
+
+function renderCommunityFaqItem(it) {
+  const question = escapeHtml(it.question || "Untitled");
+  const answers = Array.isArray(it.faq_answers)
+    ? it.faq_answers
+        .filter((a) => !a?.status || a.status === "active")
+        .slice()
+        .sort((a, b) => new Date(b?.created_at || 0) - new Date(a?.created_at || 0))
+    : [];
+  const metaText = answers.length
+    ? answers.length === 1
+      ? t("news_faq_answers_count", { n: answers.length })
+      : t("news_faq_answers_count_plural", { n: answers.length })
+    : t("news_faq_no_answers");
+  const answersHtml = answers
+    .map((a) => {
+      const text = escapeHtml(a.answer || "");
+      const isBest = !!a.is_best;
+      const bestBadge = isBest ? `<span class="bestBadge">${t("news_faq_badge_best")}</span>` : "";
+      const adminBadge = NOW_STATE.isAdmin ? `<span class="adminBadge">ADMIN</span>` : "";
+      const adminDelete = NOW_STATE.isAdmin && a.id
+        ? `<button class="btn btn--ghost btn--small faqAnswerDelete" type="button" data-answer-id="${escapeHtml(a.id)}" data-question-id="${escapeHtml(it.id || "")}">${t("btn_delete")}</button>`
+        : "";
+      return `
+        <div class="faqA ${isBest ? "is-best" : ""}">
+          <div class="faqA__meta">
+            <span class="qaBadge">A</span>${adminBadge}${bestBadge}
+          </div>
+          <div class="faqA__txt">${text}</div>
+          ${adminDelete}
+        </div>`;
+    })
+    .join("");
+  const adminPin = NOW_STATE.isAdmin && it.id
+    ? `<button class="btn btn--ghost btn--small faqPinBtn" type="button" data-qid="${escapeHtml(it.id)}">📌 Pin</button>`
+    : "";
+  const adminAnswer = NOW_STATE.isAdmin && it.id
+    ? `<button class="btn btn--ghost btn--small faqAnswerBtn" type="button" data-question-id="${escapeHtml(it.id)}">${t("btn_faq_answer")}</button>`
+    : "";
+  const adminDel = NOW_STATE.isAdmin && it.id
+    ? `<button class="btn btn--ghost btn--small btn--danger faqQ__del" type="button" data-qid="${escapeHtml(it.id)}">${t("btn_delete")}</button>`
+    : "";
+  return `
+    <article class="faqQ" data-qid="${escapeHtml(it.id || "")}">
+      <div class="faqQ__q"><span class="qaBadge">Q</span>${question}</div>
+      <div class="faqQ__meta">${metaText}</div>
+      <div class="faqQ__actions">${adminPin}${adminAnswer}${adminDel}</div>
+      <div class="faqAList">${answersHtml}</div>
+    </article>`;
+}
+
+function renderFaqSection(allItems) {
   const host = $("#nowCards");
   if (!host) return;
-  const list = Array.isArray(items) ? items : [];
-  if (host.id === "nowCards") {
-    host.classList.toggle("is-single", list.length < 2);
+  host.classList.remove("is-single");
+
+  const input = $("#faqSearch");
+  const tokens = tokenize(input?.value || "");
+
+  function matchesSearch(it) {
+    if (!tokens.length) return true;
+    const hayQ = tokenize(it.question || "").join(" ");
+    const hayA = (it.faq_answers || []).map((a) => tokenize(a.answer || "").join(" ")).join(" ");
+    return tokens.every((tok) => (hayQ + " " + hayA).includes(tok));
   }
-  host.innerHTML = list.length
-    ? list
-        .map((it) => {
-          const question = escapeHtml(it.question || "Untitled");
-          const answers = Array.isArray(it.faq_answers)
-            ? it.faq_answers
-                .filter((a) => !a?.status || a.status === "active")
-                .slice()
-                .sort(
-                  (a, b) =>
-                    new Date(b?.created_at || 0).getTime() -
-                    new Date(a?.created_at || 0).getTime()
-                )
-            : [];
-          const metaText = answers.length
-            ? (answers.length === 1 ? t('news_faq_answers_count', { n: answers.length }) : t('news_faq_answers_count_plural', { n: answers.length }))
-            : t('news_faq_no_answers');
-          const answersHtml = answers.length
-            ? answers
-                .map((a) => {
-                  const text = escapeHtml(a.answer || "");
-                  const isBest = !!a.is_best;
-                  const bestBadge = isBest ? `<span class="bestBadge">${t('news_faq_badge_best')}</span>` : "";
-                  const adminBadge = NOW_STATE.isAdmin ? `<span class="adminBadge">ADMIN</span>` : "";
-                  const aBadge = `<span class="qaBadge">A</span>`;
-                  const adminDelete =
-                    NOW_STATE.isAdmin && a.id
-                      ? `<button class="btn btn--ghost btn--small faqAnswerDelete" type="button" data-answer-id="${escapeHtml(
-                          a.id
-                        )}" data-question-id="${escapeHtml(it.id || "")}">Delete</button>`
-                      : "";
-                  return `
-                    <div class="faqA ${isBest ? "is-best" : ""}">
-                      <div class="faqA__meta">
-                        ${aBadge}
-                        ${adminBadge}
-                        ${bestBadge}
-                      </div>
-                      <div class="faqA__txt">${text}</div>
-                      ${adminDelete}
-                    </div>
-                  `;
-                })
-                .join("")
-            : "";
-          const adminAnswer =
-            NOW_STATE.isAdmin && it.id
-              ? `<button class="btn btn--ghost btn--small faqAnswerBtn" type="button" data-question-id="${escapeHtml(
-                  it.id
-                )}">${t('btn_faq_answer')}</button>`
-              : "";
-          const adminDeleteQuestion =
-            NOW_STATE.isAdmin && it.id
-              ? `<button class="btn btn--ghost btn--small btn--danger faqQ__del" type="button" data-qid="${escapeHtml(
-                  it.id
-                )}">Delete</button>`
-              : "";
-          return `
-            <article class="faqQ" data-qid="${escapeHtml(it.id || "")}">
-              <div class="faqQ__q"><span class="qaBadge">Q</span>${question}</div>
-              <div class="faqQ__meta">${metaText}</div>
-              <div class="faqQ__actions">${adminAnswer}${adminDeleteQuestion}</div>
-              <div class="faqAList">${answersHtml}</div>
-            </article>
-          `;
-        })
-        .join("")
-    : `<div class="muted small">${t('news_empty')}</div>`;
+
+  const ssFilter = sessionStorage.getItem("faqUserFilter");
+  if (ssFilter) {
+    FAQ_USER_FILTER = ssFilter;
+    sessionStorage.removeItem("faqUserFilter");
+  }
+
+  const fixedItems = (Array.isArray(allItems) ? allItems : []).filter((q) => q.is_fixed && matchesSearch(q));
+  let communityItems = (Array.isArray(allItems) ? allItems : []).filter((q) => !q.is_fixed && matchesSearch(q));
+  if (FAQ_USER_FILTER) {
+    communityItems = communityItems.filter((q) => q.user_id === FAQ_USER_FILTER);
+  }
+
+  const addGuideBtn = NOW_STATE.isAdmin
+    ? `<button class="btn btn--ghost btn--small" id="btnAddGuideFaq" type="button">+ Add Guide</button>`
+    : "";
+  const myQsBanner = FAQ_USER_FILTER
+    ? `<div class="callout faqMyQsBanner" style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <span>${t("news_faq_showing_mine")}</span>
+        <button class="btn btn--ghost btn--small" id="faqMyQsBannerClear" type="button">${t("news_faq_show_all")}</button>
+      </div>`
+    : "";
+
+  host.innerHTML = `
+    <div class="faqSection">
+      <div class="faqSectionHead">
+        <span class="faqSectionTitle">I AM KIM Guide</span>
+        ${addGuideBtn}
+      </div>
+      <div class="faqAccordionList">
+        ${fixedItems.length
+          ? fixedItems.map(renderFixedFaqItem).join("")
+          : `<div class="muted small" style="padding:8px 0">${t("news_empty")}</div>`}
+      </div>
+    </div>
+    <div class="faqSection" style="margin-top:20px">
+      <div class="faqSectionHead">
+        <span class="faqSectionTitle">Community Q&A</span>
+      </div>
+      ${myQsBanner}
+      <div id="faqCommunityList">
+        ${communityItems.length
+          ? communityItems.map(renderCommunityFaqItem).join("")
+          : `<div class="muted small" style="padding:8px 0">${t("news_empty")}</div>`}
+      </div>
+    </div>
+  `;
+
+  // Accordion toggles
+  host.querySelectorAll(".faqAccordion__q").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      btn.closest(".faqAccordion")?.classList.toggle("is-open");
+    });
+  });
+
+  // My Qs clear
+  host.querySelector("#faqMyQsBannerClear")?.addEventListener("click", () => {
+    FAQ_USER_FILTER = "";
+    renderFaqSection(NOW_STATE.faqQuestions);
+  });
+
+  // Admin: Add Guide
+  host.querySelector("#btnAddGuideFaq")?.addEventListener("click", () => {
+    openGuideFaqModal(NOW_STATE.refresh);
+  });
 }
 
 function renderChips(active) {
@@ -466,7 +519,7 @@ async function loadFaqQuestions() {
   try {
     const { data, error } = await supabase
       .from("faq_questions")
-      .select("id,question,created_at,user_id,faq_answers(id,answer,created_at,status,is_best)")
+      .select("id,question,created_at,user_id,is_fixed,faq_answers(id,answer,created_at,status,is_best)")
       .order("created_at", { ascending: false });
     if (error) throw error;
     return Array.isArray(data) ? data : [];
@@ -916,8 +969,110 @@ function bindFaqActions(refresh) {
       } catch (err) {
         console.warn("[korea-now] FAQ answer delete failed.", err);
       }
+      return;
+    }
+    const pinBtn = e.target?.closest?.(".faqPinBtn");
+    if (pinBtn) {
+      const qid = pinBtn.dataset.qid || "";
+      if (!qid) return;
+      await toggleFaqFixed(qid, true, refresh);
+      return;
+    }
+    const unpinBtn = e.target?.closest?.(".faqUnpinBtn");
+    if (unpinBtn) {
+      const qid = unpinBtn.dataset.qid || "";
+      if (!qid) return;
+      await toggleFaqFixed(qid, false, refresh);
     }
   });
+}
+
+async function toggleFaqFixed(id, isFixed, refresh) {
+  const supabase = getSupabase();
+  if (!supabase || !id) return;
+  try {
+    const { error } = await supabase.from("faq_questions").update({ is_fixed: isFixed }).eq("id", id);
+    if (error) throw error;
+    NOW_STATE.faqQuestions = await loadFaqQuestions();
+    renderFaqSection(NOW_STATE.faqQuestions);
+  } catch (err) {
+    console.warn("[korea-now] toggleFaqFixed failed.", err);
+  }
+}
+
+function openGuideFaqModal(refresh) {
+  let modal = document.getElementById("guideFaqModal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.className = "nowModal";
+    modal.id = "guideFaqModal";
+    modal.innerHTML = `
+      <div class="nowModal__backdrop" data-close="1"></div>
+      <div class="nowModal__card" role="dialog" aria-modal="true">
+        <div class="nowModal__head">
+          <div class="nowModal__title">Add Guide FAQ</div>
+          <button class="btn btn--ghost btn--small" data-close="1" type="button">${t("btn_close")}</button>
+        </div>
+        <div class="nowModal__body">
+          <label class="field">
+            <div class="field__label">${t("label_question")}</div>
+            <input id="guideFaqQ" class="input" placeholder="${t("placeholder_question")}" maxlength="300" />
+          </label>
+          <label class="field">
+            <div class="field__label">Answer</div>
+            <textarea id="guideFaqA" class="input" rows="4" maxlength="2000" placeholder="${t("placeholder_optional")}"></textarea>
+          </label>
+          <div class="field__status" id="guideFaqStatus"></div>
+        </div>
+        <div class="nowModal__actions">
+          <button class="btn btn--ghost" data-close="1" type="button">${t("btn_cancel")}</button>
+          <button class="btn btn--primary" id="btnGuideFaqSubmit" type="button">${t("btn_add_event")}</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener("click", (e) => {
+      if (e.target?.closest?.("[data-close='1']")) modal.hidden = true;
+    });
+    modal.querySelector("#btnGuideFaqSubmit")?.addEventListener("click", async () => {
+      const q = modal.querySelector("#guideFaqQ")?.value?.trim() || "";
+      const a = modal.querySelector("#guideFaqA")?.value?.trim() || "";
+      const status = modal.querySelector("#guideFaqStatus");
+      if (!q) {
+        if (status) status.textContent = t("err_title_required");
+        return;
+      }
+      const supabase = getSupabase();
+      if (!supabase) return;
+      if (status) status.textContent = t("status_saving");
+      try {
+        const { data: qData, error: qErr } = await supabase
+          .from("faq_questions")
+          .insert({ question: q, is_fixed: true })
+          .select("id")
+          .single();
+        if (qErr) throw qErr;
+        if (a) {
+          const { error: aErr } = await supabase
+            .from("faq_answers")
+            .insert({ question_id: qData.id, answer: a, status: "active", is_best: true });
+          if (aErr) throw aErr;
+        }
+        modal.hidden = true;
+        modal.querySelector("#guideFaqQ").value = "";
+        modal.querySelector("#guideFaqA").value = "";
+        if (status) status.textContent = "";
+        NOW_STATE.faqQuestions = await loadFaqQuestions();
+        renderFaqSection(NOW_STATE.faqQuestions);
+      } catch (err) {
+        console.warn("[korea-now] Guide FAQ insert failed.", err);
+        if (status) status.textContent = t("err_generic");
+      }
+    });
+  }
+  modal.hidden = false;
+  const status = modal.querySelector("#guideFaqStatus");
+  if (status) status.textContent = "";
 }
 
 export async function deleteKPost(id) {
