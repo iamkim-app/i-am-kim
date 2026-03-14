@@ -1,3 +1,5 @@
+import { getCache, setCache, TTL } from "./cache.js";
+
 const SEED_ITEMS = [
   {
     id: "kp-1",
@@ -486,6 +488,10 @@ function filterItemsByMode(items, mode) {
 }
 
 async function loadSupabaseItems(mode) {
+  const cacheKey = `korea_now_${mode}`;
+  const cached = getCache(cacheKey);
+  if (cached) return cached;
+
   const supabase = getSupabase();
   if (!supabase) return { ok: false, items: [] };
   try {
@@ -521,7 +527,9 @@ async function loadSupabaseItems(mode) {
       })
       .filter(Boolean);
 
-    return { ok: true, items: filterItemsByMode(items, mode) };
+    const result = { ok: true, items: filterItemsByMode(items, mode) };
+    setCache(cacheKey, result, TTL.NEWS);
+    return result;
   } catch (err) {
     console.warn("[korea-now] Supabase load failed.", err);
     return { ok: false, items: [] };
@@ -529,6 +537,10 @@ async function loadSupabaseItems(mode) {
 }
 
 async function loadFaqQuestions() {
+  const cacheKey = "faq_questions";
+  const cached = getCache(cacheKey);
+  if (cached) return cached;
+
   const supabase = getSupabase();
   if (!supabase) return [];
   try {
@@ -537,7 +549,9 @@ async function loadFaqQuestions() {
       .select("id,question,created_at,user_id,is_fixed,faq_answers(id,answer,created_at,status,is_best)")
       .order("created_at", { ascending: false });
     if (error) throw error;
-    return Array.isArray(data) ? data : [];
+    const result = Array.isArray(data) ? data : [];
+    setCache(cacheKey, result, TTL.NEWS);
+    return result;
   } catch (err) {
     console.warn("[korea-now] FAQ questions load failed.", err);
     try {
@@ -549,12 +563,16 @@ async function loadFaqQuestions() {
 }
 
 export async function fetchKPosts(category) {
-  const supabase = getSupabase();
-  if (!supabase) return [];
-
   const allowed = new Set(["kpop", "food", "beauty", "deals", "shopping"]);
   const catRaw = String(category || "kpop").toLowerCase();
   const cat = allowed.has(catRaw) ? catRaw : "kpop";
+
+  const cacheKey = `k_posts_${cat}`;
+  const cached = getCache(cacheKey);
+  if (cached) return cached;
+
+  const supabase = getSupabase();
+  if (!supabase) return [];
   const tagFromCat = (value) => {
     switch (value) {
       case "kpop":
@@ -581,7 +599,7 @@ export async function fetchKPosts(category) {
       .order("created_at", { ascending: false });
     if (error) throw error;
 
-    return (data || [])
+    const result = (data || [])
       .map((row) => {
         return {
           id: row.id,
@@ -592,6 +610,8 @@ export async function fetchKPosts(category) {
         };
       })
       .filter(Boolean);
+    setCache(cacheKey, result, TTL.K);
+    return result;
   } catch (err) {
     console.warn("[korea-now] fetchKPosts failed.", err);
     return [];
@@ -599,6 +619,10 @@ export async function fetchKPosts(category) {
 }
 
 export async function fetchIdolSpots() {
+  const cacheKey = "idol_spots";
+  const cached = getCache(cacheKey);
+  if (cached) return cached;
+
   const supabase = getSupabase();
   if (!supabase) return [];
   try {
@@ -607,7 +631,9 @@ export async function fetchIdolSpots() {
       .select("*")
       .order("created_at", { ascending: false });
     if (error) throw error;
-    return data || [];
+    const result = data || [];
+    setCache(cacheKey, result, TTL.K);
+    return result;
   } catch (err) {
     console.warn("[korea-now] fetchIdolSpots failed.", err);
     return [];

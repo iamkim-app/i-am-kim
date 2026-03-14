@@ -1,4 +1,5 @@
 import { AUTH_STATE, getSession, displayNameFromSession } from "./auth.js";
+import { getCache, setCache, clearCache, TTL, skeletonRows } from "./cache.js";
 
 const {
   $,
@@ -106,6 +107,16 @@ let COMMUNITY_LOADING = false;
 let COMMUNITY_LOAD_TOKEN = 0;
 let COMMUNITY_LOAD_TIMEOUT = null;
 let COMMUNITY_LOCK_RETRY = false;
+
+// 페이지네이션
+const PAGE_SIZE = 10;
+let COMMUNITY_OFFSET = 0;
+let COMMUNITY_HAS_MORE = true;
+let COMMUNITY_LOADING_MORE = false;
+let _COMMUNITY_USER_ID = null;      // 현재 세션 userId (로드모어에서 재사용)
+let _COMMUNITY_IO = null;           // 무한스크롤 IntersectionObserver
+let _COMMUNITY_IMG_IO = null;       // 이미지 lazy load IntersectionObserver
+let _communityScrollTop = 0;        // 스크롤 위치 보존용
 const ADMIN_USER_IDS = [];
 const TRIPPAL_TEMPLATE = `TRIPPAL REQUEST
 DATE: 
@@ -180,19 +191,19 @@ function applyCommunityFocusJump(feedEl) {
   });
 }
 
-function renderCommunityFeed(posts, currentUserId, likeCounts = {}, myLikes = new Set(), commentsMap = {}, profileCountryMap = {}) {
+function renderCommunityFeed(posts, currentUserId, likeCounts = {}, myLikes = new Set(), commentsMap = {}, profileCountryMap = {}, { append = false } = {}) {
   const feed = $("#communityFeed");
   if (!feed) return;
   feed.classList.add("community-feed-bleed", "community-posts-bleed");
 
   const list = Array.isArray(posts) ? posts : [];
-  if (!list.length) {
+  if (!append && !list.length) {
     feed.innerHTML = `<div class="muted small">${t('community_empty')}</div>`;
     applyCommunityFocusJump(feed);
     return;
   }
 
-  feed.innerHTML = list
+  const html = list
     .map((p) => {
       const name = escapeHtml(p.nickname || "Traveler");
       const flag = countryFlag(profileCountryMap[p.user_id] || "");
@@ -242,7 +253,7 @@ function renderCommunityFeed(posts, currentUserId, likeCounts = {}, myLikes = ne
 
       const img = (p.image_url || "").trim();
       const imgBlock = img
-        ? `<div class="postImage"><img src="${escapeHtml(img)}" alt="Post photo" loading="lazy" /></div>`
+        ? `<div class="postImage"><img data-src="${escapeHtml(img)}" alt="Post photo" class="lazy-img" /></div>`
         : "";
 
       return `
@@ -293,77 +304,125 @@ function renderCommunityFeed(posts, currentUserId, likeCounts = {}, myLikes = ne
     })
     .join("");
 
-  // bind actions
-  feed.querySelectorAll("[data-action]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const card = btn.closest(".postCard");
-      const id = Number(card?.dataset?.id);
-      const action = btn.dataset.action;
-      if (!id || !action) return;
+  if (append) {
+    feed.insertAdjacentHTML("beforeend", html);
+  } else {
+    feed.innerHTML = html;
+  }
 
-      if (action === "delete") {
-        await deletePost(id);
-      } else if (action === "report") {
-        if (btn.dataset.disabled === "1") {
-          toast(t('err_account_suspended'));
-          return;
-        }
-        await reportPost(id);
-      } else if (action === "like") {
-        if (btn.dataset.disabled === "1") {
-          toast(t('err_account_suspended'));
-          return;
-        }
-        await toggleLike(id);
-      } else if (action === "send-comment") {
-        if (btn.dataset.disabled === "1") {
-          toast(t('err_account_suspended'));
-          return;
-        }
-        const input = card?.querySelector(".commentInput");
-        const content = String(input?.value || "").trim();
-        if (!content) return;
-        await createComment(id, content);
-        if (input) input.value = "";
-      } else if (action === "delete-comment") {
-        const commentId = Number(btn.closest(".commentItem")?.dataset?.id);
-        if (Number.isFinite(commentId)) {
-          await deleteComment(commentId);
-        }
-      } else if (action === "report-comment") {
-        if (btn.dataset.disabled === "1") {
-          if (AUTH_STATE.isBanned) toast(t('err_account_suspended'));
-          else toast(t('toast_sign_in_to_report'));
-          return;
-        }
-        const commentId = Number(btn.dataset.commentId || btn.closest(".commentItem")?.dataset?.id);
-        if (Number.isFinite(commentId)) {
-          await reportComment(commentId);
-        }
-      }
-    });
-  });
+  // 이미지 lazy load
+  bindLazyImages(feed);
 
   applyCommunityFocusJump(feed);
+}
 
-  feed.querySelectorAll(".postUser[data-uid]").forEach((el) => {
-    el.addEventListener("click", (e) => {
-      if (e.target?.closest?.("[data-action]")) return;
-      const uid = el.dataset.uid;
-      if (uid) location.hash = `#user-profile?uid=${encodeURIComponent(uid)}`;
-    });
+/* 이미지 IntersectionObserver — 화면에 들어올 때 src 세팅 */
+function bindLazyImages(container) {
+  const imgs = container.querySelectorAll("img.lazy-img[data-src]:not([data-observed])");
+  if (!imgs.length) return;
+
+  if (!_COMMUNITY_IMG_IO) {
+    _COMMUNITY_IMG_IO = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const img = entry.target;
+          const src = img.dataset.src;
+          if (!src) return;
+          img.src = src;
+          img.removeAttribute("data-src");
+          img.onerror = () => {
+            img.closest(".postImage")?.classList.add("postImage--broken");
+            img.remove();
+          };
+          _COMMUNITY_IMG_IO.unobserve(img);
+        });
+      },
+      { rootMargin: "120px" }
+    );
+  }
+
+  imgs.forEach((img) => {
+    img.dataset.observed = "1";
+    _COMMUNITY_IMG_IO.observe(img);
   });
 }
+
+/* 이벤트 위임 핸들러 — setupCommunity에서 한 번만 등록 */
+async function _handleFeedClick(e) {
+  const btn = e.target?.closest?.("[data-action]");
+  const userEl = e.target?.closest?.(".postUser[data-uid]");
+
+  if (userEl && !e.target?.closest?.("[data-action]")) {
+    const uid = userEl.dataset.uid;
+    if (uid) location.hash = `#user-profile?uid=${encodeURIComponent(uid)}`;
+    return;
+  }
+
+  if (!btn) return;
+  const card = btn.closest(".postCard");
+  const id = Number(card?.dataset?.id);
+  const action = btn.dataset.action;
+  if (!action) return;
+
+  if (action === "delete") {
+    if (id) await deletePost(id);
+  } else if (action === "report") {
+    if (btn.dataset.disabled === "1") { toast(t('err_account_suspended')); return; }
+    if (id) await reportPost(id);
+  } else if (action === "like") {
+    if (btn.dataset.disabled === "1") { toast(t('err_account_suspended')); return; }
+    if (id) await toggleLike(id);
+  } else if (action === "send-comment") {
+    if (btn.dataset.disabled === "1") { toast(t('err_account_suspended')); return; }
+    if (!id) return;
+    const input = card?.querySelector(".commentInput");
+    const content = String(input?.value || "").trim();
+    if (!content) return;
+    await createComment(id, content);
+    if (input) input.value = "";
+  } else if (action === "delete-comment") {
+    const commentId = Number(btn.closest(".commentItem")?.dataset?.id);
+    if (Number.isFinite(commentId)) await deleteComment(commentId);
+  } else if (action === "report-comment") {
+    if (btn.dataset.disabled === "1") {
+      if (AUTH_STATE.isBanned) toast(t('err_account_suspended'));
+      else toast(t('toast_sign_in_to_report'));
+      return;
+    }
+    const commentId = Number(btn.dataset.commentId || btn.closest(".commentItem")?.dataset?.id);
+    if (Number.isFinite(commentId)) await reportComment(commentId);
+  }
+}
+
+// 세션 동안 유지되는 프로필 국가 캐시 (profiles 반복 조회 방지)
+const _profileCountryCache = new Map();
 
 async function loadProfileCountries(userIds) {
   if (!supabase || !userIds.length) return {};
   const unique = [...new Set(userIds.filter(Boolean))];
   if (!unique.length) return {};
+
+  // 이미 캐시된 유저는 제외하고 미캐시 유저만 fetch
+  const uncached = unique.filter((id) => !_profileCountryCache.has(id));
+  if (uncached.length) {
+    try {
+      const { data } = await supabase.from("profiles").select("user_id,country").in("user_id", uncached);
+      (data || []).forEach((r) => {
+        _profileCountryCache.set(r.user_id, r.country || "");
+      });
+      // fetch 됐지만 profiles 없는 유저도 캐시 (재조회 방지)
+      uncached.forEach((id) => {
+        if (!_profileCountryCache.has(id)) _profileCountryCache.set(id, "");
+      });
+    } catch {}
+  }
+
   const result = {};
-  try {
-    const { data } = await supabase.from("profiles").select("user_id,country").in("user_id", unique);
-    (data || []).forEach((r) => { if (r.country) result[r.user_id] = r.country; });
-  } catch {}
+  unique.forEach((id) => {
+    const country = _profileCountryCache.get(id);
+    if (country) result[id] = country;
+  });
   return result;
 }
 
@@ -384,7 +443,34 @@ async function loadCommunityPosts(forceReload) {
     COMMUNITY_LOADING = false;
     return;
   }
-  if (status) status.textContent = t('status_loading');
+
+  // 페이지네이션 리셋
+  COMMUNITY_OFFSET = 0;
+  COMMUNITY_HAS_MORE = true;
+
+  // Cache-first: 캐시 있으면 즉시 표시 후 백그라운드 갱신
+  const _cacheKey = `community_posts_${COMMUNITY_FILTER}`;
+  if (!forceReload) {
+    const cached = getCache(_cacheKey);
+    if (cached) {
+      const myLikesSet = new Set(cached.myLikesArr || []);
+      renderCommunityFeed(cached.posts, cached.currentUserId, cached.likeCounts, myLikesSet, cached.commentsMap, cached.profileCountryMap);
+      if (status) status.textContent = "";
+      COMMUNITY_LOADING = false;
+      setupInfiniteScroll();
+      // 스크롤 위치 복원
+      requestAnimationFrame(() => window.scrollTo(0, _communityScrollTop));
+      // 백그라운드 갱신 (조용히)
+      loadCommunityPosts(true).catch(() => {});
+      return;
+    }
+  }
+
+  if (status) {
+    const hasCached = !!getCache(_cacheKey);
+    if (!hasCached) status.innerHTML = skeletonRows(5);
+    else status.textContent = t('status_loading');
+  }
   if (status) {
     COMMUNITY_LOAD_TIMEOUT = setTimeout(() => {
       if (requestId !== COMMUNITY_LOAD_TOKEN) return;
@@ -411,12 +497,13 @@ async function loadCommunityPosts(forceReload) {
 
     const session = await getSession();
     const currentUserId = session?.user?.id || null;
+    _COMMUNITY_USER_ID = currentUserId;  // 이후 loadMore에서 재사용
 
     let q = supabase
       .from("posts")
       .select("id,user_id,nickname,avatar,category,content,image_url,image_path,created_at,moderation_status")
       .order("created_at", { ascending: false })
-      .limit(50);
+      .limit(PAGE_SIZE);
 
     if (COMMUNITY_FILTER !== "all") q = q.eq("category", COMMUNITY_FILTER);
     q = q.eq("moderation_status", "active");
@@ -433,7 +520,21 @@ async function loadCommunityPosts(forceReload) {
     if (requestId !== COMMUNITY_LOAD_TOKEN) return;
     if (status) status.textContent = "";
     COMMUNITY_LOCK_RETRY = false;
+    // 페이지네이션 상태 갱신
+    COMMUNITY_OFFSET = posts.length;
+    COMMUNITY_HAS_MORE = posts.length === PAGE_SIZE;
+
+    // 캐시 저장 (myLikes Set → Array 직렬화, 첫 페이지만 캐시)
+    setCache(_cacheKey, {
+      posts,
+      currentUserId,
+      likeCounts: likeInfo.counts,
+      myLikesArr: Array.from(likeInfo.myLikes),
+      commentsMap,
+      profileCountryMap,
+    }, TTL.COMMUNITY);
     renderCommunityFeed(posts, currentUserId, likeInfo.counts, likeInfo.myLikes, commentsMap, profileCountryMap);
+    setupInfiniteScroll();
   } catch (err) {
     if (requestId === COMMUNITY_LOAD_TOKEN) {
       const msg = String(err?.message || err || "");
@@ -462,6 +563,69 @@ async function loadCommunityPosts(forceReload) {
       COMMUNITY_LOAD_TIMEOUT = null;
       COMMUNITY_LOADING = false;
     }
+  }
+}
+
+/* ── 무한 스크롤 ──────────────────────────────────────────── */
+
+function setupInfiniteScroll() {
+  // 기존 옵저버 정리
+  if (_COMMUNITY_IO) { _COMMUNITY_IO.disconnect(); _COMMUNITY_IO = null; }
+
+  // sentinel 엘리먼트 확보
+  let sentinel = document.getElementById("communityInfiniteScroll");
+  if (!sentinel) {
+    const feed = document.getElementById("communityFeed");
+    if (!feed) return;
+    sentinel = document.createElement("div");
+    sentinel.id = "communityInfiniteScroll";
+    sentinel.style.height = "20px";
+    feed.insertAdjacentElement("afterend", sentinel);
+  }
+
+  _COMMUNITY_IO = new IntersectionObserver(
+    (entries) => {
+      if (entries[0].isIntersecting && COMMUNITY_HAS_MORE && !COMMUNITY_LOADING_MORE) {
+        loadMorePosts().catch(() => {});
+      }
+    },
+    { rootMargin: "200px" }
+  );
+  _COMMUNITY_IO.observe(sentinel);
+}
+
+async function loadMorePosts() {
+  if (!supabase || COMMUNITY_LOADING_MORE || !COMMUNITY_HAS_MORE) return;
+  COMMUNITY_LOADING_MORE = true;
+
+  try {
+    let q = supabase
+      .from("posts")
+      .select("id,user_id,nickname,avatar,category,content,image_url,image_path,created_at,moderation_status")
+      .order("created_at", { ascending: false })
+      .range(COMMUNITY_OFFSET, COMMUNITY_OFFSET + PAGE_SIZE - 1)
+      .eq("moderation_status", "active");
+
+    if (COMMUNITY_FILTER !== "all") q = q.eq("category", COMMUNITY_FILTER);
+
+    const { data, error } = await q;
+    if (error) throw error;
+
+    const posts = data || [];
+    if (!posts.length) { COMMUNITY_HAS_MORE = false; return; }
+
+    const likeInfo = await loadCommunityLikes(posts.map((p) => p.id), _COMMUNITY_USER_ID);
+    const commentsMap = await loadCommunityComments(posts.map((p) => p.id));
+    const profileCountryMap = await loadProfileCountries(posts.map((p) => p.user_id));
+
+    COMMUNITY_OFFSET += posts.length;
+    COMMUNITY_HAS_MORE = posts.length === PAGE_SIZE;
+
+    renderCommunityFeed(posts, _COMMUNITY_USER_ID, likeInfo.counts, likeInfo.myLikes, commentsMap, profileCountryMap, { append: true });
+  } catch (err) {
+    console.warn("[community] loadMorePosts failed.", err);
+  } finally {
+    COMMUNITY_LOADING_MORE = false;
   }
 }
 
@@ -986,6 +1150,17 @@ async function deleteComment(commentId) {
 
 function setupCommunity() {
   const page = $("#page-community");
+
+  // 이벤트 위임 — 한 번만 등록
+  if (!setupCommunity._feedBound) {
+    setupCommunity._feedBound = true;
+    document.addEventListener("click", _handleFeedClick);
+
+    // 스크롤 위치 추적 (passive)
+    window.addEventListener("scroll", () => {
+      if (page && !page.hidden) _communityScrollTop = window.scrollY;
+    }, { passive: true });
+  }
   if (page && !$("#communityBanBanner")) {
     const ban = document.createElement("div");
     ban.id = "communityBanBanner";
@@ -1238,4 +1413,5 @@ export {
   timeAgo,
 };
 
-window.addEventListener("community:refresh", () => loadCommunityPosts(true));
+// forceReload=false: 캐시 있으면 즉시 표시 후 백그라운드 갱신 (탭 전환 복귀 대응)
+window.addEventListener("community:refresh", () => loadCommunityPosts(false));

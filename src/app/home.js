@@ -1,6 +1,7 @@
 // src/app/home.js
 // Home module (YouTube -> travel skim)
 import { safeOpen } from "./deeplinks.js";
+import { getCache, setCache, TTL, skeletonCards } from "./cache.js";
 const {
   $,
   escapeHtml,
@@ -332,11 +333,15 @@ function getCollections() {
 }
 
 async function loadHomeLibrary() {
+  const cacheKey = "home_library";
+  const cached = getCache(cacheKey);
+  if (cached) { HOME_LIBRARY_COLLECTIONS = cached; return; }
   try {
     const res = await fetch(HOME_LIBRARY_URL, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json().catch(() => ({}));
     HOME_LIBRARY_COLLECTIONS = Array.isArray(data?.collections) ? data.collections : [];
+    setCache(cacheKey, HOME_LIBRARY_COLLECTIONS, TTL.HOME);
   } catch {
     HOME_LIBRARY_COLLECTIONS = [];
   }
@@ -1082,6 +1087,88 @@ function stopHomeCarousel() {
   setIndex(0);
 }
 
+function _renderNowPreviewItems(items, track, host) {
+  const mapHomeNowTag = (raw) => {
+    const t = String(raw || "").toUpperCase();
+    if (t.includes("ALERT")) return { label: "ALERT", kind: "alert" };
+    if (t.includes("GUIDE")) return { label: "GUIDE", kind: "guide" };
+    return { label: "NEWS", kind: "news" };
+  };
+  const homeNowIcon = `
+    <span class="homeNowCard__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M5 12h14M12 5v14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </span>
+  `;
+
+  if (!items.length) {
+    track.innerHTML = `
+      <div class="previewCard homeNowCard" data-kind="news">
+        <div class="previewTag">${homeNowIcon}<span class="homeNowCard__badge">NEWS</span></div>
+        <div class="previewTitle homeNowCard__title">Arrival checklist</div>
+        <div class="previewDesc homeNowCard__desc">SIM, T-money, and airport transit tips.</div>
+      </div>
+      <div class="previewCard homeNowCard" data-kind="news">
+        <div class="previewTag">${homeNowIcon}<span class="homeNowCard__badge">NEWS</span></div>
+        <div class="previewTitle homeNowCard__title">Seasonal hotspots</div>
+        <div class="previewDesc homeNowCard__desc">Popular areas and crowd windows this week.</div>
+      </div>
+      <div class="previewCard homeNowCard" data-kind="alert">
+        <div class="previewTag">${homeNowIcon}<span class="homeNowCard__badge">ALERT</span></div>
+        <div class="previewTitle homeNowCard__title">Transit changes</div>
+        <div class="previewDesc homeNowCard__desc">Temporary line closures and bus reroutes.</div>
+      </div>
+      <div class="previewCard homeNowCard" data-kind="guide">
+        <div class="previewTag">${homeNowIcon}<span class="homeNowCard__badge">GUIDE</span></div>
+        <div class="previewTitle homeNowCard__title">Transit passes</div>
+        <div class="previewDesc homeNowCard__desc">Which pass to buy for your routes.</div>
+      </div>
+      <div class="previewCard homeNowCard" data-kind="news">
+        <div class="previewTag">${homeNowIcon}<span class="homeNowCard__badge">NEWS</span></div>
+        <div class="previewTitle homeNowCard__title">Local events</div>
+        <div class="previewDesc homeNowCard__desc">Seasonal festivals and ticket tips.</div>
+      </div>
+    `;
+    const dots = document.getElementById("homeNowDots");
+    if (dots) {
+      const count = track.querySelectorAll(".previewCard").length;
+      dots.style.display = count <= 1 ? "none" : "";
+    }
+    return;
+  }
+
+  track.innerHTML = items
+    .map((it) => {
+      const mapped = mapHomeNowTag(it.tag);
+      return `
+      ${
+        it.placeholder
+          ? `<div class="previewCard homeNowCard" data-placeholder="1" data-kind="news">
+              <div class="previewTag">${homeNowIcon}<span class="homeNowCard__badge">NEWS</span></div>
+              <div class="previewTitle homeNowCard__title">Pick an item (admin)</div>
+              <div class="previewDesc homeNowCard__desc">Assign a slot in home_featured.</div>
+            </div>`
+          : `<button class="previewCard homeNowCard" type="button" data-kind="${mapped.kind}" data-link="${escapeHtml(
+              it.link || ""
+            )}" data-link-hash="${escapeHtml(it.linkHash || "")}" data-source="${escapeHtml(
+              it.source || ""
+            )}">
+              <div class="previewTag">${homeNowIcon}<span class="homeNowCard__badge">${mapped.label}</span></div>
+              <div class="previewTitle homeNowCard__title">${escapeHtml(it.title || "Untitled")}</div>
+              <div class="previewDesc homeNowCard__desc">${escapeHtml(it.summary || "")}</div>
+            </button>`
+      }
+    `;
+    })
+    .join("");
+  const dots = document.getElementById("homeNowDots");
+  if (dots) {
+    const count = track.querySelectorAll(".previewCard").length;
+    dots.style.display = count <= 1 ? "none" : "";
+  }
+}
+
 async function loadNowPreview(routeToken) {
   if (routeToken && routeToken !== window.App?.routeToken) return;
   const host = document.getElementById("homeNowPreview");
@@ -1111,12 +1198,18 @@ async function loadNowPreview(routeToken) {
       });
     }
   };
+  const _nowCacheKey = "home_now_preview";
   clearLoadingTimeout();
   if (typeof navigator !== "undefined" && navigator.onLine === false) {
     track.innerHTML = `<div class="muted small">You are offline. Connect to the internet to load updates.</div>`;
     return;
   }
-  track.innerHTML = `<div class="muted small">Loading...</div>`;
+  const _nowCached = getCache(_nowCacheKey);
+  if (_nowCached) {
+    _renderNowPreviewItems(_nowCached, track, host);
+  } else {
+    track.innerHTML = `<div class="skeletonGrid">${skeletonCards(3, { img: false })}</div>`;
+  }
   loadNowPreview.timeoutId = setTimeout(() => {
     if (requestId !== loadNowPreview.requestId) return;
     setRetry();
@@ -1189,6 +1282,7 @@ async function loadNowPreview(routeToken) {
       };
 
       items = await Promise.all(slotsNormalized.map((slot) => resolveSlot(slot)));
+      setCache(_nowCacheKey, items, TTL.HOME);
     }
   } catch (err) {
     console.warn("[home] Korea Now preview failed.", err);
@@ -1207,86 +1301,7 @@ async function loadNowPreview(routeToken) {
   if (requestId !== loadNowPreview.requestId) return;
   if (routeToken && routeToken !== window.App?.routeToken) return;
   if (!isVisible()) return;
-
-    const mapHomeNowTag = (raw) => {
-      const t = String(raw || "").toUpperCase();
-      if (t.includes("ALERT")) return { label: "ALERT", kind: "alert" };
-      if (t.includes("GUIDE")) return { label: "GUIDE", kind: "guide" };
-      return { label: "NEWS", kind: "news" };
-    };
-    const homeNowIcon = `
-      <span class="homeNowCard__icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none">
-          <path d="M5 12h14M12 5v14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-      </span>
-    `;
-
-    if (!items.length) {
-      track.innerHTML = `
-        <div class="previewCard homeNowCard" data-kind="news">
-          <div class="previewTag">${homeNowIcon}<span class="homeNowCard__badge">NEWS</span></div>
-          <div class="previewTitle homeNowCard__title">Arrival checklist</div>
-          <div class="previewDesc homeNowCard__desc">SIM, T-money, and airport transit tips.</div>
-        </div>
-        <div class="previewCard homeNowCard" data-kind="news">
-          <div class="previewTag">${homeNowIcon}<span class="homeNowCard__badge">NEWS</span></div>
-          <div class="previewTitle homeNowCard__title">Seasonal hotspots</div>
-          <div class="previewDesc homeNowCard__desc">Popular areas and crowd windows this week.</div>
-        </div>
-        <div class="previewCard homeNowCard" data-kind="alert">
-          <div class="previewTag">${homeNowIcon}<span class="homeNowCard__badge">ALERT</span></div>
-          <div class="previewTitle homeNowCard__title">Transit changes</div>
-          <div class="previewDesc homeNowCard__desc">Temporary line closures and bus reroutes.</div>
-        </div>
-        <div class="previewCard homeNowCard" data-kind="guide">
-          <div class="previewTag">${homeNowIcon}<span class="homeNowCard__badge">GUIDE</span></div>
-          <div class="previewTitle homeNowCard__title">Transit passes</div>
-          <div class="previewDesc homeNowCard__desc">Which pass to buy for your routes.</div>
-        </div>
-        <div class="previewCard homeNowCard" data-kind="news">
-          <div class="previewTag">${homeNowIcon}<span class="homeNowCard__badge">NEWS</span></div>
-          <div class="previewTitle homeNowCard__title">Local events</div>
-          <div class="previewDesc homeNowCard__desc">Seasonal festivals and ticket tips.</div>
-        </div>
-      `;
-      const dots = document.getElementById("homeNowDots");
-      if (dots) {
-        const count = track.querySelectorAll(".previewCard").length;
-        dots.style.display = count <= 1 ? "none" : "";
-      }
-      return;
-    }
-
-    track.innerHTML = items
-      .map((it) => {
-        const mapped = mapHomeNowTag(it.tag);
-        return `
-        ${
-          it.placeholder
-            ? `<div class="previewCard homeNowCard" data-placeholder="1" data-kind="news">
-                <div class="previewTag">${homeNowIcon}<span class="homeNowCard__badge">NEWS</span></div>
-                <div class="previewTitle homeNowCard__title">Pick an item (admin)</div>
-                <div class="previewDesc homeNowCard__desc">Assign a slot in home_featured.</div>
-              </div>`
-            : `<button class="previewCard homeNowCard" type="button" data-kind="${mapped.kind}" data-link="${escapeHtml(
-                it.link || ""
-              )}" data-link-hash="${escapeHtml(it.linkHash || "")}" data-source="${escapeHtml(
-                it.source || ""
-              )}">
-                <div class="previewTag">${homeNowIcon}<span class="homeNowCard__badge">${mapped.label}</span></div>
-                <div class="previewTitle homeNowCard__title">${escapeHtml(it.title || "Untitled")}</div>
-                <div class="previewDesc homeNowCard__desc">${escapeHtml(it.summary || "")}</div>
-              </button>`
-        }
-      `;
-      })
-      .join("");
-    const dots = document.getElementById("homeNowDots");
-    if (dots) {
-      const count = track.querySelectorAll(".previewCard").length;
-      dots.style.display = count <= 1 ? "none" : "";
-    }
+  _renderNowPreviewItems(items, track, host);
 }
 
 loadNowPreview.requestId = 0;
@@ -1320,11 +1335,17 @@ async function loadCommunityPreview(routeToken) {
       });
     }
   };
+  const _commPreviewKey = "home_community_preview";
   if (typeof navigator !== "undefined" && navigator.onLine === false) {
     host.innerHTML = `<div class="muted small">You are offline. Connect to the internet to load updates.</div>`;
     return;
   }
-  host.innerHTML = `<div class="muted small">Loading...</div>`;
+  const _commPreviewCached = getCache(_commPreviewKey);
+  if (_commPreviewCached) {
+    host.innerHTML = _commPreviewCached;
+  } else {
+    host.innerHTML = `<div class="skeletonGrid">${skeletonCards(3)}</div>`;
+  }
   loadCommunityPreview.timeoutId = setTimeout(() => {
     if (requestId !== loadCommunityPreview.requestId) return;
     setRetry();
@@ -1402,7 +1423,7 @@ async function loadCommunityPreview(routeToken) {
       return;
     }
 
-    host.innerHTML = rows
+    const _commPreviewHtml = rows
       .map((p) => {
         const raw = String(p.content || "");
         const title = escapeHtml(raw.split("\n")[0] || "Untitled");
@@ -1418,6 +1439,8 @@ async function loadCommunityPreview(routeToken) {
       `;
       })
       .join("");
+    setCache(_commPreviewKey, _commPreviewHtml, TTL.COMMUNITY);
+    host.innerHTML = _commPreviewHtml;
   } catch (err) {
     console.warn("[home] Community preview failed.", err);
     if (requestId === loadCommunityPreview.requestId) {

@@ -7,6 +7,7 @@ import {
   deleteKPost,
 } from "./korea_now.js";
 import { safeOpen } from "./deeplinks.js";
+import { getCache, skeletonRows } from "./cache.js";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const t = (k, vars) => (window.App?.t || ((k) => k))(k, vars);
@@ -617,7 +618,12 @@ export async function initKPage({ tab = "kpop" } = {}) {
       setKLoading(false);
       return;
     }
-    host.innerHTML = `<div class="muted small">Loading...</div>`;
+    // 캐시 있으면 skeleton 없이 즉시 표시됨 (fetchKPosts가 캐시 반환)
+    // 캐시 없을 때만 skeleton 표시
+    const _kCacheKey = `k_posts_${tab}`;
+    if (!getCache(_kCacheKey)) {
+      host.innerHTML = skeletonRows(5);
+    }
     K_LOAD_TIMEOUT = setTimeout(() => {
       if (requestId !== K_LOAD_TOKEN) return;
       K_LOAD_TOKEN += 1;

@@ -468,6 +468,14 @@ async function signOut() {
     app.updateNicknameBadge?.();
     app.updateProfileUI?.();
     try { sessionStorage.removeItem("guest_mode"); } catch {}
+    // 로그아웃 시 SW API 캐시 비우기 (다음 사용자가 이전 캐시 못 봄)
+    try {
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.ready.then((reg) => {
+          reg.active?.postMessage({ type: "CLEAR_API_CACHE" });
+        }).catch(() => {});
+      }
+    } catch {}
     window.location.reload();
   } finally {
     try {
