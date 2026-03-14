@@ -1,5 +1,11 @@
 {
   "appId": "com.iamkim.app",
   "appName": "I AM KIM",
-  "webDir": "dist"
+  "webDir": "dist",
+  "ios": {
+    "scheme": "com.iamkim.app"
+  },
+  "android": {
+    "allowMixedContent": true
+  }
 }

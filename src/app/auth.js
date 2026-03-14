@@ -357,10 +357,15 @@ async function signInWith(provider) {
     // Native (Capacitor): get OAuth URL without auto-redirect, open in SFSafariViewController
     try {
       const { Browser } = await import("@capacitor/browser");
+      const { Device } = await import("@capacitor/device");
+      const info = await Device.getInfo();
+      const redirectTo = info.platform === "ios"
+        ? "com.iamkim.app://login-callback"
+        : "com.iamkim.app://login-callback";
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: "capacitor://localhost",
+          redirectTo,
           skipBrowserRedirect: true,
         },
       });
