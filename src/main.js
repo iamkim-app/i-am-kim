@@ -3376,6 +3376,10 @@ async function loadAppModules() {
   const partnerEventsAdmin = await import("./app/partner_events_admin.js");
   ({ ensurePartnerAdminUI, setupPartnerAdmin, loadPartnerAdmin } = partnerEventsAdmin);
   Object.assign(app, { ensurePartnerAdminUI, setupPartnerAdmin, loadPartnerAdmin });
+
+  // App lifecycle — Capacitor appStateChange + WebView resume
+  const { initAppLifecycle } = await import("./app/app-lifecycle.js");
+  initAppLifecycle();
 }
 
 async function boot() {
@@ -3538,6 +3542,10 @@ window.addEventListener("app:resume", () => {
   }
   if (route === "k") {
     window.dispatchEvent(new Event("k:refresh"));
+    return;
+  }
+  if (route === "info") {
+    window.dispatchEvent(new Event("home:refresh"));
   }
 });
 
